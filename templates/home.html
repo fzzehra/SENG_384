@@ -7,32 +7,24 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <!DOCTYPE html>
-
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - Facial Image Analysis</title>
-
-
-<link rel="stylesheet" href="../static/css/style.css">
-</head>
-<body>
     <div class="container">
         <h1>Facial Image Analysis System</h1>
         <p>Welcome to the project interface.</p>
 
-    <div class="card">
-        <a class="nav-btn" href="upload.html">Go to Upload Screen</a>
-        <a class="nav-btn" href="controls.html">Go to Controls Screen</a>
-        <a class="nav-btn" href="preview.html">Go to Preview Screen</a>
-        <a class="nav-btn" href="result.html">Go to Result Screen</a>
+        <div class="card">
+            {% if current_user %}
+                <p>Logged in as <strong>{{ current_user }}</strong>.</p>
+                <a class="nav-btn" href="{{ url_for('auth.logout') }}">Logout</a>
+            {% else %}
+                <a class="nav-btn" href="{{ url_for('auth.login') }}">Login</a>
+                <a class="nav-btn" href="{{ url_for('auth.register') }}">Register</a>
+            {% endif %}
+
+            <a class="nav-btn" href="{{ url_for('upload_page') }}">Go to Upload Screen</a>
+            <a class="nav-btn" href="{{ url_for('controls_page') }}">Go to Controls Screen</a>
+            <a class="nav-btn" href="{{ url_for('preview_page') }}">Go to Preview Screen</a>
+            <a class="nav-btn" href="{{ url_for('result_page') }}">Go to Result Screen</a>
+        </div>
     </div>
-</div>
-
-</body>
-</html>
-
 </body>
 </html>
