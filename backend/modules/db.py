@@ -1,13 +1,11 @@
-# backend/modules/db.py
-
 import mysql.connector
-
 
 def get_db_connection():
     connection = mysql.connector.connect(
-        host="localhost",
+        host="127.0.0.1",
         user="root",
-        password="",  # XAMPP default boş olur genelde
-        database="seng384"
+        password="",  # XAMPP genelde boş
+        database="facial_app",
+        port=3307
     )
     return connection

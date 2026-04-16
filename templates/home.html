@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home - Facial Image Analysis</title>
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body>
     <div class="container">
         <h1>Facial Image Analysis System</h1>
@@ -18,6 +16,8 @@
             <a class="nav-btn" href="{{ url_for('controls_page') }}">Go to Controls Screen</a>
             <a class="nav-btn" href="{{ url_for('preview_page') }}">Go to Preview Screen</a>
             <a class="nav-btn" href="{{ url_for('result_page') }}">Go to Result Screen</a>
+            <a class="nav-btn" href="{{ url_for('auth.login') }}">Go to Login</a>
+            <a class="nav-btn" href="{{ url_for('auth.register') }}">Go to Register</a>
         </div>
     </div>
 </body>
