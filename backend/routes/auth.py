@@ -1,9 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from backend.modules.db import db
-from backend.modules.models import User
-
+from backend.modules.db import get_db_connection
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -31,21 +29,37 @@ def register():
             flash("Passwords do not match.", "error")
             return render_template("register.html", **_template_context())
 
-        existing_user = User.query.filter_by(email=email).first() or User.query.filter_by(username=username).first()
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # kullanıcı var mı kontrol et
+        cursor.execute(
+            "SELECT * FROM users WHERE email = %s OR username = %s",
+            (email, username)
+        )
+        existing_user = cursor.fetchone()
+
         if existing_user:
             flash("A user with that email or username already exists.", "error")
+            conn.close()
             return render_template("register.html", **_template_context())
 
-        user = User(
-            username=username,
-            email=email,
-            password_hash=generate_password_hash(password),
-        )
-        db.session.add(user)
-        db.session.commit()
+        # kullanıcı oluştur
+        password_hash = generate_password_hash(password)
 
-        session["user_id"] = user.id
-        session["username"] = user.username
+        cursor.execute(
+            "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
+            (username, email, password_hash)
+        )
+        conn.commit()
+
+        user_id = cursor.lastrowid
+
+        conn.close()
+
+        session["user_id"] = user_id
+        session["username"] = username
+
         flash("Registration successful. You are now logged in.", "success")
         return redirect(url_for("home"))
 
@@ -65,13 +79,24 @@ def login():
             flash("Please enter both email and password.", "error")
             return render_template("login.html", **_template_context())
 
-        user = User.query.filter_by(email=email).first()
-        if not user or not check_password_hash(user.password_hash, password):
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute(
+            "SELECT * FROM users WHERE email = %s",
+            (email,)
+        )
+        user = cursor.fetchone()
+
+        conn.close()
+
+        if not user or not check_password_hash(user["password_hash"], password):
             flash("Invalid credentials. Please try again.", "error")
             return render_template("login.html", **_template_context())
 
-        session["user_id"] = user.id
-        session["username"] = user.username
+        session["user_id"] = user["id"]
+        session["username"] = user["username"]
+
         flash("Logged in successfully.", "success")
         return redirect(url_for("home"))
 

@@ -1,3 +1,13 @@
-from flask_sqlalchemy import SQLAlchemy
+# backend/modules/db.py
 
-db = SQLAlchemy()
+import mysql.connector
+
+
+def get_db_connection():
+    connection = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",  # XAMPP default boş olur genelde
+        database="seng384"
+    )
+    return connection
