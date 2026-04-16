@@ -1,3 +1,4 @@
+import os
 """
 Launching Flask
 Adding route files to the system
@@ -5,7 +6,7 @@ Creating upload and results folders
 Returning a test message on the main page
 """
 
-from flask import Flask
+from flask import Flask, render_template
 from flask_cors import CORS
 
 from backend.routes.upload import upload_bp
@@ -18,7 +19,13 @@ from backend.modules.utils.helpers import ensure_dir
 
 
 def create_app():
-    app = Flask(__name__)
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(base_dir, "templates"),
+        static_folder=os.path.join(base_dir, "static")
+    )
     CORS(app)
 
     app.config["UPLOAD_FOLDER"] = "static/uploads"
@@ -37,9 +44,23 @@ def create_app():
 
     @app.route("/")
     def home():
-        return {
-            "message": "Facial Image Warping API is running."
-        }
+        return render_template("home.html")
+
+    @app.route("/upload-page")
+    def upload_page():
+        return render_template("upload.html")
+
+    @app.route("/controls-page")
+    def controls_page():
+        return render_template("controls.html")
+
+    @app.route("/preview-page")
+    def preview_page():
+        return render_template("preview.html")
+
+    @app.route("/result-page")
+    def result_page():
+        return render_template("result.html")
 
     return app
 
