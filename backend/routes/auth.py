@@ -32,7 +32,6 @@ def register():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # kullanıcı var mı kontrol et
         cursor.execute(
             "SELECT * FROM users WHERE email = %s OR username = %s",
             (email, username)
@@ -40,28 +39,21 @@ def register():
         existing_user = cursor.fetchone()
 
         if existing_user:
-            flash("A user with that email or username already exists.", "error")
             conn.close()
+            flash("A user with that email or username already exists.", "error")
             return render_template("register.html", **_template_context())
 
-        # kullanıcı oluştur
-        password_hash = generate_password_hash(password)
+        hashed_password = generate_password_hash(password)
 
         cursor.execute(
-            "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
-            (username, email, password_hash)
+            "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)",
+            (username, email, hashed_password)
         )
         conn.commit()
-
-        user_id = cursor.lastrowid
-
         conn.close()
 
-        session["user_id"] = user_id
-        session["username"] = username
-
-        flash("Registration successful. You are now logged in.", "success")
-        return redirect(url_for("home"))
+        flash("Registration successful. Please log in.", "success")
+        return redirect(url_for("auth.login"))
 
     return render_template("register.html", **_template_context())
 
@@ -87,10 +79,9 @@ def login():
             (email,)
         )
         user = cursor.fetchone()
-
         conn.close()
 
-        if not user or not check_password_hash(user["password_hash"], password):
+        if not user or not check_password_hash(user["password"], password):
             flash("Invalid credentials. Please try again.", "error")
             return render_template("login.html", **_template_context())
 
