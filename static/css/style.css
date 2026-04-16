@@ -26,6 +26,11 @@ p {
     background: none;
     box-shadow: none;
     padding: 0;
+
+    display: flex;              /* 🔥 EKLE */
+    justify-content: center;    /* 🔥 ORTALA */
+    gap: 15px;                  /* 🔥 ARALIK */
+    flex-wrap: wrap;            /* 🔥 TAŞARSA ALT SATIR */
 }
 
 label {
