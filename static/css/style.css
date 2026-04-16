@@ -27,10 +27,10 @@ p {
     box-shadow: none;
     padding: 0;
 
-    display: flex;              /* 🔥 EKLE */
-    justify-content: center;    /* 🔥 ORTALA */
-    gap: 15px;                  /* 🔥 ARALIK */
-    flex-wrap: wrap;            /* 🔥 TAŞARSA ALT SATIR */
+    display: flex;              
+    justify-content: center;    
+    gap: 15px;                  
+    flex-wrap: wrap;            
 }
 
 label {
