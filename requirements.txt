@@ -1,5 +1,7 @@
 Flask
 flask-cors
+Flask-SQLAlchemy
+PyMySQL
 opencv-python
 numpy
 matplotlib
