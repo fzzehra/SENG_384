@@ -1,6 +1,6 @@
 body {
     font-family: Arial, sans-serif;
-    background: #f4f6f8;
+    background:linear-gradient(to left,#f4f6f8, #E4FCC0);    
     margin: 0;
     padding: 20px;
 }
@@ -8,11 +8,19 @@ body {
 .container {
     max-width: 1000px;
     margin: 0 auto;
+    justify-content: center; 
+    align-items: center;     
 }
 
 h1 {
     text-align: center;
     margin-bottom: 24px;
+    color: #4646e5;
+}
+p {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #4646e5;
 }
 
 .card {
@@ -20,7 +28,7 @@ h1 {
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px #4040d8;
 }
 
 label {
@@ -38,10 +46,11 @@ input, select {
 }
 
 button, .nav-btn {
+    text-align: center;
     display: inline-block;
     padding: 10px 18px;
     border: none;
-    background: #2563eb;
+    background: #B9B9FF;
     color: white;
     border-radius: 6px;
     cursor: pointer;
@@ -50,7 +59,8 @@ button, .nav-btn {
 }
 
 button:hover, .nav-btn:hover {
-    background: #1d4ed8;
+    text-align: center;
+    background: #B9B9FF;
 }
 
 .image-grid {
