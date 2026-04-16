@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controls Screen</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Controls Screen</h1>
+
+        <div class="card">
+            <label for="transformation">Select Transformation</label>
+            <select id="transformation">
+                <option>Smile Enhancement</option>
+                <option>Eyebrow Raising</option>
+                <option>Lip Widening</option>
+                <option>Face Slimming</option>
+                <option>Aging</option>
+                <option>De-Aging</option>
+            </select>
+
+            <label for="intensity">Intensity</label>
+            <input type="range" id="intensity" min="0" max="100" value="50">
+
+            <a class="nav-btn" href="/preview">Next: Preview</a>
+        </div>
+    </div>
+</body>
+</html>

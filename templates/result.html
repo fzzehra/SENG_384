@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result Screen</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Result Screen</h1>
+
+        <div class="card">
+            <label for="original">Original Image Path</label>
+            <input type="text" id="original" value="images/original.jpg">
+
+            <label for="transformed">Transformed Image Path</label>
+            <input type="text" id="transformed" value="images/transformed.jpg">
+
+            <button id="analyzeBtn">Analyze</button>
+        </div>
+
+        <div class="card">
+            <h2>Metrics</h2>
+            <div id="metricsResult">No results yet.</div>
+        </div>
+
+        <div class="card">
+            <h2>Energy Analysis</h2>
+            <div id="energyResult">No results yet.</div>
+        </div>
+
+        <div class="card">
+            <h2>Spectrum Images</h2>
+            <div class="image-grid">
+                <div>
+                    <p>Original Spectrum</p>
+                    <img id="originalSpectrum" src="" alt="Original Spectrum">
+                </div>
+                <div>
+                    <p>Transformed Spectrum</p>
+                    <img id="transformedSpectrum" src="" alt="Transformed Spectrum">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Screen</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Preview Screen</h1>
+
+        <div class="card">
+            <p>This screen can be used to preview original and transformed images before analysis.</p>
+
+            <div class="image-grid">
+                <div>
+                    <p>Original Image</p>
+                    <img src="{{ url_for('static', filename='uploads/original-placeholder.png') }}" alt="Original Preview">
+                </div>
+                <div>
+                    <p>Transformed Image</p>
+                    <img src="{{ url_for('static', filename='uploads/transformed-placeholder.png') }}" alt="Transformed Preview">
+                </div>
+            </div>
+
+            <a class="nav-btn" href="/result">Next: Result</a>
+        </div>
+    </div>
+</body>
+</html>
