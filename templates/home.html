@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home - Facial Image Analysis</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&family=Poppins:wght@300;400;500;600&display=swap');
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -44,10 +44,15 @@
 
     .logo {
       height: 80px;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s ease, filter 0.3s ease;
+      filter: sepia(0.4) saturate(0.7) hue-rotate(10deg);
+      opacity: 0.9;
     }
 
-    .logo:hover { transform: scale(1.05); }
+    .logo:hover { 
+      transform: scale(1.05);
+      filter: sepia(0.2) saturate(0.8) hue-rotate(10deg);
+    }
 
     .nav-links {
       display: flex;
@@ -106,9 +111,13 @@
 
     p.subtitle {
       color: #6060aa;
-      font-size: 16px;
-      font-weight: 300;
+      font-size: 17px;
+      font-weight: 500;
       margin-bottom: 30px;
+      letter-spacing: 0.3px;
+      line-height: 1.7;
+      font-family: 'Poppins', sans-serif;
+      font-style: italic;
     }
 
     /* --- Grid Menü --- */

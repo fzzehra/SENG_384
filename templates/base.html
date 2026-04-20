@@ -24,11 +24,14 @@
     width: 80px;
     height: auto;
     z-index: 1000;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    filter: sepia(0.4) saturate(0.7) hue-rotate(10deg);
+    opacity: 0.9;
   }
 
   .logo:hover {
     transform: scale(1.05);
+    filter: sepia(0.2) saturate(0.8) hue-rotate(10deg);
   }
 
   .nav-links {
