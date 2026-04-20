@@ -206,7 +206,6 @@
     <img src="{{ url_for('static', filename='image/logo.png') }}" class="logo" alt="Logo">
     <div class="nav-links">
       <a href="{{ url_for('home') }}">Home</a>
-      <a href="{{ url_for('upload_page') }}">Studio</a>
       <a href="{{ url_for('preview_page') }}">History</a>
       {% if current_user %}
         <a href="{{ url_for('auth.logout') }}" style="color: #ff6b6b;">Logout</a>
