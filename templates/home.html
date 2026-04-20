@@ -91,22 +91,24 @@
       display: inline-block;
       background: rgba(70, 70, 229, 0.1);
       color: #4646e5;
-      font-size: 11px;
+      font-size: 14px;
       font-weight: 600;
-      letter-spacing: 2px;
+      letter-spacing: 2.5px;
       text-transform: uppercase;
-      padding: 6px 16px;
+      padding: 10px 24px;
       border-radius: 100px;
-      margin-bottom: 16px;
+      margin-bottom: 25px;
       border: 1px solid rgba(70, 70, 229, 0.2);
     }
 
     h1 {
       font-family: 'Playfair Display', serif;
-      font-size: 48px;
+      font-size: 56px;
       color: #2a2a7a;
       line-height: 1.2;
       margin-bottom: 15px;
+      font-weight: 900;
+      letter-spacing: -1.5px;
     }
 
     p.subtitle {
@@ -127,6 +129,7 @@
       gap: 20px;
       width: 100%;
       max-width: 900px;
+      margin-bottom: 40px;
       animation: fadeUp 0.7s 0.15s ease both;
     }
 
@@ -188,11 +191,138 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* --- Demo Bölümü --- */
+    .demo-section {
+      margin-top: 40px;
+      margin-bottom: 60px;
+      padding: 60px 40px;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 32px;
+      max-width: 1000px;
+      width: 100%;
+      animation: fadeUp 0.8s 0.3s ease both;
+    }
+
+    .demo-section h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 52px;
+      color: #2a2a7a;
+      text-align: center;
+      margin-bottom: 50px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .demo-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .demo-image {
+      position: relative;
+      text-align: center;
+    }
+
+    .demo-image img {
+      width: 300px;
+      height: 250px;
+      object-fit: cover;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(70, 70, 229, 0.15);
+      transition: transform 0.3s ease;
+    }
+
+    .demo-image img:hover {
+      transform: scale(1.05);
+    }
+
+    .demo-label {
+      margin-top: 12px;
+      color: #6060aa;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .demo-arrow {
+      font-size: 40px;
+      color: #4646e5;
+      font-weight: 300;
+    }
+
+    .demo-info {
+      background: rgba(70, 70, 229, 0.05);
+      border-left: 4px solid #4646e5;
+      padding: 30px;
+      border-radius: 12px;
+    }
+
+    .demo-info h3 {
+      color: #2a2a7a;
+      font-size: 20px;
+      margin-bottom: 15px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+    }
+
+    .demo-info p {
+      color: #6060aa;
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .demo-info ul {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .demo-info li {
+      color: #4646e5;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
     /* Mobil Uyumluluk */
     @media (max-width: 768px) {
       .menu-grid { grid-template-columns: 1fr 1fr; }
       nav { padding: 20px; }
       h1 { font-size: 32px; }
+      
+      .demo-section {
+        margin-top: 50px;
+        padding: 40px 20px;
+      }
+
+      .demo-section h2 {
+        font-size: 26px;
+      }
+
+      .demo-container {
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .demo-arrow {
+        transform: rotate(90deg);
+      }
+
+      .demo-image img {
+        width: 100%;
+        max-width: 250px;
+      }
+
+      .demo-info ul {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -264,6 +394,32 @@
         </div>
         <span class="btn-text">Register Page</span>
       </a>
+    </div>
+
+    <!-- Demo/Örnek Bölümü -->
+    <div class="demo-section">
+      <h2>Chameleon Analysis Demo</h2>
+      <div class="demo-container">
+        <div class="demo-image">
+          <img src="https://via.placeholder.com/400x300?text=Original+Image" alt="Original">
+          <p class="demo-label">Original Image</p>
+        </div>
+        <div class="demo-arrow">→</div>
+        <div class="demo-image">
+          <img src="https://via.placeholder.com/400x300?text=Transformed+Image" alt="Transformed">
+          <p class="demo-label">Result</p>
+        </div>
+      </div>
+      <div class="demo-info">
+        <h3>How It Works</h3>
+        <p>Upload your facial images and apply various expression transformations. Our AI-powered system analyzes facial landmarks and applies realistic transformations including smile, eyebrow raising, lip widening, and face slimming effects.</p>
+        <ul>
+          <li>✓ Advanced AI facial recognition</li>
+          <li>✓ Natural expression transformations</li>
+          <li>✓ Real-time preview</li>
+          <li>✓ High-quality output</li>
+        </ul>
+      </div>
     </div>
   </div>
 
