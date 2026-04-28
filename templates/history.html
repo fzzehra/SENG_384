@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History - Facial Image Analysis</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8fcd4 50%, #f4f0ff 100%);
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 120px 20px 40px;
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 { width: 320px; height: 320px; background: #b0b0ff; top: -80px; left: -80px; }
+    .blob-2 { width: 260px; height: 260px; background: #a8f0c0; bottom: -60px; right: -60px; }
+
+    .container {
+      width: 100%;
+      max-width: 1000px;
+      z-index: 10;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(70, 70, 229, 0.1);
+      color: #4646e5;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(70, 70, 229, 0.2);
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 42px;
+      color: #2a2a7a;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #6060aa;
+      font-size: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .history-item {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 15px 45px rgba(70, 70, 229, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(70, 70, 229, 0.1);
+      padding-bottom: 15px;
+    }
+
+    .item-info h3 {
+      color: #2a2a7a;
+      font-size: 18px;
+      margin-bottom: 4px;
+      text-transform: capitalize;
+    }
+
+    .item-date {
+      color: #8888bb;
+      font-size: 13px;
+    }
+
+    .item-intensity {
+      background: rgba(70, 70, 229, 0.1);
+      color: #4646e5;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .image-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .img-box {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .img-box span {
+      font-size: 11px;
+      font-weight: 600;
+      color: #8888bb;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .img-wrapper {
+      width: 100%;
+      aspect-ratio: 4/3;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(70, 70, 229, 0.1);
+    }
+
+    .img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .img-wrapper:hover img {
+      transform: scale(1.05);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 24px;
+      border: 2px dashed rgba(70, 70, 229, 0.2);
+    }
+
+    .empty-state p {
+      color: #6060aa;
+      font-size: 18px;
+    }
+
+    @media (max-width: 768px) {
+      .image-comparison { grid-template-columns: 1fr; }
+      h1 { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  {% include 'base.html' %}
+
+  <div class="container">
+    <div class="page-header">
+      <div class="badge">Your Workspace</div>
+      <h1>Transformation History</h1>
+      <p class="subtitle">Review all your previous facial transformations</p>
+    </div>
+
+    <div class="history-list">
+      {% for item in history %}
+      <div class="history-item">
+        <div class="item-header">
+          <div class="item-info">
+            <h3>{{ item.transform_type.replace('_', ' ') }}</h3>
+            <div class="item-date">{{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else 'Unknown' }}</div>
+          </div>
+          <div class="item-intensity">Intensity: {{ (item.intensity * 100)|round|int }}%</div>
+        </div>
+        
+        <div class="image-comparison">
+          <div class="img-box">
+            <span>Original</span>
+            <div class="img-wrapper">
+              <img src="/{{ item.original_image }}" alt="Original">
+            </div>
+          </div>
+          <div class="img-box">
+            <span>Transformed</span>
+            <div class="img-wrapper">
+              <img src="/{{ item.transformed_image }}" alt="Transformed">
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <p>You haven't saved any transformations yet.</p>
+        <br>
+        <a href="{{ url_for('upload_page') }}" style="color: #4646e5; font-weight: 600;">Upload an image now</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</body>
+</html>

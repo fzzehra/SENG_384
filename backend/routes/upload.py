@@ -3,14 +3,16 @@ import shutil
 import cv2
 import numpy as np
 
-from flask import Blueprint, request, current_app
+from flask import Blueprint, request, current_app, session
 from werkzeug.utils import secure_filename
 
+from backend.modules.db import get_db_connection
 from backend.modules.utils.helpers import (
     allowed_file,
     error_response,
     success_response,
     timestamped_filename,
+    ensure_dir,
 )
 
 from backend.modules.landmark.landmark import process_landmark_pipeline
@@ -143,6 +145,37 @@ def upload_image():
 
     except Exception as e:
         return error_response(f"Transform failed: {str(e)}", 500)
+
+    # Save to history if requested and user is logged in
+    if request.form.get("save_to_history") == "true" and session.get("user_id"):
+        try:
+            history_folder = os.path.join(current_app.config["RESULT_FOLDER"], "history")
+            ensure_dir(history_folder)
+            
+            # Create a unique filename for the transformed image
+            base_name = os.path.basename(file_path)
+            name, ext = os.path.splitext(base_name)
+            hist_transformed_name = f"{name}_{transform_type}_result{ext}"
+            hist_transformed_path = os.path.join(history_folder, hist_transformed_name)
+            
+            # Save the transformed image uniquely
+            cv2.imwrite(hist_transformed_path, output_image)
+            
+            # Store relative paths in DB for easy access
+            rel_original_path = file_path # This is already static/uploads/filename
+            rel_transformed_path = os.path.join("static/results/history", hist_transformed_name)
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO user_history (user_id, original_image, transformed_image, transform_type, intensity) VALUES (%s, %s, %s, %s, %s)",
+                (session["user_id"], rel_original_path, rel_transformed_path, transform_type, intensity)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+        except Exception as e:
+            print(f"HISTORY SAVE ERROR: {e}")
 
     return success_response(
         "Image uploaded and transformed successfully.",

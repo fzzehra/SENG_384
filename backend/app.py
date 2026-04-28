@@ -71,6 +71,29 @@ def create_app():
             return redirect(url_for("auth.login"))
         return render_template("preview.html", cache_buster=int(time.time()))
 
+    @app.route("/history")
+    def history():
+        if not session.get("user_id"):
+            flash("Please log in to view your history.", "error")
+            return redirect(url_for("auth.login"))
+        
+        try:
+            from backend.modules.db import get_db_connection
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM user_history WHERE user_id = %s ORDER BY created_at DESC",
+                (session["user_id"],)
+            )
+            history_data = cursor.fetchall()
+            cursor.close()
+            conn.close()
+        except Exception as e:
+            print(f"FETCH HISTORY ERROR: {e}")
+            history_data = []
+
+        return render_template("history.html", history=history_data)
+
     @app.route("/result-page")
     def result_page():
         if not session.get("user_id"):
