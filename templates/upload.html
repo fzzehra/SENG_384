@@ -94,7 +94,7 @@
     border-radius: 28px;
     padding: 44px 48px;
     width: 100%;
-    max-width: 480px;
+    max-width: 520px;
     box-shadow: 0 20px 60px rgba(70, 70, 229, 0.1), 0 4px 20px rgba(0, 0, 0, 0.06);
     animation: fadeUp 0.7s 0.15s ease both;
   }
@@ -408,6 +408,11 @@
         <input type="radio" name="operation" id="opt6" value="De-Aging">
         <label for="opt6"><span class="dot"></span>De-Aging</label>
       </div>
+
+      <div class="transform-option">
+        <input type="radio" name="operation" id="opt7" value="Landmarks">
+        <label for="opt7"><span class="dot"></span>Show Landmarks</label>
+      </div>
     </div>
 
     <div class="intensity-control">
@@ -459,6 +464,7 @@
     if (op === "Face Slimming") return "slim_face";
     if (op === "Aging") return "aging";
     if (op === "De-Aging") return "deaging";
+    if (op === "Landmarks") return "landmarks";
     return "smile";
   }
 
@@ -474,10 +480,13 @@
 
   document.querySelectorAll('input[name="operation"]').forEach((radio) => {
     radio.addEventListener("change", function () {
-      intensityLabel.textContent =
-        this.value === "Smile Enhancement"
-          ? "Smile Intensity"
-          : "Transformation Intensity";
+      if (this.value === "Smile Enhancement") {
+        intensityLabel.textContent = "Smile Intensity";
+      } else if (this.value === "Landmarks") {
+        intensityLabel.textContent = "Landmark Preview";
+      } else {
+        intensityLabel.textContent = "Transformation Intensity";
+      }
 
       updateLivePreview();
     });
