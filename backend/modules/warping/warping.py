@@ -84,17 +84,41 @@ def modify_landmarks(
         upper_lip = FEATURE_GROUPS[expression]["upper_lip"]
         lower_lip = FEATURE_GROUPS[expression]["lower_lip"]
 
-        dx = 35.0 * intensity
-        dy = 28.0 * intensity
+        center_x = np.mean(pts[:, 0])
 
+        dx = 28.0 * intensity
+        dy = 22.0 * intensity
+
+        # Ağız köşeleri dışa ve yukarı
         pts[corners[0]] += np.array([-dx, -dy], dtype=np.float32)
         pts[corners[1]] += np.array([dx, -dy], dtype=np.float32)
 
+        # Üst dudak kavisli şekilde yukarı
         for idx in upper_lip:
-            pts[idx] += np.array([0.0, -10.0 * intensity], dtype=np.float32)
+            dist = abs(pts[idx][0] - center_x)
+            curve = max(0.0, 1 - dist / 120.0)
+            pts[idx] += np.array(
+                [0.0, -12.0 * intensity * curve],
+                dtype=np.float32
+            )
 
+        # Alt dudak hafif aşağı, ağız daha doğal açılır
         for idx in lower_lip:
-            pts[idx] += np.array([0.0, 8.0 * intensity], dtype=np.float32)
+            dist = abs(pts[idx][0] - center_x)
+            curve = max(0.0, 1 - dist / 120.0)
+            pts[idx] += np.array(
+                [0.0, 10.0 * intensity * curve],
+                dtype=np.float32
+            )
+
+        # Yanaklar hafif yukarı
+        cheek_indices = [50, 187, 205, 425, 411, 280]
+        for idx in cheek_indices:
+            if idx < len(pts):
+                pts[idx] += np.array(
+                    [0.0, -6.0 * intensity],
+                    dtype=np.float32
+                )
 
     elif expression == "eyebrow_raise":
         for idx in FEATURE_GROUPS[expression]["left_brow"] + FEATURE_GROUPS[expression]["right_brow"]:
