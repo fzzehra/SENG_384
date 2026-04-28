@@ -102,7 +102,7 @@
   .upload-zone {
     border: 2px dashed rgba(70, 70, 229, 0.3);
     border-radius: 18px;
-    padding: 36px 20px;
+    padding: 20px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -110,6 +110,11 @@
     margin-bottom: 28px;
     position: relative;
     overflow: hidden;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
   }
 
   .upload-zone:hover {
@@ -125,6 +130,22 @@
     cursor: pointer;
     width: 100%;
     height: 100%;
+    z-index: 4;
+  }
+
+  #previewImage {
+    display: none;
+    width: 100%;
+    max-height: 360px;
+    object-fit: contain;
+    border-radius: 16px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .upload-placeholder {
+    position: relative;
+    z-index: 1;
   }
 
   .upload-icon {
@@ -285,10 +306,6 @@
     background: linear-gradient(135deg, #7070f0, #5555ee);
   }
 
-  .submit-btn:active {
-    transform: translateY(-1px);
-  }
-
   .submit-btn svg {
     width: 18px;
     height: 18px;
@@ -341,17 +358,22 @@
 
   <div class="card">
     <div class="upload-zone" id="uploadZone">
-      <input type="file" accept="image/*" id="fileInput" onchange="handleFile(event)">
-      <div class="upload-icon">
-        <svg viewBox="0 0 24 24" stroke-width="1.8">
-          <polyline points="16 16 12 12 8 16"></polyline>
-          <line x1="12" y1="12" x2="12" y2="21"></line>
-          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
-        </svg>
+      <img id="previewImage" alt="Preview image">
+
+      <div class="upload-placeholder" id="uploadPlaceholder">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" stroke-width="1.8">
+            <polyline points="16 16 12 12 8 16"></polyline>
+            <line x1="12" y1="12" x2="12" y2="21"></line>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+          </svg>
+        </div>
+        <h3>Drop your image here</h3>
+        <p>or click to browse · JPG, PNG, WEBP</p>
+        <div class="file-name" id="fileName"></div>
       </div>
-      <h3>Drop your image here</h3>
-      <p>or click to browse · JPG, PNG, WEBP</p>
-      <div class="file-name" id="fileName"></div>
+
+      <input type="file" accept="image/*" id="fileInput" onchange="handleFile(event)">
     </div>
 
     <span class="field-label">Choose a transformation</span>
@@ -390,7 +412,7 @@
 
     <div class="intensity-control">
       <div class="intensity-row">
-        <span class="field-label" id="intensityLabel">Transformation Intensity</span>
+        <span class="field-label" id="intensityLabel">Smile Intensity</span>
         <span class="intensity-value" id="intensityValue">50%</span>
       </div>
 
@@ -408,16 +430,26 @@
 </div>
 
 <script>
+  let previewTimer = null;
+
   function handleFile(e) {
     const file = e.target.files[0];
 
-    if (file) {
-      document.getElementById('fileName').textContent = file.name;
+    if (!file) return;
 
-      const zone = document.getElementById('uploadZone');
-      zone.style.borderColor = 'rgba(70,70,229,0.7)';
-      zone.style.background = 'rgba(70,70,229,0.08)';
-    }
+    document.getElementById('fileName').textContent = file.name;
+
+    const img = document.getElementById("previewImage");
+    img.src = URL.createObjectURL(file);
+    img.style.display = "block";
+
+    document.getElementById("uploadPlaceholder").style.display = "none";
+
+    const zone = document.getElementById('uploadZone');
+    zone.style.borderColor = 'rgba(70,70,229,0.7)';
+    zone.style.background = 'rgba(70,70,229,0.08)';
+
+    updateLivePreview();
   }
 
   function mapOperation(op) {
@@ -436,17 +468,48 @@
 
   intensityInput.addEventListener("input", function () {
     intensityValue.textContent = Math.round(Number(this.value) * 100) + "%";
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(updateLivePreview, 350);
   });
 
   document.querySelectorAll('input[name="operation"]').forEach((radio) => {
     radio.addEventListener("change", function () {
-      if (this.value === "Smile Enhancement") {
-        intensityLabel.textContent = "Smile Intensity";
-      } else {
-        intensityLabel.textContent = "Transformation Intensity";
-      }
+      intensityLabel.textContent =
+        this.value === "Smile Enhancement"
+          ? "Smile Intensity"
+          : "Transformation Intensity";
+
+      updateLivePreview();
     });
   });
+
+  async function updateLivePreview() {
+    const file = document.getElementById('fileInput').files[0];
+    const op = document.querySelector('input[name="operation"]:checked');
+
+    if (!file || !op) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("transform_type", mapOperation(op.value));
+    formData.append("intensity", intensityInput.value);
+
+    try {
+      const response = await fetch("/upload/", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const img = document.getElementById("previewImage");
+        img.src = "/static/uploads/transformed.jpg?v=" + Date.now();
+      }
+    } catch (error) {
+      console.log("Live preview failed:", error);
+    }
+  }
 
   async function handleSubmit() {
     const file = document.getElementById('fileInput').files[0];
@@ -458,7 +521,6 @@
     }
 
     const formData = new FormData();
-
     formData.append("image", file);
     formData.append("transform_type", mapOperation(op.value));
     formData.append("intensity", intensityInput.value);
@@ -477,7 +539,6 @@
       }
 
       window.location.href = "/preview-page";
-
     } catch (error) {
       alert("Upload failed: " + error);
     }
