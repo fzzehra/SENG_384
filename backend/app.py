@@ -1,10 +1,5 @@
 import os
-"""
-Launching Flask
-Adding route files to the system
-Creating upload and results folders
-Returning a test message on the main page
-"""
+import time
 
 from flask import Flask, render_template, session, redirect, url_for, flash
 from flask_cors import CORS
@@ -68,12 +63,13 @@ def create_app():
             return redirect(url_for("auth.login"))
         return render_template("controls.html")
 
+    # 🔥 CACHE FIX BURADA
     @app.route("/preview-page")
     def preview_page():
         if not session.get("user_id"):
             flash("Please log in to access this page.", "error")
             return redirect(url_for("auth.login"))
-        return render_template("preview.html")
+        return render_template("preview.html", cache_buster=int(time.time()))
 
     @app.route("/result-page")
     def result_page():

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,11 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       min-height: 100vh;
@@ -29,8 +34,22 @@
       pointer-events: none;
       z-index: 0;
     }
-    .blob-1 { width: 320px; height: 320px; background: #b0b0ff; top: -80px; left: -80px; }
-    .blob-2 { width: 260px; height: 260px; background: #a8f0c0; bottom: -60px; right: -60px; }
+
+    .blob-1 {
+      width: 320px;
+      height: 320px;
+      background: #b0b0ff;
+      top: -80px;
+      left: -80px;
+    }
+
+    .blob-2 {
+      width: 260px;
+      height: 260px;
+      background: #a8f0c0;
+      bottom: -60px;
+      right: -60px;
+    }
 
     /* İçerik Alanı */
     .container {
@@ -39,7 +58,8 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 100px 20px 40px; /* Navbar için üstten boşluk */
+      padding: 100px 20px 40px;
+      /* Navbar için üstten boşluk */
       width: 100%;
       z-index: 5;
     }
@@ -82,7 +102,7 @@
       background: rgba(255, 255, 255, 0.72);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.85);
+      border: 1px solid rgba(255, 255, 255, 0.85);
       border-radius: 28px;
       padding: 40px;
       width: 100%;
@@ -162,21 +182,41 @@
     }
 
     @keyframes fadeDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @media (max-width: 768px) {
-      .image-grid { grid-template-columns: 1fr; }
-      h1 { font-size: 32px; }
+      .image-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 32px;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <div class="blob blob-1"></div>
@@ -196,14 +236,14 @@
         <div class="image-box">
           <p>Original Image</p>
           <div class="img-wrapper">
-            <img src="{{ url_for('static', filename='uploads/original.jpg') }}">
+            <img src="{{ url_for('static', filename='uploads/original.jpg') }}?v={{ cache_buster }}">
           </div>
         </div>
-        
+
         <div class="image-box">
           <p>Transformed Image</p>
           <div class="img-wrapper">
-            <img src="{{ url_for('static', filename='uploads/transformed.jpg') }}">
+            <img src="{{ url_for('static', filename='uploads/transformed.jpg') }}?v={{ cache_buster }}">
           </div>
         </div>
       </div>
@@ -219,4 +259,5 @@
   </div>
 
 </body>
+
 </html>

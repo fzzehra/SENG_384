@@ -1,12 +1,6 @@
-"""
-checks if there is an image in the incoming file
-checks if the extension is suitable
-saves the file to static/uploads
-returns the saved path as JSON.
-"""
-
-
 import os
+import shutil
+import cv2
 from flask import Blueprint, request, current_app
 from werkzeug.utils import secure_filename
 
@@ -17,7 +11,30 @@ from backend.modules.utils.helpers import (
     timestamped_filename,
 )
 
+from backend.modules.landmark.landmark import process_landmark_pipeline
+from backend.modules.warping.warping import apply_expression
+
 upload_bp = Blueprint("upload", __name__)
+
+TRANSFORM_MAP = {
+    "smile": "smile",
+    "eyebrow": "eyebrow_raise",
+    "lip_widen": "lip_widen",
+    "slim_face": "face_slimming",
+}
+
+
+def apply_aging_effect(image, intensity=0.5):
+    intensity = float(max(0.0, min(1.0, intensity)))
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray_bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+    return cv2.addWeighted(image, 1 - intensity, gray_bgr, intensity, 0)
+
+
+def apply_deaging_effect(image, intensity=0.5):
+    intensity = float(max(0.0, min(1.0, intensity)))
+    smooth = cv2.bilateralFilter(image, 9, 75, 75)
+    return cv2.addWeighted(image, 1 - intensity, smooth, intensity, 0)
 
 
 @upload_bp.route("/", methods=["POST"])
@@ -33,6 +50,19 @@ def upload_image():
     if not allowed_file(file.filename):
         return error_response("Unsupported file format. Please upload JPG or PNG.", 400)
 
+    transform_type = request.form.get("transform_type", "smile")
+    intensity = request.form.get("intensity", 0.5)
+
+    try:
+        intensity = float(intensity)
+    except (TypeError, ValueError):
+        return error_response("intensity must be a number.", 400)
+
+    intensity = max(0.0, min(1.0, intensity))
+
+    if transform_type not in TRANSFORM_MAP and transform_type not in {"aging", "deaging"}:
+        return error_response("Invalid transform_type.", 400)
+
     filename = secure_filename(file.filename)
     filename = timestamped_filename(filename)
 
@@ -40,24 +70,57 @@ def upload_image():
     file_path = os.path.join(upload_folder, filename)
 
     file.save(file_path)
-    # --- EK BAŞLANGIÇ ---
-    # Preview için sabit dosya üret
+
     original_path = os.path.join(upload_folder, "original.jpg")
     transformed_path = os.path.join(upload_folder, "transformed.jpg")
 
-    # uploaded file → original.jpg
-    import shutil
     shutil.copy(file_path, original_path)
 
-    # geçici olarak transformed da aynı (transform bağlanınca değişecek)
-    shutil.copy(file_path, transformed_path)
-    # --- EK BİTİŞ ---
+    image = cv2.imread(file_path)
+
+    if image is None:
+        return error_response("Image could not be read.", 400)
+
+    try:
+        if transform_type in TRANSFORM_MAP:
+            landmark_result = process_landmark_pipeline(image)
+
+            if not landmark_result["success"]:
+                return error_response(
+                    landmark_result["validation"]["reason"],
+                    400
+                )
+
+            output_image, dst_landmarks, triangles = apply_expression(
+                image=image,
+                landmarks=landmark_result["landmarks"],
+                expression=TRANSFORM_MAP[transform_type],
+                intensity=intensity
+            )
+
+        elif transform_type == "aging":
+            output_image = apply_aging_effect(image, intensity)
+
+        else:
+            output_image = apply_deaging_effect(image, intensity)
+
+        saved = cv2.imwrite(transformed_path, output_image)
+
+        if not saved:
+            return error_response("Transformed image could not be saved.", 500)
+
+    except Exception as e:
+        return error_response(f"Transform failed: {str(e)}", 500)
 
     return success_response(
-        "Image uploaded successfully.",
+        "Image uploaded and transformed successfully.",
         data={
             "filename": filename,
-            "file_path": file_path
+            "file_path": file_path,
+            "original_path": original_path,
+            "transformed_path": transformed_path,
+            "transform_type": transform_type,
+            "intensity": intensity
         },
         status_code=201
     )

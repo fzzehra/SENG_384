@@ -84,38 +84,44 @@ def modify_landmarks(
         upper_lip = FEATURE_GROUPS[expression]["upper_lip"]
         lower_lip = FEATURE_GROUPS[expression]["lower_lip"]
 
-        dx = 8.0 * intensity
-        dy = 6.0 * intensity
+        dx = 35.0 * intensity
+        dy = 28.0 * intensity
+
         pts[corners[0]] += np.array([-dx, -dy], dtype=np.float32)
         pts[corners[1]] += np.array([dx, -dy], dtype=np.float32)
 
         for idx in upper_lip:
-            pts[idx] += np.array([0.0, -2.5 * intensity], dtype=np.float32)
+            pts[idx] += np.array([0.0, -10.0 * intensity], dtype=np.float32)
+
         for idx in lower_lip:
-            pts[idx] += np.array([0.0, 2.0 * intensity], dtype=np.float32)
+            pts[idx] += np.array([0.0, 8.0 * intensity], dtype=np.float32)
 
     elif expression == "eyebrow_raise":
         for idx in FEATURE_GROUPS[expression]["left_brow"] + FEATURE_GROUPS[expression]["right_brow"]:
-            pts[idx] += np.array([0.0, -7.0 * intensity], dtype=np.float32)
+            pts[idx] += np.array([0.0, -15.0 * intensity], dtype=np.float32)
 
     elif expression == "lip_widen":
         corners = FEATURE_GROUPS[expression]["corners"]
-        pts[corners[0]] += np.array([-10.0 * intensity, 0.0], dtype=np.float32)
-        pts[corners[1]] += np.array([10.0 * intensity, 0.0], dtype=np.float32)
+        pts[corners[0]] += np.array([-22.0 * intensity, 0.0], dtype=np.float32)
+        pts[corners[1]] += np.array([22.0 * intensity, 0.0], dtype=np.float32)
 
         for idx in FEATURE_GROUPS[expression]["upper_lip"]:
-            pts[idx] += np.array([0.0, -1.5 * intensity], dtype=np.float32)
+            pts[idx] += np.array([0.0, -5.0 * intensity], dtype=np.float32)
+
         for idx in FEATURE_GROUPS[expression]["lower_lip"]:
-            pts[idx] += np.array([0.0, 1.5 * intensity], dtype=np.float32)
+            pts[idx] += np.array([0.0, 5.0 * intensity], dtype=np.float32)
 
     elif expression == "face_slimming":
         center_x = np.mean(pts[:, 0])
+
         for idx in FEATURE_GROUPS[expression]["left_cheek_jaw"]:
-            pts[idx][0] += (center_x - pts[idx][0]) * 0.10 * intensity
+            pts[idx][0] += (center_x - pts[idx][0]) * 0.25 * intensity
+
         for idx in FEATURE_GROUPS[expression]["right_cheek_jaw"]:
-            pts[idx][0] += (center_x - pts[idx][0]) * 0.10 * intensity
+            pts[idx][0] += (center_x - pts[idx][0]) * 0.25 * intensity
+
         for idx in FEATURE_GROUPS[expression]["chin"]:
-            pts[idx][1] -= 1.5 * intensity
+            pts[idx][1] -= 6.0 * intensity
 
     for i in range(len(pts)):
         pts[i] = _clip_point(pts[i], w, h)
@@ -129,6 +135,7 @@ def delaunay_triangulation(image_shape, landmarks: Sequence[Point]) -> List[Tria
     subdiv = cv2.Subdiv2D(rect)
 
     pts = np.array(landmarks, dtype=np.float32)
+
     for x, y in pts:
         px = float(np.clip(x, 0, w - 1))
         py = float(np.clip(y, 0, h - 1))
@@ -165,6 +172,7 @@ def delaunay_triangulation(image_shape, landmarks: Sequence[Point]) -> List[Tria
             continue
 
         tri = tuple(sorted((i1, i2, i3)))
+
         if len(set(tri)) == 3 and tri not in seen:
             seen.add(tri)
             triangles.append(tri)
@@ -198,6 +206,7 @@ def warp_triangles(
             continue
 
         src_patch = image[sy:sy + sh, sx:sx + sw]
+
         if src_patch.size == 0:
             continue
 
@@ -222,11 +231,20 @@ def warp_triangles(
 
         if image.ndim == 3:
             mask_3 = mask[..., None]
-            output[y1:y2, x1:x2] = output[y1:y2, x1:x2] * (1.0 - mask_3) + warped_patch * mask_3
+            output[y1:y2, x1:x2] = (
+                output[y1:y2, x1:x2] * (1.0 - mask_3)
+                + warped_patch * mask_3
+            )
         else:
-            output[y1:y2, x1:x2] = output[y1:y2, x1:x2] * (1.0 - mask) + warped_patch * mask
+            output[y1:y2, x1:x2] = (
+                output[y1:y2, x1:x2] * (1.0 - mask)
+                + warped_patch * mask
+            )
 
-        accum_mask[y1:y2, x1:x2] = np.maximum(accum_mask[y1:y2, x1:x2], mask)
+        accum_mask[y1:y2, x1:x2] = np.maximum(
+            accum_mask[y1:y2, x1:x2],
+            mask
+        )
 
     if image.ndim == 3:
         accum_mask_3 = accum_mask[..., None]
@@ -247,10 +265,17 @@ def apply_expression(
         raise ValueError("image is empty")
 
     src_landmarks = np.array(landmarks, dtype=np.float32)
+
     if len(src_landmarks) < 3:
         raise ValueError("At least 3 landmarks are required.")
 
-    dst_landmarks = modify_landmarks(src_landmarks, image.shape, expression, intensity)
+    dst_landmarks = modify_landmarks(
+        src_landmarks,
+        image.shape,
+        expression,
+        intensity
+    )
+
     triangles = delaunay_triangulation(image.shape, src_landmarks)
     warped = warp_triangles(image, src_landmarks, dst_landmarks, triangles)
 
