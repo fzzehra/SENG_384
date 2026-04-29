@@ -31,6 +31,8 @@ if (analyzeBtn) {
                 <p><strong>MSE:</strong> ${result.metrics.mse}</p>
                 <p><strong>PSNR:</strong> ${result.metrics.psnr}</p>
                 <p><strong>SSIM:</strong> ${result.metrics.ssim}</p>
+                <p><strong>RMSE:</strong> ${result.metrics.rmse}</p>
+                <p><strong>Correlation:</strong> ${result.metrics.correlation}</p>
             `;
 
             document.getElementById("energyResult").innerHTML = `

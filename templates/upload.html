@@ -480,12 +480,17 @@
 
   document.querySelectorAll('input[name="operation"]').forEach((radio) => {
     radio.addEventListener("change", function () {
-      if (this.value === "Smile Enhancement") {
-        intensityLabel.textContent = "Smile Intensity";
-      } else if (this.value === "Landmarks") {
-        intensityLabel.textContent = "Landmark Preview";
+      const intensityControl = document.querySelector('.intensity-control');
+      
+      if (this.value === "Landmarks") {
+        intensityControl.style.display = "none";
       } else {
-        intensityLabel.textContent = "Transformation Intensity";
+        intensityControl.style.display = "block";
+        if (this.value === "Smile Enhancement") {
+          intensityLabel.textContent = "Smile Intensity";
+        } else {
+          intensityLabel.textContent = "Transformation Intensity";
+        }
       }
 
       updateLivePreview();

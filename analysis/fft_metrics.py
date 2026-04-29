@@ -88,16 +88,27 @@ def compute_ssim(image1, image2):
     return float(ssim(image1, image2))
 
 
-def save_spectrum_image(spectrum, output_path, title):
-    plt.figure(figsize=(6, 6))
-    plt.imshow(spectrum, cmap="gray")
-    plt.title(title)
-    plt.axis("off")
-    plt.tight_layout()
+def compute_rmse(image1, image2):
+    mse_value = compute_mse(image1, image2)
+    return float(np.sqrt(mse_value))
 
-    # 🔥 sadece dosyaya kaydet
-    plt.savefig(output_path, bbox_inches="tight", pad_inches=0.1)
-    plt.close()  # 🔥 önemli (memory leak + crash önler)
+
+def compute_correlation(image1, image2):
+    # Normalize edilmiş çapraz korelasyon katsayısı
+    correlation = np.corrcoef(image1.flatten(), image2.flatten())[0, 1]
+    return float(correlation)
+
+
+def save_spectrum_image(spectrum, output_path, title=None):
+    # Spectrum'u 0-255 arasına normalize et
+    spectrum_normalized = cv2.normalize(spectrum, None, 0, 255, cv2.NORM_MINMAX)
+    spectrum_uint8 = np.uint8(spectrum_normalized)
+    
+    # Renk haritası uygula (daha belirgin analiz için)
+    spectrum_color = cv2.applyColorMap(spectrum_uint8, cv2.COLORMAP_JET)
+    
+    # Görseli kaydet
+    cv2.imwrite(output_path, spectrum_color)
 
 
 def export_results(results_dict, output_path):
@@ -141,6 +152,8 @@ def analyze_images(original_path, transformed_path):
     mse_value = compute_mse(original_gray, transformed_gray)
     psnr_value = compute_psnr(original_gray, transformed_gray)
     ssim_value = compute_ssim(original_gray, transformed_gray)
+    rmse_value = compute_rmse(original_gray, transformed_gray)
+    corr_value = compute_correlation(original_gray, transformed_gray)
 
     os.makedirs("static/results", exist_ok=True)
 
@@ -149,14 +162,16 @@ def analyze_images(original_path, transformed_path):
 
     return {
         "metrics": {
-            "mse": mse_value,
-            "psnr": psnr_value,
-            "ssim": ssim_value
+            "mse": round(mse_value, 4),
+            "psnr": round(psnr_value, 4),
+            "ssim": round(ssim_value, 4),
+            "rmse": round(rmse_value, 4),
+            "correlation": round(corr_value, 4)
         },
         "energy": {
-            "original": original_energy,
-            "transformed": transformed_energy,
-            "original_ratio": original_ratio,
-            "transformed_ratio": transformed_ratio
+            "original": round(original_energy, 2),
+            "transformed": round(transformed_energy, 2),
+            "original_ratio": round(original_ratio, 4),
+            "transformed_ratio": round(transformed_ratio, 4)
         }
     }
