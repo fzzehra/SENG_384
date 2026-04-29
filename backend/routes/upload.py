@@ -16,7 +16,7 @@ from backend.modules.utils.helpers import (
 )
 
 from backend.modules.landmark.landmark import process_landmark_pipeline
-from backend.modules.warping.warping import apply_expression
+from backend.modules.warping import apply_expression
 from backend.modules.makeup.makeup import apply_makeup_pipeline
 
 upload_bp = Blueprint("upload", __name__)
