@@ -532,6 +532,8 @@
     if (op === "Aging") return "aging";
     if (op === "De-Aging") return "deaging";
     if (op === "Landmarks") return "landmarks";
+    if (op === "Lipstick") return "lipstick";
+    if (op === "Eyeshadow") return "eyeshadow";
     return "smile";
   }
 
@@ -555,6 +557,10 @@
         intensityControl.style.display = "block";
         if (this.value === "Smile Enhancement") {
           intensityLabel.textContent = "Smile Intensity";
+        } else if (this.value === "Lipstick") {
+          intensityLabel.textContent = "Lipstick Color Intensity";
+        } else if (this.value === "Eyeshadow") {
+          intensityLabel.textContent = "Eyeshadow Intensity";
         } else {
           intensityLabel.textContent = "Transformation Intensity";
         }

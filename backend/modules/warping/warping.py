@@ -75,32 +75,29 @@ def modify_landmarks(
         raise ValueError("landmarks must have shape (N, 2)")
 
     if expression == "smile":
-        corners = FEATURE_GROUPS[expression]["corners"]
-        upper_lip = FEATURE_GROUPS[expression]["upper_lip"]
-        lower_lip = FEATURE_GROUPS[expression]["lower_lip"]
-
-        center_x = np.mean(pts[:, 0])
-
-        dx = 28.0 * intensity
-        dy = 22.0 * intensity
+        corners = [61, 291]
+        upper_lip = [13, 312, 82, 11, 302, 72] # Daha fazla nokta
+        lower_lip = [14, 317, 87, 12, 307, 77]
+        
+        dx = 25.0 * intensity
+        dy = 14.0 * intensity # Dikey kaymayı azalttık (dudağı bozmaması için)
 
         pts[corners[0]] += np.array([-dx, -dy], dtype=np.float32)
         pts[corners[1]] += np.array([dx, -dy], dtype=np.float32)
 
+        # Dudak hatlarını daha geniş bir kavisle taşı
         for idx in upper_lip:
-            dist = abs(pts[idx][0] - center_x)
-            curve = max(0.0, 1 - dist / 120.0)
-            pts[idx] += np.array([0.0, -12.0 * intensity * curve], dtype=np.float32)
+            dist_to_center = abs(pts[idx][0] - np.mean(pts[corners, 0]))
+            pts[idx] += np.array([0.0, -8.0 * intensity * (1 - dist_to_center/150)], dtype=np.float32)
 
         for idx in lower_lip:
-            dist = abs(pts[idx][0] - center_x)
-            curve = max(0.0, 1 - dist / 120.0)
-            pts[idx] += np.array([0.0, 10.0 * intensity * curve], dtype=np.float32)
+            dist_to_center = abs(pts[idx][0] - np.mean(pts[corners, 0]))
+            pts[idx] += np.array([0.0, 5.0 * intensity * (1 - dist_to_center/150)], dtype=np.float32)
 
-        cheek_indices = [50, 187, 205, 425, 411, 280]
-        for idx in cheek_indices:
-            if idx < len(pts):
-                pts[idx] += np.array([0.0, -6.0 * intensity], dtype=np.float32)
+        # Ağız çevresindeki deri (nasolabial)
+        around_mouth = [62, 292, 76, 306, 184, 408]
+        for idx in around_mouth:
+            pts[idx] += np.array([0.0, -4.0 * intensity], dtype=np.float32)
 
     elif expression == "eyebrow_raise":
         for idx in FEATURE_GROUPS[expression]["left_brow"] + FEATURE_GROUPS[expression]["right_brow"]:

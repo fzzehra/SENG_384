@@ -17,6 +17,7 @@ from backend.modules.utils.helpers import (
 
 from backend.modules.landmark.landmark import process_landmark_pipeline
 from backend.modules.warping.warping import apply_expression
+from backend.modules.makeup.makeup import apply_makeup_pipeline
 
 upload_bp = Blueprint("upload", __name__)
 
@@ -25,6 +26,8 @@ TRANSFORM_MAP = {
     "eyebrow": "eyebrow_raise",
     "lip_widen": "lip_widen",
     "slim_face": "face_slimming",
+    "lipstick": "lipstick",
+    "eyeshadow": "eyeshadow",
 }
 
 
@@ -121,6 +124,18 @@ def upload_image():
                 )
 
             output_image = landmark_result["image_with_landmarks"]
+
+        elif transform_type in ["lipstick", "eyeshadow"]:
+            landmark_result = process_landmark_pipeline(image)
+            if not landmark_result["success"]:
+                return error_response(landmark_result["validation"]["reason"], 400)
+            
+            output_image = apply_makeup_pipeline(
+                image=image,
+                landmarks=landmark_result["landmarks"],
+                makeup_type=transform_type,
+                intensity=intensity
+            )
 
         elif transform_type in TRANSFORM_MAP:
             landmark_result = process_landmark_pipeline(image)
