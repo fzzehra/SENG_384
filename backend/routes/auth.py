@@ -45,7 +45,7 @@ def register():
                 flash("A user with that email or username already exists.", "error")
                 return render_template("register.html", **_template_context())
 
-            hashed_password = generate_password_hash(password)
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
             cursor.execute(
                 "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)",
