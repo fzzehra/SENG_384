@@ -200,29 +200,34 @@
   </div>
 
   <div class="card">
+    <!-- Live Preview Area -->
+    <div class="preview-container" style="margin-bottom: 30px; width: 100%; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(70, 70, 229, 0.1); background: #fff;">
+      <img id="livePreview" src="/static/uploads/transformed.jpg?v={{ cache_buster }}" style="width: 100%; height: auto; display: block; object-fit: contain;">
+    </div>
+
     <div class="control-group">
       <span class="field-label">Select Transformation</span>
       <select id="transformation">
-        <option>Smile Enhancement</option>
-        <option>Eyebrow Raising</option>
-        <option>Lip Widening</option>
-        <option>Face Slimming</option>
-        <option>Aging</option>
-        <option>De-Aging</option>
+        <option value="smile">Smile Enhancement</option>
+        <option value="eyebrow">Eyebrow Raising</option>
+        <option value="lip_widen">Lip Widening</option>
+        <option value="slim_face">Face Slimming</option>
+        <option value="aging">Aging</option>
+        <option value="deaging">De-Aging</option>
       </select>
     </div>
 
     <div class="control-group">
       <span class="field-label">Intensity Level</span>
       <div class="slider-container">
-        <input type="range" id="intensity" min="0" max="100" value="50" oninput="updateValue(this.value)">
+        <input type="range" id="intensity" min="0" max="100" value="50">
         <span class="intensity-value" id="valDisplay">50%</span>
       </div>
     </div>
 
     <a class="nav-btn" href="{{ url_for('preview_page') }}">
       Next: Preview Results
-      <svg viewBox="0 0 24 24" stroke-width="2">
+      <svg viewBox="0 0 24 24" stroke-width="2" style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
         <line x1="5" y1="12" x2="19" y2="12"></line>
         <polyline points="12 5 19 12 12 19"></polyline>
       </svg>
@@ -230,9 +235,44 @@
   </div>
 
   <script>
-    function updateValue(val) {
-      document.getElementById('valDisplay').textContent = val + '%';
+    const transformationSelect = document.getElementById('transformation');
+    const intensitySlider = document.getElementById('intensity');
+    const valDisplay = document.getElementById('valDisplay');
+    const livePreview = document.getElementById('livePreview');
+    
+    let debounceTimer;
+
+    async function applyTransform() {
+      const type = transformationSelect.value;
+      const intensity = intensitySlider.value / 100;
+      
+      try {
+        const response = await fetch('/transform/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_path: 'static/uploads/original.jpg',
+            transform_type: type,
+            intensity: intensity
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          livePreview.src = '/static/uploads/transformed.jpg?v=' + new Date().getTime();
+        }
+      } catch (err) {
+        console.error('Transform error:', err);
+      }
     }
+
+    intensitySlider.addEventListener('input', (e) => {
+      valDisplay.textContent = e.target.value + '%';
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyTransform, 300);
+    });
+
+    transformationSelect.addEventListener('change', applyTransform);
   </script>
 
 </body>

@@ -106,7 +106,7 @@ def transform_image():
             output_image = apply_deaging_effect(image, intensity)
             extra_data = {}
 
-        output_path = create_output_path(image_path, transform_type)
+        output_path = "static/uploads/transformed.jpg"
 
         saved = cv2.imwrite(output_path, output_image)
 
