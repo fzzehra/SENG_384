@@ -31,12 +31,34 @@ def create_output_path(image_path, transform_type):
 
 def apply_aging_effect(image, intensity=0.5):
     intensity = float(max(0.0, min(1.0, intensity)))
-
+    
+    # 1. Doku Keskinleştirme (Kırışıklıklar için detayı artır)
+    enhanced = cv2.detailEnhance(image, sigma_s=int(25 * intensity + 5), sigma_r=0.25 * intensity + 0.1)
+    
+    # 2. Renk ve Kontrast
+    lab = cv2.cvtColor(enhanced, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
+    
+    # Doygunluğu azalt
+    a = cv2.addWeighted(a, 1 - (0.7 * intensity), np.full_like(a, 128, dtype=np.uint8), 0.7 * intensity, 0)
+    b = cv2.addWeighted(b, 1 - (0.5 * intensity), np.full_like(b, 128, dtype=np.uint8), 0.5 * intensity, 0)
+    
+    # L kanalında kontrastı artır
+    l = cv2.convertScaleAbs(l, alpha=1.2, beta=-int(25 * intensity))
+    
+    lab = cv2.merge((l, a, b))
+    aged = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    
+    # 3. Saç/Sakal Beyazlatma (Daha agresif)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray_bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-
-    aged = cv2.addWeighted(image, 1 - intensity, gray_bgr, intensity, 0)
-    return aged
+    _, mask = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)
+    mask = cv2.GaussianBlur(mask, (41, 41), 0)
+    mask_3d = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+    
+    # Beyazlatma yoğunluğu artırıldı
+    final_aged = cv2.addWeighted(aged, 1.0, mask_3d, 0.5 * intensity, 0)
+    
+    return final_aged
 
 
 def apply_deaging_effect(image, intensity=0.5):
