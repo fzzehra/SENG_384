@@ -80,85 +80,74 @@ def transform_image():
         return error_response("JSON body is required.", 400)
 
     image_path = data.get("image_path")
-    transform_type = data.get("transform_type")
-    intensity = data.get("intensity", 0.5)
+    # Yeni format: [{"type": "smile", "intensity": 0.5}, ...]
+    transforms = data.get("transforms", [])
+    
+    # Geriye dönük uyumluluk için eski formatı da destekleyelim
+    if not transforms and data.get("transform_type"):
+        transforms = [{
+            "type": data.get("transform_type"),
+            "intensity": data.get("intensity", 0.5)
+        }]
 
     if not image_path:
         return error_response("image_path is required.", 400)
 
-    if transform_type not in TRANSFORM_MAP and transform_type not in {"aging", "deaging"}:
-        return error_response("Invalid transform_type.", 400)
-
-    try:
-        intensity = float(intensity)
-    except (TypeError, ValueError):
-        return error_response("intensity must be a number.", 400)
-
-    intensity = max(0.0, min(1.0, intensity))
-
     image = cv2.imread(image_path)
-
     if image is None:
         return error_response("Image could not be read.", 400)
 
+    output_image = image.copy()
+    results_meta = []
+
     try:
-        if transform_type in ["lipstick", "eyeshadow"]:
-            landmark_result = process_landmark_pipeline(image)
-            if not landmark_result["success"]:
-                return error_response(landmark_result["validation"]["reason"], 400)
-            
-            output_image = apply_makeup_pipeline(
-                image=image,
-                landmarks=landmark_result["landmarks"],
-                makeup_type=transform_type,
-                intensity=intensity
-            )
-            extra_data = {"type": "makeup"}
+        # Tüm dönüşümleri sırayla uygula
+        for t in transforms:
+            t_type = t.get("type")
+            t_intensity = float(t.get("intensity", 0.5))
+            t_intensity = max(0.0, min(1.0, t_intensity))
 
-        elif transform_type in TRANSFORM_MAP:
-            landmark_result = process_landmark_pipeline(image)
+            if t_type in ["lipstick", "eyeshadow"]:
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result["success"]:
+                    output_image = apply_makeup_pipeline(
+                        image=output_image,
+                        landmarks=landmark_result["landmarks"],
+                        makeup_type=t_type,
+                        intensity=t_intensity
+                    )
+                    results_meta.append(t_type)
 
-            if not landmark_result["success"]:
-                return error_response(
-                    landmark_result["validation"]["reason"],
-                    400
-                )
+            elif t_type in TRANSFORM_MAP:
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result["success"]:
+                    output_image, _, _ = apply_expression(
+                        image=output_image,
+                        landmarks=landmark_result["landmarks"],
+                        expression=TRANSFORM_MAP[t_type],
+                        intensity=t_intensity
+                    )
+                    results_meta.append(t_type)
 
-            output_image, dst_landmarks, triangles = apply_expression(
-                image=image,
-                landmarks=landmark_result["landmarks"],
-                expression=TRANSFORM_MAP[transform_type],
-                intensity=intensity
-            )
+            elif t_type == "aging":
+                output_image = apply_aging_effect(output_image, t_intensity)
+                results_meta.append("aging")
 
-            extra_data = {
-                "num_landmarks": landmark_result["num_landmarks"],
-                "num_triangles": len(triangles)
-            }
-
-        elif transform_type == "aging":
-            output_image = apply_aging_effect(image, intensity)
-            extra_data = {}
-
-        else:
-            output_image = apply_deaging_effect(image, intensity)
-            extra_data = {}
+            elif t_type == "deaging":
+                output_image = apply_deaging_effect(output_image, t_intensity)
+                results_meta.append("deaging")
 
         output_path = "static/uploads/transformed.jpg"
-
         saved = cv2.imwrite(output_path, output_image)
 
         if not saved:
             return error_response("Output image could not be saved.", 500)
 
         return success_response(
-            "Transform applied successfully.",
+            "Transforms applied successfully.",
             data={
-                "original_image": image_path,
                 "output_path": output_path,
-                "transform_type": transform_type,
-                "intensity": intensity,
-                **extra_data
+                "applied_transforms": results_meta
             }
         )
 

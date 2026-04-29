@@ -69,7 +69,7 @@
       border-radius: 28px;
       padding: 44px 48px;
       width: 100%;
-      max-width: 480px;
+      max-width: 900px;
       box-shadow: 0 20px 60px rgba(70, 70, 229, 0.1);
       animation: fadeUp 0.7s 0.15s ease both;
     }
@@ -198,63 +198,110 @@
     <h1>Refine Results</h1>
   </div>
 
-  <div class="card">
-    <!-- Live Preview Area -->
-    <div class="preview-container" style="margin-bottom: 30px; width: 100%; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(70, 70, 229, 0.1); background: #fff;">
-      <img id="livePreview" src="/static/uploads/transformed.jpg?v={{ cache_buster }}" style="width: 100%; height: auto; display: block; object-fit: contain;">
-    </div>
-
-    <div class="control-group">
-      <span class="field-label">Select Transformation</span>
-      <select id="transformation">
-        <option value="smile">Smile Enhancement</option>
-        <option value="eyebrow">Eyebrow Raising</option>
-        <option value="lip_widen">Lip Widening</option>
-        <option value="slim_face">Face Slimming</option>
-        <option value="aging">Aging</option>
-        <option value="deaging">De-Aging</option>
-        <option value="lipstick">Lipstick (Red)</option>
-        <option value="eyeshadow">Eyeshadow (Purple)</option>
-      </select>
-    </div>
-
-    <div class="control-group">
-      <span class="field-label">Intensity Level</span>
-      <div class="slider-container">
-        <input type="range" id="intensity" min="0" max="100" value="50">
-        <span class="intensity-value" id="valDisplay">50%</span>
+  <div class="card" style="max-width: 800px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <!-- Left Column: Preview -->
+    <div class="preview-side">
+      <div class="badge">Live Studio</div>
+      <div class="preview-container" style="position: sticky; top: 0; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(70, 70, 229, 0.1); background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+        <img id="livePreview" src="/static/uploads/transformed.jpg?v={{ cache_buster }}" style="width: 100%; height: auto; display: block;">
+      </div>
+      
+      <div style="margin-top: 30px;">
+        <a class="nav-btn" href="{{ url_for('preview_page') }}">
+          Finish & Analyze
+          <svg viewBox="0 0 24 24" stroke-width="2" style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
       </div>
     </div>
 
-    <a class="nav-btn" href="{{ url_for('preview_page') }}">
-      Next: Preview Results
-      <svg viewBox="0 0 24 24" stroke-width="2" style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-        <polyline points="12 5 19 12 12 19"></polyline>
-      </svg>
-    </a>
+    <!-- Right Column: Controls -->
+    <div class="controls-side" style="display: flex; flex-direction: column; gap: 20px;">
+      <span class="field-label" style="margin-bottom: 5px;">Adjust Features</span>
+      
+      <!-- Control Item Component -->
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Smile Enhance</span>
+          <span class="val-txt" id="smile-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="smile" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Face Slimming</span>
+          <span class="val-txt" id="slim_face-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="slim_face" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Aging Effect</span>
+          <span class="val-txt" id="aging-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="aging" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Eyebrow Raising</span>
+          <span class="val-txt" id="eyebrow-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item" style="background: rgba(70,70,229,0.05); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.1);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #4646e5;">Lipstick (Red)</span>
+          <span class="val-txt" id="lipstick-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="lipstick" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item" style="background: rgba(70,70,229,0.05); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.1);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #4646e5;">Eyeshadow (Purple)</span>
+          <span class="val-txt" id="eyeshadow-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="eyeshadow" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+    </div>
   </div>
 
   <script>
-    const transformationSelect = document.getElementById('transformation');
-    const intensitySlider = document.getElementById('intensity');
-    const valDisplay = document.getElementById('valDisplay');
+    const sliders = document.querySelectorAll('.refine-slider');
     const livePreview = document.getElementById('livePreview');
-    
     let debounceTimer;
 
-    async function applyTransform() {
-      const type = transformationSelect.value;
-      const intensity = intensitySlider.value / 100;
-      
+    async function applyAllTransforms() {
+      const transforms = [];
+      sliders.forEach(slider => {
+        const val = parseInt(slider.value);
+        if (val > 0) {
+          transforms.push({
+            type: slider.dataset.type,
+            intensity: val / 100
+          });
+        }
+      });
+
+      if (transforms.length === 0) {
+          // Eğer hiç transform yoksa orijinali göster
+          livePreview.src = '/static/uploads/original.jpg?v=' + new Date().getTime();
+          return;
+      }
+
       try {
         const response = await fetch('/transform/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             image_path: 'static/uploads/original.jpg',
-            transform_type: type,
-            intensity: intensity
+            transforms: transforms
           })
         });
         
@@ -267,13 +314,15 @@
       }
     }
 
-    intensitySlider.addEventListener('input', (e) => {
-      valDisplay.textContent = e.target.value + '%';
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(applyTransform, 300);
+    sliders.forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        const type = e.target.dataset.type;
+        document.getElementById(`${type}-val`).textContent = e.target.value + '%';
+        
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
+      });
     });
-
-    transformationSelect.addEventListener('change', applyTransform);
   </script>
 
 </body>
