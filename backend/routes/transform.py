@@ -9,17 +9,21 @@ from backend.modules.warping import apply_expression
 from backend.modules.makeup.makeup import apply_makeup_pipeline
 
 transform_bp = Blueprint("transform", __name__)
+print("LOADED TRANSFORM FILE:", __file__)
 
 TRANSFORM_MAP = {
     "smile": "smile",
     "eyebrow": "eyebrow_raise",
+
+    # Controls sayfasındaki Face slider'ı bunu gönderiyor.
+    "slim_face": "face_slimming",
+
+    # Eski / alternatif isim desteği
+    "face": "face_slimming",
+    "face_slimming": "face_slimming",
+    "lip_widen": "lip_widen",
     "lip_widening": "lip_widen",
     "face_widening": "face_widening",
-
-    # Eski isimlerle uyumluluk için bırakıldı.
-    "lip_widen": "lip_widen",
-    "slim_face": "face_slimming",
-    "face_slimming": "face_slimming",
 }
 
 
@@ -143,6 +147,7 @@ def transform_image():
             print("TRANSFORM TYPE:", t_type)
             print("INTENSITY:", t_intensity)
 
+            # 1) Warping / expression transformations
             if t_type in TRANSFORM_MAP:
                 landmark_result = process_landmark_pipeline(output_image)
 
@@ -159,6 +164,7 @@ def transform_image():
                     )
 
                     results_meta.append(t_type)
+                    print("APPLIED:", t_type)
 
                 except Exception as expression_error:
                     print(f"Expression transform failed for {t_type}: {expression_error}")
@@ -172,17 +178,41 @@ def transform_image():
                         )
 
                         results_meta.append(t_type)
+                        print("APPLIED:", t_type)
                     else:
                         raise expression_error
 
+            # 2) Makeup transformations
+            elif t_type in ["lipstick", "eyeshadow"]:
+                landmark_result = process_landmark_pipeline(output_image)
+
+                if not landmark_result.get("success"):
+                    print(f"Landmark detection failed for {t_type}")
+                    continue
+
+                output_image = apply_makeup_pipeline(
+                    image=output_image,
+                    landmarks=landmark_result["landmarks"],
+                    makeup_type=t_type,
+                    intensity=t_intensity
+                )
+
+                results_meta.append(t_type)
+                print("APPLIED:", t_type)
+
+            # 3) Aging
             elif t_type == "aging":
                 output_image = apply_aging_effect(output_image, t_intensity)
                 results_meta.append("aging")
+                print("APPLIED: aging")
 
+            # 4) De-aging, eski destek için kalsın
             elif t_type == "deaging":
                 output_image = apply_deaging_effect(output_image, t_intensity)
                 results_meta.append("deaging")
+                print("APPLIED: deaging")
 
+            # 5) Landmark display, eski destek için kalsın
             elif t_type == "landmarks":
                 landmark_result = process_landmark_pipeline(output_image)
 
@@ -193,6 +223,7 @@ def transform_image():
                     )
 
                     results_meta.append("landmarks")
+                    print("APPLIED: landmarks")
                 else:
                     print("Landmark detection failed for landmarks display.")
 

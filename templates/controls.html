@@ -1,473 +1,417 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controls - Facial Image Analysis</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Refine Results</title>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #f0f4ff 0%, #e8fcd4 50%, #f4f0ff 100%);
-      font-family: 'DM Sans', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    .blob {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(60px);
-      opacity: 0.35;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .blob-1 {
-      width: 320px;
-      height: 320px;
-      background: #b0b0ff;
-      top: -80px;
-      left: -80px;
-    }
-
-    .blob-2 {
-      width: 260px;
-      height: 260px;
-      background: #a8f0c0;
-      bottom: -60px;
-      right: -60px;
-    }
-
-    .page-header {
-      text-align: center;
-      margin-bottom: 40px;
-      animation: fadeDown 0.6s ease both;
-      position: relative;
-      z-index: 1;
-    }
-
-    .badge {
-      display: inline-block;
-      background: rgba(70, 70, 229, 0.1);
-      color: #4646e5;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 6px 16px;
-      border-radius: 100px;
-      margin-bottom: 16px;
-      border: 1px solid rgba(70, 70, 229, 0.2);
-    }
-
-    .page-header h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 42px;
-      color: #2a2a7a;
-      line-height: 1.2;
-    }
-
-    .card {
-      background: rgba(255, 255, 255, 0.72);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.85);
-      border-radius: 28px;
-      padding: 44px 48px;
-      width: 100%;
-      max-width: 900px;
-      box-shadow: 0 20px 60px rgba(70, 70, 229, 0.1);
-      animation: fadeUp 0.7s 0.15s ease both;
-      position: relative;
-      z-index: 1;
-    }
-
-    .main-grid {
-      max-width: 900px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-    }
-
-    .preview-container {
-      position: sticky;
-      top: 20px;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 1.5px solid rgba(70, 70, 229, 0.1);
-      background: #fff;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    }
-
-    .preview-container img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    .controls-side {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .field-label {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: #6060aa;
-      margin-bottom: 5px;
-      display: block;
-    }
-
-    .control-item {
-      background: rgba(255, 255, 255, 0.45);
-      padding: 18px 20px;
-      border-radius: 18px;
-      border: 1px solid rgba(70, 70, 229, 0.08);
-      transition: all 0.25s ease;
-    }
-
-    .control-item:hover {
-      border-color: rgba(70, 70, 229, 0.25);
-      box-shadow: 0 8px 24px rgba(70, 70, 229, 0.08);
-    }
-
-    .control-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      gap: 12px;
-    }
-
-    .control-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #2a2a7a;
-    }
-
-    .val-txt {
-      font-size: 14px;
-      color: #4646e5;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    input[type="range"] {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 7px;
-      background: rgba(70, 70, 229, 0.12);
-      border-radius: 5px;
-      outline: none;
-      margin: 10px 0 4px;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 24px;
-      height: 24px;
-      background: #4646e5;
-      border: 3px solid white;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 5px 16px rgba(70, 70, 229, 0.35);
-      transition: transform 0.2s ease;
-    }
-
-    input[type="range"]::-webkit-slider-thumb:hover {
-      transform: scale(1.15);
-    }
-
-    input[type="range"]::-moz-range-thumb {
-      width: 24px;
-      height: 24px;
-      background: #4646e5;
-      border: 3px solid white;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 5px 16px rgba(70, 70, 229, 0.35);
-    }
-
-    .nav-btn {
-      width: 100%;
-      padding: 15px;
-      border-radius: 14px;
-      text-decoration: none;
-      background: linear-gradient(135deg, #6060e5, #4646e5);
-      color: white;
-      font-size: 15px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: all 0.3s ease;
-      box-shadow: 0 6px 24px rgba(70, 70, 229, 0.35);
-    }
-
-    .nav-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 32px rgba(70, 70, 229, 0.45);
-    }
-
-    .reset-btn {
-      width: 100%;
-      margin-top: 12px;
-      padding: 13px;
-      border-radius: 14px;
-      border: 1.5px solid rgba(70, 70, 229, 0.2);
-      background: rgba(255, 255, 255, 0.55);
-      color: #4646e5;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.25s ease;
-    }
-
-    .reset-btn:hover {
-      background: rgba(70, 70, 229, 0.08);
-    }
-
-    @keyframes fadeDown {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(24px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @media (max-width: 800px) {
-      .main-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .card {
-        padding: 30px 24px;
-      }
-
-      .page-header h1 {
-        font-size: 34px;
-      }
-    }
-  </style>
-</head>
-
-<body>
-  {% include 'base.html' %}
-
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-
-  <div class="page-header">
-    <div class="badge">Adjustment Studio</div>
-    <h1>Refine Results</h1>
-  </div>
-
-  <div class="card main-grid">
-
-    <div class="preview-side">
-      <div class="badge">Live Studio</div>
-
-      <div class="preview-container">
-        <img
-          id="livePreview"
-          src="/static/uploads/transformed.jpg?v={{ cache_buster }}"
-          alt="Live Preview"
-          onerror="this.src='/static/uploads/original.jpg?v=' + new Date().getTime();"
-        >
-      </div>
-
-      <button type="button" class="reset-btn" id="resetBtn">
-        Reset Adjustments
-      </button>
-
-      <div style="margin-top: 24px;">
-        <a class="nav-btn" href="{{ url_for('preview_page') }}">
-          Finish & Analyze
-          <svg viewBox="0 0 24 24" stroke-width="2" style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </a>
-      </div>
-    </div>
-
-    <div class="controls-side">
-      <span class="field-label">Adjust Features</span>
-
-      <div class="control-item">
-        <div class="control-head">
-          <span class="control-title">Smile Enhance</span>
-          <span class="val-txt" id="smile-val">0%</span>
-        </div>
-        <input type="range" class="refine-slider" data-type="smile" min="0" max="100" value="0">
-      </div>
-
-      <div class="control-item">
-        <div class="control-head">
-          <span class="control-title">Eyebrow Thickening</span>
-          <span class="val-txt" id="eyebrow-val">0%</span>
-        </div>
-        <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0">
-      </div>
-
-      <div class="control-item">
-        <div class="control-head">
-          <span class="control-title">Lip Widening</span>
-          <span class="val-txt" id="lip_widening-val">0%</span>
-        </div>
-        <input type="range" class="refine-slider" data-type="lip_widening" min="0" max="100" value="0">
-      </div>
-
-      <div class="control-item">
-        <div class="control-head">
-          <span class="control-title">Face Widening</span>
-          <span class="val-txt" id="face_widening-val">0%</span>
-        </div>
-        <input type="range" class="refine-slider" data-type="face_widening" min="0" max="100" value="0">
-      </div>
-
-      <div class="control-item">
-        <div class="control-head">
-          <span class="control-title">Aging</span>
-          <span class="val-txt" id="aging-val">0%</span>
-        </div>
-        <input type="range" class="refine-slider" data-type="aging" min="0" max="100" value="0">
-      </div>
-
-      <div class="control-item">
-        <div class="control-head">
-          <span class="control-title">De-Aging</span>
-          <span class="val-txt" id="deaging-val">0%</span>
-        </div>
-        <input type="range" class="refine-slider" data-type="deaging" min="0" max="100" value="0">
-      </div>
-
-      <div class="control-item">
-        <div class="control-head">
-          <span class="control-title">Show Landmarks</span>
-          <span class="val-txt" id="landmarks-val">0%</span>
-        </div>
-        <input type="range" class="refine-slider" data-type="landmarks" min="0" max="100" value="0">
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const sliders = document.querySelectorAll('.refine-slider');
-    const livePreview = document.getElementById('livePreview');
-    const resetBtn = document.getElementById('resetBtn');
-
-    let debounceTimer;
-
-    async function applyAllTransforms() {
-      const transforms = [];
-
-      sliders.forEach(slider => {
-        const value = parseInt(slider.value);
-
-        if (value > 0) {
-          transforms.push({
-            type: slider.dataset.type,
-            intensity: value / 100
-          });
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-      });
 
-      if (transforms.length === 0) {
-        livePreview.src = '/static/uploads/original.jpg?v=' + new Date().getTime();
-        return;
-      }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(90deg, #edf1f6 0%, #eef5ea 100%);
+            min-height: 100vh;
+            color: #3d3f8f;
+        }
 
-      try {
-        const response = await fetch('/transform/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            image_path: 'static/uploads/original.jpg',
-            transforms: transforms
-          })
+        .page-title {
+            text-align: center;
+            font-size: 64px;
+            font-weight: 800;
+            color: #35349a;
+            margin-top: 18px;
+            margin-bottom: 18px;
+            letter-spacing: 0.5px;
+        }
+
+        .main-card {
+            width: 92%;
+            max-width: 1120px;
+            margin: 0 auto 30px auto;
+            background: #fefefe;
+            border-radius: 34px;
+            padding: 38px 34px;
+            box-shadow: 0 14px 34px rgba(0, 0, 0, 0.05);
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.05fr;
+            gap: 36px;
+            align-items: start;
+        }
+
+        .left-panel {
+            width: 100%;
+        }
+
+        .studio-badge {
+            display: inline-block;
+            padding: 10px 22px;
+            border: 1.8px solid #cfd2f8;
+            border-radius: 999px;
+            color: #5560d8;
+            font-weight: 700;
+            letter-spacing: 3px;
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+
+        .preview-wrapper {
+            width: 100%;
+            border-radius: 28px;
+            overflow: hidden;
+            background: #f5f5fb;
+            border: 1px solid #ececff;
+            min-height: 530px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+        }
+
+        .left-buttons {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .reset-btn,
+        .finish-btn {
+            width: 100%;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: 0.2s ease;
+        }
+
+        .reset-btn {
+            background: #ffffff;
+            color: #4a50c9;
+            border: 1.6px solid #d9dcff;
+            padding: 18px 20px;
+            font-size: 18px;
+        }
+
+        .reset-btn:hover {
+            background: #f8f9ff;
+        }
+
+        .finish-btn {
+            background: linear-gradient(90deg, #5a5fe8 0%, #4845e8 100%);
+            color: white;
+            padding: 21px 20px;
+            font-size: 18px;
+            box-shadow: 0 12px 25px rgba(76, 82, 225, 0.28);
+        }
+
+        .finish-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .finish-btn span {
+            margin-left: 12px;
+            font-size: 24px;
+            vertical-align: middle;
+        }
+
+        .right-panel h3 {
+            color: #666bc0;
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            letter-spacing: 1px;
+        }
+
+        .feature-box {
+            background: #ffffff;
+            border: 1px solid #ececff;
+            border-radius: 24px;
+            padding: 22px 24px 26px 24px;
+            margin-bottom: 18px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.02);
+        }
+
+        .feature-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .feature-header span:first-child {
+            font-size: 17px;
+            font-weight: 700;
+            color: #343a97;
+        }
+
+        .val-txt {
+            font-size: 16px;
+            font-weight: 800;
+            color: #4d51de;
+        }
+
+        .refine-slider {
+            width: 100%;
+            appearance: none;
+            -webkit-appearance: none;
+            height: 7px;
+            border-radius: 999px;
+            background: #e7e8fb;
+            outline: none;
+        }
+
+        .refine-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #4b4fe5;
+            cursor: pointer;
+            border: 4px solid #ffffff;
+            box-shadow: 0 6px 18px rgba(75, 79, 229, 0.35);
+        }
+
+        .refine-slider::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #4b4fe5;
+            cursor: pointer;
+            border: 4px solid #ffffff;
+            box-shadow: 0 6px 18px rgba(75, 79, 229, 0.35);
+        }
+
+        .status-text {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #6f73b8;
+            min-height: 18px;
+        }
+
+        @media (max-width: 980px) {
+            .page-title {
+                font-size: 46px;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-wrapper {
+                min-height: 360px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="page-title">Refine Results</h1>
+
+    <div class="main-card">
+        <div class="content-grid">
+            <!-- LEFT -->
+            <div class="left-panel">
+                <div class="studio-badge">LIVE STUDIO</div>
+
+                <div class="preview-wrapper">
+                    <img
+                        id="preview-image"
+                        src="{{ url_for('static', filename='uploads/original.jpg') }}"
+                        alt="Preview"
+                    />
+                </div>
+
+                <div class="left-buttons">
+                    <button type="button" class="reset-btn" id="reset-btn">
+                        Reset Adjustments
+                    </button>
+
+                    <button type="button" class="finish-btn" id="finish-btn">
+                        Finish &amp; Analyze <span>→</span>
+                    </button>
+
+                    <div class="status-text" id="status-text"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT -->
+            <div class="right-panel">
+                <h3>ADJUST FEATURES</h3>
+
+                <div class="feature-box">
+                    <div class="feature-header">
+                        <span>Smile Enhance</span>
+                        <span class="val-txt" id="smile-val">0%</span>
+                    </div>
+                    <input type="range" class="refine-slider" data-type="smile" min="0" max="100" value="0">
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-header">
+                        <span>Face</span>
+                        <span class="val-txt" id="slim_face-val">0%</span>
+                    </div>
+                    <input type="range" class="refine-slider" data-type="slim_face" min="0" max="100" value="0">
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-header">
+                        <span>Aging Effect</span>
+                        <span class="val-txt" id="aging-val">0%</span>
+                    </div>
+                    <input type="range" class="refine-slider" data-type="aging" min="0" max="100" value="0">
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-header">
+                        <span>Eyebrow Thickening</span>
+                        <span class="val-txt" id="eyebrow-val">0%</span>
+                    </div>
+                    <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0">
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-header">
+                        <span>Lipstick (Red)</span>
+                        <span class="val-txt" id="lipstick-val">0%</span>
+                    </div>
+                    <input type="range" class="refine-slider" data-type="lipstick" min="0" max="100" value="0">
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-header">
+                        <span>Eyeshadow (Purple)</span>
+                        <span class="val-txt" id="eyeshadow-val">0%</span>
+                    </div>
+                    <input type="range" class="refine-slider" data-type="eyeshadow" min="0" max="100" value="0">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sliders = document.querySelectorAll('.refine-slider');
+        const previewImage = document.getElementById('preview-image');
+        const resetBtn = document.getElementById('reset-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        const statusText = document.getElementById('status-text');
+
+        const originalImagePath = 'static/uploads/original.jpg';
+        let debounceTimer = null;
+        let latestOutputPath = originalImagePath;
+
+        function setStatus(text) {
+            statusText.textContent = text || '';
+        }
+
+        function updateSliderText(slider) {
+            const id = slider.dataset.type + '-val';
+            const valueText = document.getElementById(id);
+            if (valueText) {
+                valueText.textContent = slider.value + '%';
+            }
+        }
+
+        sliders.forEach(slider => {
+            updateSliderText(slider);
+
+            slider.addEventListener('input', function () {
+                updateSliderText(this);
+
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    applyAllTransforms();
+                }, 350);
+            });
         });
 
-        const data = await response.json();
+        async function applyAllTransforms() {
+            const transforms = [];
 
-        if (data.success) {
-          livePreview.src = '/static/uploads/transformed.jpg?v=' + new Date().getTime();
-        } else {
-          console.error('Transform failed:', data);
+            sliders.forEach(slider => {
+                const value = parseInt(slider.value, 10);
+                if (value > 0) {
+                    transforms.push({
+                        type: slider.dataset.type,
+                        intensity: value / 100
+                    });
+                }
+            });
+
+            if (transforms.length === 0) {
+                previewImage.src = '/' + originalImagePath + '?v=' + Date.now();
+                latestOutputPath = originalImagePath;
+                setStatus('All adjustments cleared.');
+                return;
+            }
+
+            try {
+                setStatus('Applying transformations...');
+
+                const response = await fetch("{{ url_for('transform.transform_image') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image_path: originalImagePath,
+                        transforms: transforms
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Transform response:', result);
+
+                if (!response.ok) {
+                    setStatus('');
+                    alert(result.message || 'Transform failed');
+                    return;
+                }
+
+                if (result.data && result.data.output_path) {
+                    latestOutputPath = result.data.output_path;
+                    previewImage.src = '/' + result.data.output_path + '?v=' + Date.now();
+                    setStatus('Transformation applied successfully.');
+                } else {
+                    setStatus('');
+                    alert('No output image returned from server.');
+                }
+
+            } catch (error) {
+                console.error('Transform fetch error:', error);
+                setStatus('');
+                alert('Transform failed');
+            }
         }
 
-      } catch (err) {
-        console.error('Transform error:', err);
-      }
-    }
+        resetBtn.addEventListener('click', function () {
+            sliders.forEach(slider => {
+                slider.value = 0;
+                updateSliderText(slider);
+            });
 
-    sliders.forEach(slider => {
-      slider.addEventListener('input', function () {
-        const type = this.dataset.type;
-        const valueText = document.getElementById(`${type}-val`);
+            latestOutputPath = originalImagePath;
+            previewImage.src = '/' + originalImagePath + '?v=' + Date.now();
+            setStatus('Adjustments reset.');
+        });
 
-        if (valueText) {
-          valueText.textContent = this.value + '%';
-        }
-
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(applyAllTransforms, 400);
-      });
-    });
-
-    resetBtn.addEventListener('click', function () {
-      sliders.forEach(slider => {
-        slider.value = 0;
-
-        const type = slider.dataset.type;
-        const valueText = document.getElementById(`${type}-val`);
-
-        if (valueText) {
-          valueText.textContent = '0%';
-        }
-      });
-
-      livePreview.src = '/static/uploads/original.jpg?v=' + new Date().getTime();
-    });
-  </script>
-
+        finishBtn.addEventListener('click', function () {
+            window.location.href = "{{ url_for('result_page') }}";
+        });
+    </script>
 </body>
 </html>
