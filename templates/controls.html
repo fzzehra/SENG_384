@@ -1,417 +1,329 @@
 <!DOCTYPE html>
 <html lang="en">
+    
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Refine Results</title>
+  <meta charset="UTF-8">
+  <meta name="viewport"  initial-scale=1.0">
+  <title>Controls - Facial Image Analysis</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: linear-gradient(90deg, #edf1f6 0%, #eef5ea 100%);
-            min-height: 100vh;
-            color: #3d3f8f;
-        }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8fcd4 50%, #f4f0ff 100%);
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      position: relative;
+    }
 
-        .page-title {
-            text-align: center;
-            font-size: 64px;
-            font-weight: 800;
-            color: #35349a;
-            margin-top: 18px;
-            margin-bottom: 18px;
-            letter-spacing: 0.5px;
-        }
+    /* Arka Plan Efektleri */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .blob-1 { width: 320px; height: 320px; background: #b0b0ff; top: -80px; left: -80px; }
+    .blob-2 { width: 260px; height: 260px; background: #a8f0c0; bottom: -60px; right: -60px; }
 
-        .main-card {
-            width: 92%;
-            max-width: 1120px;
-            margin: 0 auto 30px auto;
-            background: #fefefe;
-            border-radius: 34px;
-            padding: 38px 34px;
-            box-shadow: 0 14px 34px rgba(0, 0, 0, 0.05);
-        }
+    .page-header {
+      text-align: center;
+      margin-bottom: 40px;
+      animation: fadeDown 0.6s ease both;
+    }
 
-        .content-grid {
-            display: grid;
-            grid-template-columns: 1fr 1.05fr;
-            gap: 36px;
-            align-items: start;
-        }
+    .badge {
+      display: inline-block;
+      background: rgba(70, 70, 229, 0.1);
+      color: #4646e5;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(70, 70, 229, 0.2);
+    }
 
-        .left-panel {
-            width: 100%;
-        }
+    .page-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 42px;
+      color: #2a2a7a;
+      line-height: 1.2;
+    }
 
-        .studio-badge {
-            display: inline-block;
-            padding: 10px 22px;
-            border: 1.8px solid #cfd2f8;
-            border-radius: 999px;
-            color: #5560d8;
-            font-weight: 700;
-            letter-spacing: 3px;
-            font-size: 13px;
-            margin-bottom: 22px;
-        }
+    /* Kart Tasarımı */
+    .card {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.85);
+      border-radius: 28px;
+      padding: 44px 48px;
+      width: 100%;
+      max-width: 900px;
+      box-shadow: 0 20px 60px rgba(70, 70, 229, 0.1);
+      animation: fadeUp 0.7s 0.15s ease both;
+    }
 
-        .preview-wrapper {
-            width: 100%;
-            border-radius: 28px;
-            overflow: hidden;
-            background: #f5f5fb;
-            border: 1px solid #ececff;
-            min-height: 530px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    .control-group {
+      margin-bottom: 30px;
+    }
 
-        .preview-wrapper img {
-            width: 100%;
-            height: auto;
-            display: block;
-            object-fit: cover;
-        }
+    .field-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #6060aa;
+      margin-bottom: 14px;
+      display: block;
+    }
 
-        .left-buttons {
-            margin-top: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
+    /* Select Stil */
+    select {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(70, 70, 229, 0.15);
+      background: rgba(255, 255, 255, 0.6);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: #2a2a7a;
+      appearance: none;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234646e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 18px;
+      transition: all 0.3s ease;
+    }
 
-        .reset-btn,
-        .finish-btn {
-            width: 100%;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 700;
-            transition: 0.2s ease;
-        }
+    select:focus {
+      outline: none;
+      border-color: #4646e5;
+      background-color: white;
+    }
 
-        .reset-btn {
-            background: #ffffff;
-            color: #4a50c9;
-            border: 1.6px solid #d9dcff;
-            padding: 18px 20px;
-            font-size: 18px;
-        }
+    /* Range/Slider Stil */
+    .slider-container {
+      padding: 10px 0;
+    }
 
-        .reset-btn:hover {
-            background: #f8f9ff;
-        }
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: rgba(70, 70, 229, 0.1);
+      border-radius: 5px;
+      outline: none;
+      margin: 20px 0;
+    }
 
-        .finish-btn {
-            background: linear-gradient(90deg, #5a5fe8 0%, #4845e8 100%);
-            color: white;
-            padding: 21px 20px;
-            font-size: 18px;
-            box-shadow: 0 12px 25px rgba(76, 82, 225, 0.28);
-        }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      background: #4646e5;
+      border: 3px solid white;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(70, 70, 229, 0.3);
+      transition: transform 0.2s ease;
+    }
 
-        .finish-btn:hover {
-            transform: translateY(-1px);
-        }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
 
-        .finish-btn span {
-            margin-left: 12px;
-            font-size: 24px;
-            vertical-align: middle;
-        }
+    .intensity-value {
+      text-align: center;
+      font-weight: 600;
+      color: #4646e5;
+      font-size: 18px;
+      margin-top: -10px;
+      display: block;
+    }
 
-        .right-panel h3 {
-            color: #666bc0;
-            font-size: 30px;
-            font-weight: 800;
-            margin-bottom: 24px;
-            letter-spacing: 1px;
-        }
+    /* Buton Stil */
+    .nav-btn {
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      text-decoration: none;
+      background: linear-gradient(135deg, #6060e5, #4646e5);
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 24px rgba(70, 70, 229, 0.35);
+    }
 
-        .feature-box {
-            background: #ffffff;
-            border: 1px solid #ececff;
-            border-radius: 24px;
-            padding: 22px 24px 26px 24px;
-            margin-bottom: 18px;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.02);
-        }
+    .nav-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 32px rgba(70, 70, 229, 0.45);
+    }
 
-        .feature-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-        }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-        .feature-header span:first-child {
-            font-size: 17px;
-            font-weight: 700;
-            color: #343a97;
-        }
-
-        .val-txt {
-            font-size: 16px;
-            font-weight: 800;
-            color: #4d51de;
-        }
-
-        .refine-slider {
-            width: 100%;
-            appearance: none;
-            -webkit-appearance: none;
-            height: 7px;
-            border-radius: 999px;
-            background: #e7e8fb;
-            outline: none;
-        }
-
-        .refine-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #4b4fe5;
-            cursor: pointer;
-            border: 4px solid #ffffff;
-            box-shadow: 0 6px 18px rgba(75, 79, 229, 0.35);
-        }
-
-        .refine-slider::-moz-range-thumb {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #4b4fe5;
-            cursor: pointer;
-            border: 4px solid #ffffff;
-            box-shadow: 0 6px 18px rgba(75, 79, 229, 0.35);
-        }
-
-        .status-text {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #6f73b8;
-            min-height: 18px;
-        }
-
-        @media (max-width: 980px) {
-            .page-title {
-                font-size: 46px;
-            }
-
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .preview-wrapper {
-                min-height: 360px;
-            }
-        }
-    </style>
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-    <h1 class="page-title">Refine Results</h1>
+{% include 'base.html' %}
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
 
-    <div class="main-card">
-        <div class="content-grid">
-            <!-- LEFT -->
-            <div class="left-panel">
-                <div class="studio-badge">LIVE STUDIO</div>
+  <div class="page-header">
+    <div class="badge">Ajustment Studio</div>
+    <h1>Refine Results</h1>
+  </div>
 
-                <div class="preview-wrapper">
-                    <img
-                        id="preview-image"
-                        src="{{ url_for('static', filename='uploads/original.jpg') }}"
-                        alt="Preview"
-                    />
-                </div>
-
-                <div class="left-buttons">
-                    <button type="button" class="reset-btn" id="reset-btn">
-                        Reset Adjustments
-                    </button>
-
-                    <button type="button" class="finish-btn" id="finish-btn">
-                        Finish &amp; Analyze <span>→</span>
-                    </button>
-
-                    <div class="status-text" id="status-text"></div>
-                </div>
-            </div>
-
-            <!-- RIGHT -->
-            <div class="right-panel">
-                <h3>ADJUST FEATURES</h3>
-
-                <div class="feature-box">
-                    <div class="feature-header">
-                        <span>Smile Enhance</span>
-                        <span class="val-txt" id="smile-val">0%</span>
-                    </div>
-                    <input type="range" class="refine-slider" data-type="smile" min="0" max="100" value="0">
-                </div>
-
-                <div class="feature-box">
-                    <div class="feature-header">
-                        <span>Face</span>
-                        <span class="val-txt" id="slim_face-val">0%</span>
-                    </div>
-                    <input type="range" class="refine-slider" data-type="slim_face" min="0" max="100" value="0">
-                </div>
-
-                <div class="feature-box">
-                    <div class="feature-header">
-                        <span>Aging Effect</span>
-                        <span class="val-txt" id="aging-val">0%</span>
-                    </div>
-                    <input type="range" class="refine-slider" data-type="aging" min="0" max="100" value="0">
-                </div>
-
-                <div class="feature-box">
-                    <div class="feature-header">
-                        <span>Eyebrow Thickening</span>
-                        <span class="val-txt" id="eyebrow-val">0%</span>
-                    </div>
-                    <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0">
-                </div>
-
-                <div class="feature-box">
-                    <div class="feature-header">
-                        <span>Lipstick (Red)</span>
-                        <span class="val-txt" id="lipstick-val">0%</span>
-                    </div>
-                    <input type="range" class="refine-slider" data-type="lipstick" min="0" max="100" value="0">
-                </div>
-
-                <div class="feature-box">
-                    <div class="feature-header">
-                        <span>Eyeshadow (Purple)</span>
-                        <span class="val-txt" id="eyeshadow-val">0%</span>
-                    </div>
-                    <input type="range" class="refine-slider" data-type="eyeshadow" min="0" max="100" value="0">
-                </div>
-            </div>
-        </div>
+  <div class="card" style="max-width: 800px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <!-- Left Column: Preview -->
+    <div class="preview-side">
+      <div class="badge">Live Studio</div>
+      <div class="preview-container" style="position: sticky; top: 0; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(70, 70, 229, 0.1); background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+        <img id="livePreview" src="/static/uploads/transformed.jpg?v={{ cache_buster }}" style="width: 100%; height: auto; display: block;">
+      </div>
+      
+      <div style="margin-top: 30px;">
+        <a class="nav-btn" href="{{ url_for('preview_page') }}">
+          Finish & Analyze
+          <svg viewBox="0 0 24 24" stroke-width="2" style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
     </div>
 
-    <script>
-        const sliders = document.querySelectorAll('.refine-slider');
-        const previewImage = document.getElementById('preview-image');
-        const resetBtn = document.getElementById('reset-btn');
-        const finishBtn = document.getElementById('finish-btn');
-        const statusText = document.getElementById('status-text');
+    <!-- Right Column: Controls -->
+    <div class="controls-side" style="display: flex; flex-direction: column; gap: 20px;">
+      <span class="field-label" style="margin-bottom: 5px;">Adjust Features</span>
+      
+      <!-- Control Item Component -->
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Smile Enhance</span>
+          <span class="val-txt" id="smile-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="smile" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
 
-        const originalImagePath = 'static/uploads/original.jpg';
-        let debounceTimer = null;
-        let latestOutputPath = originalImagePath;
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Face </span>
+          <span class="val-txt" id="slim_face-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="slim_face" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
 
-        function setStatus(text) {
-            statusText.textContent = text || '';
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Aging Effect</span>
+          <span class="val-txt" id="aging-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="aging" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Eyebrow Thickening</span>
+          <span class="val-txt" id="eyebrow-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item" style="background: rgba(70,70,229,0.05); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.1);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #4646e5;">Lipstick (Red)</span>
+          <span class="val-txt" id="lipstick-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="lipstick" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item" style="background: rgba(70,70,229,0.05); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.1);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #4646e5;">Eyeshadow (Purple)</span>
+          <span class="val-txt" id="eyeshadow-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="eyeshadow" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sliders = document.querySelectorAll('.refine-slider');
+    const livePreview = document.getElementById('livePreview');
+    let debounceTimer;
+
+    async function applyAllTransforms() {
+      const transforms = [];
+      sliders.forEach(slider => {
+        const val = parseInt(slider.value);
+        if (val > 0) {
+          transforms.push({
+            type: slider.dataset.type,
+            intensity: val / 100
+          });
         }
+      });
 
-        function updateSliderText(slider) {
-            const id = slider.dataset.type + '-val';
-            const valueText = document.getElementById(id);
-            if (valueText) {
-                valueText.textContent = slider.value + '%';
-            }
+      if (transforms.length === 0) {
+          // Eğer hiç transform yoksa orijinali göster
+          livePreview.src = '/static/uploads/original.jpg?v=' + new Date().getTime();
+          return;
+      }
+
+      try {
+        const response = await fetch('/transform/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_path: 'static/uploads/original.jpg',
+            transforms: transforms
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          livePreview.src = '/static/uploads/transformed.jpg?v=' + new Date().getTime();
         }
+      } catch (err) {
+        console.error('Transform error:', err);
+      }
+    }
 
-        sliders.forEach(slider => {
-            updateSliderText(slider);
+    sliders.forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        const type = e.target.dataset.type;
+        document.getElementById(`${type}-val`).textContent = e.target.value + '%';
+        
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
+      });
+    });
+  </script>
 
-            slider.addEventListener('input', function () {
-                updateSliderText(this);
-
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    applyAllTransforms();
-                }, 350);
-            });
-        });
-
-        async function applyAllTransforms() {
-            const transforms = [];
-
-            sliders.forEach(slider => {
-                const value = parseInt(slider.value, 10);
-                if (value > 0) {
-                    transforms.push({
-                        type: slider.dataset.type,
-                        intensity: value / 100
-                    });
-                }
-            });
-
-            if (transforms.length === 0) {
-                previewImage.src = '/' + originalImagePath + '?v=' + Date.now();
-                latestOutputPath = originalImagePath;
-                setStatus('All adjustments cleared.');
-                return;
-            }
-
-            try {
-                setStatus('Applying transformations...');
-
-                const response = await fetch("{{ url_for('transform.transform_image') }}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        image_path: originalImagePath,
-                        transforms: transforms
-                    })
-                });
-
-                const result = await response.json();
-                console.log('Transform response:', result);
-
-                if (!response.ok) {
-                    setStatus('');
-                    alert(result.message || 'Transform failed');
-                    return;
-                }
-
-                if (result.data && result.data.output_path) {
-                    latestOutputPath = result.data.output_path;
-                    previewImage.src = '/' + result.data.output_path + '?v=' + Date.now();
-                    setStatus('Transformation applied successfully.');
-                } else {
-                    setStatus('');
-                    alert('No output image returned from server.');
-                }
-
-            } catch (error) {
-                console.error('Transform fetch error:', error);
-                setStatus('');
-                alert('Transform failed');
-            }
-        }
-
-        resetBtn.addEventListener('click', function () {
-            sliders.forEach(slider => {
-                slider.value = 0;
-                updateSliderText(slider);
-            });
-
-            latestOutputPath = originalImagePath;
-            previewImage.src = '/' + originalImagePath + '?v=' + Date.now();
-            setStatus('Adjustments reset.');
-        });
-
-        finishBtn.addEventListener('click', function () {
-            window.location.href = "{{ url_for('result_page') }}";
-        });
-    </script>
 </body>
 </html>
