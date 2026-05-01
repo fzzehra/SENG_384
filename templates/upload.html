@@ -552,37 +552,44 @@
   }
 
   async function handleSubmit() {
-    const fileInput = document.getElementById('fileInput').files[0];
-    const file = capturedBlob || fileInput;
-    const op = document.querySelector('input[name="operation"]:checked');
+  const fileInput = document.getElementById('fileInput').files[0];
+  const file = capturedBlob || fileInput;
 
-    if (!file) {
-      alert('Please select an image or take a photo first.');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("image", file, "image.jpg");
-    formData.append("transform_type", mapOperation(op.value));
-    formData.append("intensity", intensityInput.value);
-    formData.append("save_to_history", "true");
-
-    try {
-      const response = await fetch("/upload/", {
-        method: "POST",
-        body: formData
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        alert(data.message || "Upload failed.");
-        return;
-      }
-
-      window.location.href = "/controls-page";
-    } catch (error) {
-      alert("Upload failed: " + error);
-    }
+  if (!file) {
+    alert('Please select an image or take a photo first.');
+    return;
   }
+
+  const formData = new FormData();
+  formData.append("image", file, "image.jpg");
+  // İlk sayfada artık işlem seçilmediği için varsayılan bir değer gönderiyoruz
+  formData.append("transform_type", "smile"); 
+  formData.append("intensity", "0.5");
+  formData.append("save_to_history", "true");
+
+  try {
+    // Butonun tıklandığını anlamak için görsel bir geri bildirim (isteğe bağlı)
+    const btn = document.querySelector('.submit-btn');
+    btn.innerHTML = 'Uploading...';
+    btn.style.opacity = '0.7';
+
+    const response = await fetch("/upload/", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      // Yükleme başarılıysa yönlendir
+      window.location.href = "/controls-page";
+    } else {
+      alert(data.message || "Upload failed.");
+      btn.innerHTML = 'Upload & Continue'; // Hatada butonu düzelt
+    }
+  } catch (error) {
+    console.error("Upload error:", error);
+    alert("Connection error. Please try again.");
+  }
+}
 </script>
