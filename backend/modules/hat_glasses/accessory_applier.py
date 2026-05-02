@@ -3,37 +3,42 @@ import numpy as np
 from typing import List, Tuple
 
 def overlay_transparent(background, overlay, x, y, size=None):
+    bg_img = background.copy()
+
+    if overlay is None or overlay.shape[2] < 4:
+        return bg_img
+
     if size:
-        overlay = cv2.resize(overlay, size)
+        overlay = cv2.resize(overlay, size, interpolation=cv2.INTER_AREA)
 
     h, w = overlay.shape[:2]
-    
-    # --- TAŞMA KONTROLÜ (EKLEME) ---
-    # Başlangıç noktası resmin dışındaysa kırp
-    x_start, y_start = max(0, x), max(0, y)
-    x_end, y_end = min(background.shape[1], x + w), min(background.shape[0], y + h)
+    bg_h, bg_w = bg_img.shape[:2]
 
-    # Eğer aksesuar tamamen resmin dışındaysa direkt orijinal resmi döndür
-    if x_start >= x_end or y_start >= y_end:
-        return background
+    x1 = max(0, x)
+    y1 = max(0, y)
+    x2 = min(bg_w, x + w)
+    y2 = min(bg_h, y + h)
 
-    # Bindirilecek parcanın overlay üzerindeki sınırlarını belirle
-    overlay_x_start, overlay_y_start = x_start - x, y_start - y
-    overlay_x_end, overlay_y_end = overlay_x_start + (x_end - x_start), overlay_y_start + (y_end - y_start)
+    if x1 >= x2 or y1 >= y2:
+        return bg_img
 
-    crop_overlay = overlay[overlay_y_start:overlay_y_end, overlay_x_start:overlay_x_end]
-    crop_background = background[y_start:y_end, x_start:x_end]
-    # ------------------------------
+    ox1 = x1 - x
+    oy1 = y1 - y
+    ox2 = ox1 + (x2 - x1)
+    oy2 = oy1 + (y2 - y1)
 
-    overlay_img = crop_overlay[:, :, :3]
-    mask = crop_overlay[:, :, 3] / 255.0
-    mask_3d = np.repeat(mask[:, :, None], 3, axis=2)
+    overlay_crop = overlay[oy1:oy2, ox1:ox2]
 
-    # Vektörel çarpım (Daha hızlıdır)
-    blended = (1.0 - mask_3d) * crop_background + mask_3d * overlay_img
-    background[y_start:y_end, x_start:x_end] = blended.astype(np.uint8)
+    overlay_rgb = overlay_crop[:, :, :3].astype(float)
+    alpha = overlay_crop[:, :, 3].astype(float) / 255.0
+    alpha = alpha[:, :, None]
 
-    return background
+    bg_region = bg_img[y1:y2, x1:x2].astype(float)
+
+    blended = (1 - alpha) * bg_region + alpha * overlay_rgb
+    bg_img[y1:y2, x1:x2] = blended.astype(np.uint8)
+
+    return bg_img
 
 def apply_accessories(image, landmarks, hat_path=None, glasses_path=None):
     """
@@ -54,7 +59,7 @@ def apply_accessories(image, landmarks, hat_path=None, glasses_path=None):
             right_eye = landmarks[263]
             
             # Gözlük genişliği iki göz arası mesafeye göre (biraz pay ekleyerek)
-            eye_width = int(abs(right_eye[0] - left_eye[0]) * 1.8)
+            eye_width = int(abs(right_eye[0] - left_eye[0]) * 1.55)
             # Gözlük yüksekliği (oranı koruyarak)
             aspect_ratio = glasses_img.shape[1] / glasses_img.shape[0]
             eye_height = int(eye_width / aspect_ratio)
@@ -69,22 +74,34 @@ def apply_accessories(image, landmarks, hat_path=None, glasses_path=None):
             output = overlay_transparent(output, glasses_img, top_left_x, top_left_y, (eye_width, eye_height))
 
     # --- ŞAPKA YERLEŞİMİ ---
+    # --- ŞAPKA YERLEŞİMİ ---
     if hat_path:
         hat_img = cv2.imread(hat_path, cv2.IMREAD_UNCHANGED)
         if hat_img is not None:
-            # Alın üstü (10) ve yüz genişliği (234, 454)
             top_head = landmarks[10]
             left_face = landmarks[234]
             right_face = landmarks[454]
-            
-            face_width = int(abs(right_face[0] - left_face[0]) * 2.2)
-            aspect_ratio = hat_img.shape[1] / hat_img.shape[0]
-            hat_height = int(face_width / aspect_ratio)
-            
-            # Yerleşim noktası (Alnın biraz yukarısı)
-            hat_x = top_head[0] - (face_width // 2)
-            hat_y = top_head[1] - int(hat_height * 0.8) # Şapkanın tipine göre 0.8 ayarlanabilir
-            
-            output = overlay_transparent(output, hat_img, hat_x, hat_y, (face_width, hat_height))
 
-    return output
+            face_width = abs(right_face[0] - left_face[0])
+
+            # Daha doğal: 2.2 çok büyük kalıyordu
+            hat_width = int(face_width * 1.38)
+
+            aspect_ratio = hat_img.shape[1] / hat_img.shape[0]
+            hat_height = int(hat_width / aspect_ratio)
+
+            center_x = (left_face[0] + right_face[0]) // 2
+
+            # Şapkayı kafanın üstüne daha doğal oturt
+            hat_x = center_x - (hat_width // 2)
+            hat_y = int(top_head[1] - hat_height * 0.80)
+
+            hat_y -= int(h * 0.03)
+            output = overlay_transparent(
+                output,
+                hat_img,
+                hat_x,
+                hat_y,
+                (hat_width, hat_height)
+            )
+        return output
