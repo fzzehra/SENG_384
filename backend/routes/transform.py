@@ -9,6 +9,7 @@ from backend.modules.warping import apply_expression
 from backend.modules.makeup.makeup import apply_makeup_pipeline
 from backend.modules.aging.aging import apply_aging_effect
 from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay
+from backend.modules.hat_glasses.accessory_applier import apply_accessories
 
 transform_bp = Blueprint("transform", __name__)
 print("LOADED TRANSFORM FILE:", __file__)
@@ -150,7 +151,27 @@ def transform_image():
                 output_image = apply_aging_effect(output_image, t_intensity, landmarks)
                 results_meta.append("aging")
                 print("APPLIED: aging")
+            elif t_type == "accessories":
+                params = transform.get("params", {})
+                hat_name = params.get("hat", None)
+                glasses_name = params.get("glasses", None)
+                
+                # Dosya yollarını oluştur (static klasörü altında olduğunu varsayıyorum)
+                hat_path = os.path.join(os.getcwd(), "static", "accessories", hat_name) if hat_name else None
+                glasses_path = os.path.join(os.getcwd(), "static", "accessories", glasses_name) if glasses_name else None
 
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_accessories(
+                        image=output_image,
+                        landmarks=landmark_result["landmarks"],
+                        hat_path=hat_path,
+                        glasses_path=glasses_path
+                    )
+                    results_meta.append("accessories")
+                    print(f"APPLIED: accessories (Hat: {hat_name}, Glasses: {glasses_name})")
+                else:
+                    print("Landmark detection failed for accessories.")
             elif t_type == "deaging":
                 output_image = apply_deaging_effect(output_image, t_intensity)
                 results_meta.append("deaging")
