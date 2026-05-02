@@ -72,15 +72,27 @@ def modify_landmarks(
             pts[idx] += np.array([0.0, -15.0 * intensity], dtype=np.float32)
 
     elif expression == "lip_widen":
-        corners = FEATURE_GROUPS[expression]["corners"]
-        pts[corners[0]] += np.array([-22.0 * intensity, 0.0], dtype=np.float32)
-        pts[corners[1]] += np.array([22.0 * intensity, 0.0], dtype=np.float32)
+        dx = 15.0 * intensity
+        
+        # Left corner and inner corner
+        for idx in [61, 78]: 
+            pts[idx] += np.array([-dx, 0.0], dtype=np.float32)
+        # Left nearby points (upper/lower lip + skin) to smooth the stretch
+        for idx in [185, 146, 191, 95, 57]: 
+            pts[idx] += np.array([-dx * 0.6, 0.0], dtype=np.float32)
+            
+        # Right corner and inner corner
+        for idx in [291, 308]: 
+            pts[idx] += np.array([dx, 0.0], dtype=np.float32)
+        # Right nearby points
+        for idx in [409, 375, 415, 324, 287]: 
+            pts[idx] += np.array([dx * 0.6, 0.0], dtype=np.float32)
 
         for idx in FEATURE_GROUPS[expression]["upper_lip"]:
-            pts[idx] += np.array([0.0, -5.0 * intensity], dtype=np.float32)
+            pts[idx] += np.array([0.0, -4.0 * intensity], dtype=np.float32)
 
         for idx in FEATURE_GROUPS[expression]["lower_lip"]:
-            pts[idx] += np.array([0.0, 5.0 * intensity], dtype=np.float32)
+            pts[idx] += np.array([0.0, 4.0 * intensity], dtype=np.float32)
 
     for i in range(len(pts)):
         pts[i] = _clip_point(pts[i], w, h)
