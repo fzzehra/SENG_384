@@ -176,7 +176,7 @@ def transform_image():
             elif t_type == "hair_overlay":
                 params = transform.get("params", {})
                 overlay_name = params.get("overlay", "")
-                overlay_path = os.path.join("static", "hairstyles", overlay_name)
+                overlay_path = os.path.join(os.getcwd(), "static", "hairstyles", overlay_name)
 
                 landmark_result = process_landmark_pipeline(output_image)
                 if landmark_result.get("success"):

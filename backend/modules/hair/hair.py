@@ -67,7 +67,9 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0):
 
     h, w = image.shape[:2]
 
-    # Landmarklar
+    # -------------------------
+    # FACE KEY POINTS
+    # -------------------------
     top_head     = landmarks[10]
     chin         = landmarks[152]
     left_temple  = landmarks[234]
@@ -75,46 +77,35 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0):
 
     face_w = abs(right_temple[0] - left_temple[0])
     face_h = abs(chin[1] - top_head[1])
-    cx     = (left_temple[0] + right_temple[0]) // 2
+    cx = (left_temple[0] + right_temple[0]) // 2
 
-    # -----------------------------
-    # 🔥 DAHA DOĞRU SAÇ POZİSYONU
-    # -----------------------------
+    # -------------------------
+    # 🔥 FIX 1: HAIRLINE ALIGNMENT
+    # -------------------------
+    hair_anchor_y = top_head[1] - int(face_h * 0.18)
 
-    # Saç başlangıcı (hairline üstü)
-    hairline_y = top_head[1] - int(face_h * 0.15)
-
-    # Saçın üst noktası
-    crown_y = top_head[1] - int(face_h * 0.55)
-
-    # Saçın alt sınırı (kulak hizası)
-    bottom_y = top_head[1] + int(face_h * 0.45)
-
-    # Genişlik (kafadan biraz büyük)
-    target_w = int(face_w * 1.35)
-
-    # Overlay oranını koru
+    # -------------------------
+    # 🔥 FIX 2: PROPORTIONAL SCALE
+    # -------------------------
+    target_w = int(face_w * 1.45)
     scale = target_w / overlay.shape[1]
     target_h = int(overlay.shape[0] * scale)
 
     overlay_resized = cv2.resize(overlay, (target_w, target_h))
 
-    # -----------------------------
-    # 🔥 EN KRİTİK KISIM (YERLEŞİM)
-    # -----------------------------
-
+    # -------------------------
+    # 🔥 FIX 3: CENTERING (critical)
+    # -------------------------
     x_start = cx - target_w // 2
+    y_start = hair_anchor_y - int(target_h * 0.22)
 
-    # SAÇI hairline'a sabitle
-    y_start = hairline_y - int(target_h * 0.25)
-
-    # -----------------------------
-    # SINIR KONTROLLERİ
-    # -----------------------------
-    x1 = max(x_start, 0)
-    y1 = max(y_start, 0)
-    x2 = min(x_start + target_w, w)
-    y2 = min(y_start + target_h, h)
+    # -------------------------
+    # bounds
+    # -------------------------
+    x1 = max(0, x_start)
+    y1 = max(0, y_start)
+    x2 = min(w, x_start + target_w)
+    y2 = min(h, y_start + target_h)
 
     if x1 >= x2 or y1 >= y2:
         return image
@@ -124,32 +115,21 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0):
 
     crop = overlay_resized[oy1:oy1 + (y2 - y1), ox1:ox1 + (x2 - x1)]
 
-    # -----------------------------
-    # 🔥 DAHA DOĞAL BLENDING
-    # -----------------------------
-    alpha = (crop[:, :, 3].astype(np.float32) / 255.0)
-
-    # blur sonrası kanal kayboluyor → geri ekliyoruz
-    alpha = cv2.GaussianBlur(alpha, (15, 15), 0)
-    alpha = alpha[:, :, None]
-
+    # -------------------------
+    # 🔥 FIX 4: SAFE ALPHA
+    # -------------------------
+    alpha = crop[:, :, 3:4].astype(np.float32) / 255.0
+    alpha = cv2.GaussianBlur(alpha, (21, 21), 0)
     alpha = alpha * intensity
 
+    # -------------------------
+    # BLEND
+    # -------------------------
     result = image.astype(np.float32)
 
     result[y1:y2, x1:x2] = (
         result[y1:y2, x1:x2] * (1 - alpha) +
         crop[:, :, :3].astype(np.float32) * alpha
     )
-
-    # -----------------------------
-    # 🔥 YÜZÜ KORU (SAÇ YÜZE GİRMESİN)
-    # -----------------------------
-    face_mask = _face_mask(image, landmarks)
-    face_mask = cv2.GaussianBlur(face_mask, (31, 31), 0) / 255.0
-
-    face_mask = face_mask[:, :, None]
-
-    result = result * (1 - face_mask) + image.astype(np.float32) * face_mask
 
     return np.clip(result, 0, 255).astype(np.uint8)
