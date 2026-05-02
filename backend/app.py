@@ -1,7 +1,7 @@
 import os
 import time
 
-from flask import Flask, render_template, session, redirect, url_for, flash, request, jsonify
+from flask import Flask, render_template, session, redirect, url_for, flash, request, jsonify, current_app
 from flask_cors import CORS
 
 from backend.modules.utils.helpers import ensure_dir
@@ -61,7 +61,7 @@ def create_app():
         if not session.get("user_id"):
             flash("Please log in to access this page.", "error")
             return redirect(url_for("auth.login"))
-        return render_template("controls.html")
+        return render_template("controls.html", cache_buster=int(time.time()))
 
     @app.route("/preview-page")
     def preview_page():
@@ -75,7 +75,7 @@ def create_app():
         if not session.get("user_id"):
             flash("Please log in to view your history.", "error")
             return redirect(url_for("auth.login"))
-        
+
         try:
             from backend.modules.db import get_db_connection
             conn = get_db_connection()
@@ -106,36 +106,53 @@ def create_app():
             transform_type = data.get("transform_type", "custom")
             intensity = float(data.get("intensity", 1.0))
 
-            original_src = "static/uploads/original.jpg"
-            transformed_src = "static/uploads/transformed.jpg"
+            # Mutlak yol kullan — göreceli yol Windows'ta çalışmıyor
+            static_folder = current_app.static_folder
+            original_src = os.path.join(static_folder, "uploads", "original.jpg")
+            transformed_src = os.path.join(static_folder, "uploads", "transformed.jpg")
 
-            if not os.path.exists(original_src) or not os.path.exists(transformed_src):
-                return jsonify({"success": False, "message": "No image to save"}), 400
+            print(f"SAVE HISTORY: original_src={original_src}")
+            print(f"SAVE HISTORY: transformed_src={transformed_src}")
+            print(f"SAVE HISTORY: original exists={os.path.exists(original_src)}")
+            print(f"SAVE HISTORY: transformed exists={os.path.exists(transformed_src)}")
 
-            history_folder = "static/results/history"
+            if not os.path.exists(original_src):
+                return jsonify({"success": False, "message": "Original image not found"}), 400
+            if not os.path.exists(transformed_src):
+                # Transform yapılmamışsa orijinali kopyala
+                shutil.copy(original_src, transformed_src)
+
+            history_folder = os.path.join(static_folder, "results", "history")
             ensure_dir(history_folder)
 
             ts = int(time.time())
-            hist_original_path = os.path.join(history_folder, f"orig_{ts}.jpg")
-            hist_transformed_path = os.path.join(history_folder, f"result_{ts}.jpg")
+            orig_filename = f"orig_{ts}.jpg"
+            result_filename = f"result_{ts}.jpg"
 
-            shutil.copy(original_src, hist_original_path)
-            shutil.copy(transformed_src, hist_transformed_path)
+            shutil.copy(original_src, os.path.join(history_folder, orig_filename))
+            shutil.copy(transformed_src, os.path.join(history_folder, result_filename))
+
+            # DB'ye web'den erişilebilen görece yol kaydediyoruz
+            rel_original = f"static/results/history/{orig_filename}"
+            rel_transformed = f"static/results/history/{result_filename}"
 
             conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO user_history (user_id, original_image, transformed_image, transform_type, intensity) VALUES (%s, %s, %s, %s, %s)",
-                (session["user_id"], hist_original_path, hist_transformed_path, transform_type, intensity)
+                (session["user_id"], rel_original, rel_transformed, transform_type, intensity)
             )
             conn.commit()
             cursor.close()
             conn.close()
 
+            print(f"SAVE HISTORY: success — {rel_original} / {rel_transformed}")
             return jsonify({"success": True})
 
         except Exception as e:
+            import traceback
             print(f"SAVE HISTORY ERROR: {e}")
+            traceback.print_exc()
             return jsonify({"success": False, "message": str(e)}), 500
 
     @app.route("/result-page")
