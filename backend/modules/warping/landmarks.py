@@ -4,6 +4,7 @@ import numpy as np
 
 from .types import Point
 
+
 FEATURE_GROUPS = {
     "smile": {
         "corners": [61, 291],
@@ -45,47 +46,58 @@ def modify_landmarks(
         raise ValueError("landmarks must have shape (N, 2)")
 
     if expression == "smile":
-        corners = [61, 291]
-        upper_lip = [13, 312, 82, 11, 302, 72]
-        lower_lip = [14, 317, 87, 12, 307, 77]
+        left_corner = 61
+        right_corner = 291
 
-        dx = 25.0 * intensity
-        dy = 14.0 * intensity
+        dx = 12.0 * intensity
+        dy = 7.0 * intensity
 
-        pts[corners[0]] += np.array([-dx, -dy], dtype=np.float32)
-        pts[corners[1]] += np.array([dx, -dy], dtype=np.float32)
+        pts[left_corner] += np.array([-dx, -dy], dtype=np.float32)
+        pts[right_corner] += np.array([dx, -dy], dtype=np.float32)
 
+        left_neighbors = [78, 95, 191, 185, 40, 80, 88, 178]
+        right_neighbors = [308, 324, 415, 409, 270, 310, 318, 402]
+
+        for idx in left_neighbors:
+            pts[idx] += np.array([-dx * 0.45, -dy * 0.45], dtype=np.float32)
+
+        for idx in right_neighbors:
+            pts[idx] += np.array([dx * 0.45, -dy * 0.45], dtype=np.float32)
+
+        upper_lip = [13, 312, 82, 0, 37, 267]
         for idx in upper_lip:
-            dist_to_center = abs(pts[idx][0] - np.mean(pts[corners, 0]))
-            pts[idx] += np.array([0.0, -8.0 * intensity * (1 - dist_to_center / 150)], dtype=np.float32)
+            pts[idx] += np.array([0.0, -3.0 * intensity], dtype=np.float32)
 
+        lower_lip = [14, 317, 87, 17, 84, 314]
         for idx in lower_lip:
-            dist_to_center = abs(pts[idx][0] - np.mean(pts[corners, 0]))
-            pts[idx] += np.array([0.0, 5.0 * intensity * (1 - dist_to_center / 150)], dtype=np.float32)
+            pts[idx] += np.array([0.0, 2.0 * intensity], dtype=np.float32)
 
-        around_mouth = [62, 292, 76, 306, 184, 408]
+        around_mouth = [62, 292, 76, 306, 184, 408, 57, 287]
         for idx in around_mouth:
-            pts[idx] += np.array([0.0, -4.0 * intensity], dtype=np.float32)
+            pts[idx] += np.array([0.0, -2.5 * intensity], dtype=np.float32)
 
     elif expression == "eyebrow_raise":
-        for idx in FEATURE_GROUPS[expression]["left_brow"] + FEATURE_GROUPS[expression]["right_brow"]:
+        brow_points = (
+            FEATURE_GROUPS[expression]["left_brow"]
+            + FEATURE_GROUPS[expression]["right_brow"]
+        )
+
+        for idx in brow_points:
             pts[idx] += np.array([0.0, -15.0 * intensity], dtype=np.float32)
 
     elif expression == "lip_widen":
         dx = 15.0 * intensity
-        
-        # Left corner and inner corner
-        for idx in [61, 78]: 
+
+        for idx in [61, 78]:
             pts[idx] += np.array([-dx, 0.0], dtype=np.float32)
-        # Left nearby points (upper/lower lip + skin) to smooth the stretch
-        for idx in [185, 146, 191, 95, 57]: 
+
+        for idx in [185, 146, 191, 95, 57]:
             pts[idx] += np.array([-dx * 0.6, 0.0], dtype=np.float32)
-            
-        # Right corner and inner corner
-        for idx in [291, 308]: 
+
+        for idx in [291, 308]:
             pts[idx] += np.array([dx, 0.0], dtype=np.float32)
-        # Right nearby points
-        for idx in [409, 375, 415, 324, 287]: 
+
+        for idx in [409, 375, 415, 324, 287]:
             pts[idx] += np.array([dx * 0.6, 0.0], dtype=np.float32)
 
         for idx in FEATURE_GROUPS[expression]["upper_lip"]:
