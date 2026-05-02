@@ -22,7 +22,6 @@
       position: relative;
     }
 
-    /* Arka Plan Efektleri */
     .blob {
       position: absolute;
       border-radius: 50%;
@@ -60,7 +59,6 @@
       line-height: 1.2;
     }
 
-    /* Kart Tasarımı */
     .card {
       background: rgba(255, 255, 255, 0.72);
       backdrop-filter: blur(24px);
@@ -88,7 +86,6 @@
       display: block;
     }
 
-    /* Select Stil */
     select {
       width: 100%;
       padding: 14px 18px;
@@ -113,7 +110,6 @@
       background-color: white;
     }
 
-    /* Range/Slider Stil */
     .slider-container {
       padding: 10px 0;
     }
@@ -155,7 +151,6 @@
       display: block;
     }
 
-    /* Buton Stil */
     .nav-btn {
       width: 100%;
       padding: 15px;
@@ -171,11 +166,20 @@
       gap: 10px;
       transition: all 0.3s ease;
       box-shadow: 0 6px 24px rgba(70, 70, 229, 0.35);
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
     }
 
     .nav-btn:hover {
       transform: translateY(-3px);
       box-shadow: 0 10px 32px rgba(70, 70, 229, 0.45);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
     }
 
     @keyframes fadeDown {
@@ -208,13 +212,13 @@
       </div>
       
       <div style="margin-top: 30px;">
-        <a class="nav-btn" href="{{ url_for('preview_page') }}">
+        <button class="nav-btn" id="finishBtn">
           Finish & Analyze
           <svg viewBox="0 0 24 24" stroke-width="2" style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
-        </a>
+        </button>
       </div>
     </div>
 
@@ -222,7 +226,6 @@
     <div class="controls-side" style="display: flex; flex-direction: column; gap: 20px;">
       <span class="field-label" style="margin-bottom: 5px;">Adjust Features</span>
       
-      <!-- Control Item Component -->
       <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
           <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Smile Enhance</span>
@@ -284,7 +287,9 @@
   <script>
     const sliders = document.querySelectorAll('.refine-slider');
     const livePreview = document.getElementById('livePreview');
+    const finishBtn = document.getElementById('finishBtn');
     let debounceTimer;
+    let lastAppliedTransforms = [];
 
     async function applyAllTransforms() {
       const transforms = [];
@@ -298,10 +303,11 @@
         }
       });
 
+      lastAppliedTransforms = transforms;
+
       if (transforms.length === 0) {
-          // Eğer hiç transform yoksa orijinali göster
-          livePreview.src = '/static/uploads/original.jpg?v=' + new Date().getTime();
-          return;
+        livePreview.src = '/static/uploads/original.jpg?v=' + new Date().getTime();
+        return;
       }
 
       try {
@@ -331,6 +337,30 @@
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(applyAllTransforms, 400);
       });
+    });
+
+    finishBtn.addEventListener('click', async () => {
+      finishBtn.disabled = true;
+      finishBtn.textContent = 'Saving...';
+
+      const transformType = lastAppliedTransforms.length > 0
+        ? lastAppliedTransforms.map(t => t.type).join(', ')
+        : 'none';
+      const avgIntensity = lastAppliedTransforms.length > 0
+        ? lastAppliedTransforms.reduce((s, t) => s + t.intensity, 0) / lastAppliedTransforms.length
+        : 0;
+
+      try {
+        await fetch('/save-history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transform_type: transformType, intensity: avgIntensity })
+        });
+      } catch (e) {
+        console.error('History save error:', e);
+      }
+
+      window.location.href = '{{ url_for("preview_page") }}';
     });
   </script>
 

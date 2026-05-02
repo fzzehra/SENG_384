@@ -1,7 +1,7 @@
 import os
 import time
 
-from flask import Flask, render_template, session, redirect, url_for, flash
+from flask import Flask, render_template, session, redirect, url_for, flash, request, jsonify
 from flask_cors import CORS
 
 from backend.modules.utils.helpers import ensure_dir
@@ -63,7 +63,6 @@ def create_app():
             return redirect(url_for("auth.login"))
         return render_template("controls.html")
 
-    # 🔥 CACHE FIX BURADA
     @app.route("/preview-page")
     def preview_page():
         if not session.get("user_id"):
@@ -93,6 +92,51 @@ def create_app():
             history_data = []
 
         return render_template("history.html", history=history_data)
+
+    @app.route("/save-history", methods=["POST"])
+    def save_history():
+        if not session.get("user_id"):
+            return jsonify({"success": False, "message": "Not logged in"}), 401
+
+        try:
+            import shutil
+            from backend.modules.db import get_db_connection
+
+            data = request.get_json() or {}
+            transform_type = data.get("transform_type", "custom")
+            intensity = float(data.get("intensity", 1.0))
+
+            original_src = "static/uploads/original.jpg"
+            transformed_src = "static/uploads/transformed.jpg"
+
+            if not os.path.exists(original_src) or not os.path.exists(transformed_src):
+                return jsonify({"success": False, "message": "No image to save"}), 400
+
+            history_folder = "static/results/history"
+            ensure_dir(history_folder)
+
+            ts = int(time.time())
+            hist_original_path = os.path.join(history_folder, f"orig_{ts}.jpg")
+            hist_transformed_path = os.path.join(history_folder, f"result_{ts}.jpg")
+
+            shutil.copy(original_src, hist_original_path)
+            shutil.copy(transformed_src, hist_transformed_path)
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO user_history (user_id, original_image, transformed_image, transform_type, intensity) VALUES (%s, %s, %s, %s, %s)",
+                (session["user_id"], hist_original_path, hist_transformed_path, transform_type, intensity)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            return jsonify({"success": True})
+
+        except Exception as e:
+            print(f"SAVE HISTORY ERROR: {e}")
+            return jsonify({"success": False, "message": str(e)}), 500
 
     @app.route("/result-page")
     def result_page():
