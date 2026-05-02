@@ -68,13 +68,8 @@ def apply_lipstick(image, landmarks, color=(0, 0, 255), intensity=0.5):
     # Remove mouth opening so teeth/tongue area is not painted
     lipstick_mask = cv2.subtract(outer_mask, inner_mask)
 
-    # Stronger visible blending
     result = _blend_color(image, lipstick_mask, color=color, alpha=0.75 * intensity)
-
-    # Slight richness boost
-    result = cv2.addWeighted(image, 1.0 - (0.12 * intensity), result, 0.12 * intensity + 1.0, 0)
-
-    return np.clip(result, 0, 255).astype(np.uint8)
+    return result
 
 
 def apply_eyeshadow(image, landmarks, color=(180, 0, 180), intensity=0.5):
@@ -112,13 +107,8 @@ def apply_eyeshadow(image, landmarks, color=(180, 0, 180), intensity=0.5):
 
     shadow_mask = cv2.max(left_mask, right_mask)
 
-    # Stronger visible purple
     result = _blend_color(image, shadow_mask, color=color, alpha=0.60 * intensity)
-
-    # Slight smooth enhancement
-    result = cv2.addWeighted(image, 1.0 - (0.08 * intensity), result, 0.08 * intensity + 1.0, 0)
-
-    return np.clip(result, 0, 255).astype(np.uint8)
+    return result
 
 
 def apply_makeup_pipeline(image, landmarks, makeup_type, intensity=0.5):
