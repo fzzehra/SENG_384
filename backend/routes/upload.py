@@ -6,6 +6,7 @@ import numpy as np
 from flask import Blueprint, request, current_app, session
 from werkzeug.utils import secure_filename
 
+from backend.modules.aging import apply_aging_effect
 from backend.modules.db import get_db_connection
 from backend.modules.utils.helpers import (
     allowed_file,
@@ -30,29 +31,6 @@ TRANSFORM_MAP = {
     "eyeshadow": "eyeshadow",
 }
 
-
-def apply_aging_effect(image, intensity=0.5):
-    intensity = float(max(0.0, min(1.0, intensity)))
-    
-    # 1. Doku Keskinleştirme (Kırışıklıklar için)
-    enhanced = cv2.detailEnhance(image, sigma_s=int(15 * intensity + 5), sigma_r=0.15 * intensity + 0.1)
-    
-    # 2. Renk ve Kontrast
-    lab = cv2.cvtColor(enhanced, cv2.COLOR_BGR2LAB)
-    l, a, b = cv2.split(lab)
-    a = cv2.addWeighted(a, 1 - (0.6 * intensity), np.full_like(a, 128, dtype=np.uint8), 0.6 * intensity, 0)
-    b = cv2.addWeighted(b, 1 - (0.4 * intensity), np.full_like(b, 128, dtype=np.uint8), 0.4 * intensity, 0)
-    l = cv2.convertScaleAbs(l, alpha=1.1, beta=-int(15 * intensity))
-    lab = cv2.merge((l, a, b))
-    aged = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
-    
-    # 3. Beyazlatma simülasyonu
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    _, mask = cv2.threshold(gray, 160, 255, cv2.THRESH_BINARY)
-    mask = cv2.GaussianBlur(mask, (31, 31), 0)
-    mask_3d = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-    
-    return cv2.addWeighted(aged, 1.0, mask_3d, 0.3 * intensity, 0)
 
 
 def apply_deaging_effect(image, intensity=0.5):

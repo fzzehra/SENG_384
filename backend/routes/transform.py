@@ -7,6 +7,7 @@ from backend.modules.utils.helpers import error_response, success_response
 from backend.modules.landmark.landmark import process_landmark_pipeline
 from backend.modules.warping import apply_expression
 from backend.modules.makeup.makeup import apply_makeup_pipeline
+from backend.modules.aging.aging import apply_aging_effect
 
 transform_bp = Blueprint("transform", __name__)
 print("LOADED TRANSFORM FILE:", __file__)
@@ -40,47 +41,6 @@ def create_output_path(image_path, transform_type):
     return os.path.join(folder, output_filename)
 
 
-def apply_aging_effect(image, intensity=0.5):
-    intensity = float(max(0.0, min(1.0, intensity)))
-
-    enhanced = cv2.detailEnhance(
-        image,
-        sigma_s=int(25 * intensity + 5),
-        sigma_r=0.25 * intensity + 0.1
-    )
-
-    lab = cv2.cvtColor(enhanced, cv2.COLOR_BGR2LAB)
-    l, a, b = cv2.split(lab)
-
-    a = cv2.addWeighted(
-        a,
-        1 - (0.7 * intensity),
-        np.full_like(a, 128, dtype=np.uint8),
-        0.7 * intensity,
-        0
-    )
-
-    b = cv2.addWeighted(
-        b,
-        1 - (0.5 * intensity),
-        np.full_like(b, 128, dtype=np.uint8),
-        0.5 * intensity,
-        0
-    )
-
-    l = cv2.convertScaleAbs(l, alpha=1.2, beta=-int(25 * intensity))
-
-    lab = cv2.merge((l, a, b))
-    aged = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
-
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    _, mask = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)
-    mask = cv2.GaussianBlur(mask, (41, 41), 0)
-    mask_3d = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-
-    final_aged = cv2.addWeighted(aged, 1.0, mask_3d, 0.5 * intensity, 0)
-
-    return final_aged
 
 
 def apply_deaging_effect(image, intensity=0.5):
@@ -202,10 +162,16 @@ def transform_image():
 
             # 3) Aging
             elif t_type == "aging":
-                output_image = apply_aging_effect(output_image, t_intensity)
+                landmark_result = process_landmark_pipeline(output_image)
+
+                landmarks = None
+                if landmark_result.get("success"):
+                    landmarks = landmark_result["landmarks"]
+
+                output_image = apply_aging_effect(output_image, t_intensity, landmarks)
+
                 results_meta.append("aging")
                 print("APPLIED: aging")
-
             # 4) De-aging, eski destek için kalsın
             elif t_type == "deaging":
                 output_image = apply_deaging_effect(output_image, t_intensity)
