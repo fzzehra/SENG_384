@@ -65,8 +65,15 @@ def transform_image():
 
     if not image_path:
         return error_response("image_path is required.", 400)
-
-    image = cv2.imread(image_path)
+    
+    clean_image_path = image_path.replace("transformed.jpg", "original.jpg")
+    
+    # Dosya sisteminde original.jpg var mı diye kontrol et (opsiyonel ama güvenli)
+    import os
+    if os.path.exists(clean_image_path):
+        image = cv2.imread(clean_image_path)
+    else:
+        image = cv2.imread(image_path)
 
     if image is None:
         return error_response(f"Image could not be read: {image_path}", 400)
