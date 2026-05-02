@@ -78,13 +78,17 @@ def apply_eyeshadow(image, landmarks, color=(180, 0, 180), intensity=0.5):
     """
     pts = np.array(landmarks, dtype=np.int32)
 
-    # Left eye / eyebrow region
+    # Left eye upper contour + eyebrow
     left_eye_upper = [33, 246, 161, 160, 159, 158, 157, 173, 133]
     left_brow = [70, 63, 105, 66, 107]
 
-    # Right eye / eyebrow region
+    # Right eye upper contour + eyebrow
     right_eye_upper = [263, 466, 388, 387, 386, 385, 384, 398, 362]
     right_brow = [336, 296, 334, 293, 300]
+
+    # Full eye contours — gözün içini maske dışında bırakmak için
+    left_eye_full = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246]
+    right_eye_full = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466]
 
     def build_shadow_region(eye_indices, brow_indices):
         eye_pts = pts[eye_indices]
@@ -92,7 +96,6 @@ def apply_eyeshadow(image, landmarks, color=(180, 0, 180), intensity=0.5):
 
         eye_center_y = np.mean(eye_pts[:, 1])
 
-        # Move eyebrow points a bit downward toward eyelid area
         adjusted_brow = brow_pts.copy()
         adjusted_brow[:, 1] = (0.65 * adjusted_brow[:, 1] + 0.35 * eye_center_y).astype(np.int32)
 
@@ -106,6 +109,13 @@ def apply_eyeshadow(image, landmarks, color=(180, 0, 180), intensity=0.5):
     right_mask = _create_soft_mask(image.shape, right_region, blur_ksize=21)
 
     shadow_mask = cv2.max(left_mask, right_mask)
+
+    # Göz açıklığını (iris/beyaz kısım) shadow mask'ten çıkar
+    left_eye_opening = _create_soft_mask(image.shape, pts[left_eye_full], blur_ksize=5)
+    right_eye_opening = _create_soft_mask(image.shape, pts[right_eye_full], blur_ksize=5)
+    eye_opening_mask = cv2.max(left_eye_opening, right_eye_opening)
+
+    shadow_mask = cv2.subtract(shadow_mask, eye_opening_mask)
 
     result = _blend_color(image, shadow_mask, color=color, alpha=0.60 * intensity)
     return result
