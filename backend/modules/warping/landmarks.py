@@ -17,8 +17,8 @@ FEATURE_GROUPS = {
     },
     "lip_widen": {
         "corners": [61, 291],
-        "upper_lip": [0, 37, 267],
-        "lower_lip": [17, 84, 314],
+        "upper_lip": [0, 37, 267, 13, 82, 312],
+        "lower_lip": [17, 84, 314, 14, 87, 317],
     },
 }
 
@@ -86,25 +86,50 @@ def modify_landmarks(
             pts[idx] += np.array([0.0, -15.0 * intensity], dtype=np.float32)
 
     elif expression == "lip_widen":
-        dx = 15.0 * intensity
+        # Dudak Kalınlaştırma (Vertical Thickening) - Ağzı açmadan hacim verme
+        thickness = 12.0 * intensity
+        mouth_center_x = np.mean(pts[[61, 291], 0])
 
-        for idx in [61, 78]:
-            pts[idx] += np.array([-dx, 0.0], dtype=np.float32)
+        # Dış hatlar (Hacmi asıl veren kısımlar)
+        upper_outer = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291]
+        lower_outer = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291]
+        
+        # İç hatlar (Ağız birleşim çizgisi - Az hareket etmeli ki yırtılma olmasın)
+        upper_inner = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308]
+        lower_inner = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308]
 
-        for idx in [185, 146, 191, 95, 57]:
-            pts[idx] += np.array([-dx * 0.6, 0.0], dtype=np.float32)
+        # Üst dış hattı yukarı taşı
+        for idx in upper_outer:
+            dist_to_center = abs(pts[idx][0] - mouth_center_x)
+            weight = max(0.3, 1 - dist_to_center / 130)
+            pts[idx] += np.array([0.0, -thickness * weight], dtype=np.float32)
 
-        for idx in [291, 308]:
-            pts[idx] += np.array([dx, 0.0], dtype=np.float32)
+        # Üst iç hattı çok az yukarı taşı (Yırtılmayı önler)
+        for idx in upper_inner:
+            dist_to_center = abs(pts[idx][0] - mouth_center_x)
+            weight = max(0.1, 1 - dist_to_center / 130)
+            pts[idx] += np.array([0.0, -thickness * 0.3 * weight], dtype=np.float32)
 
-        for idx in [409, 375, 415, 324, 287]:
-            pts[idx] += np.array([dx * 0.6, 0.0], dtype=np.float32)
+        # Alt dış hattı aşağı taşı
+        for idx in lower_outer:
+            dist_to_center = abs(pts[idx][0] - mouth_center_x)
+            weight = max(0.3, 1 - dist_to_center / 130)
+            pts[idx] += np.array([0.0, thickness * weight], dtype=np.float32)
 
-        for idx in FEATURE_GROUPS[expression]["upper_lip"]:
-            pts[idx] += np.array([0.0, -4.0 * intensity], dtype=np.float32)
+        # Alt iç hattı çok az aşağı taşı
+        for idx in lower_inner:
+            dist_to_center = abs(pts[idx][0] - mouth_center_x)
+            weight = max(0.1, 1 - dist_to_center / 130)
+            pts[idx] += np.array([0.0, thickness * 0.3 * weight], dtype=np.float32)
 
-        for idx in FEATURE_GROUPS[expression]["lower_lip"]:
-            pts[idx] += np.array([0.0, 4.0 * intensity], dtype=np.float32)
+        # Çevre dokuları (Burun altı ve çene) genişçe esnet
+        surround_up = [164, 2, 94, 327, 48, 278, 57, 287]
+        for idx in surround_up:
+            pts[idx] += np.array([0.0, -thickness * 0.2], dtype=np.float32)
+
+        surround_down = [18, 200, 199, 175, 152, 377, 400, 410]
+        for idx in surround_down:
+            pts[idx] += np.array([0.0, thickness * 0.2], dtype=np.float32)
 
     for i in range(len(pts)):
         pts[i] = _clip_point(pts[i], w, h)
