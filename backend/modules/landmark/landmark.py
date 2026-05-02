@@ -30,12 +30,11 @@ def detect_landmarks(image: np.ndarray) -> LandmarkList:
     face_landmarks = results.multi_face_landmarks[0]
 
     landmarks = []
+
     for lm in face_landmarks.landmark:
+        # 🔥 FIX: float → int dönüşümü doğru scale
         x = int(lm.x * w)
         y = int(lm.y * h)
-
-        x = max(0, min(x, w - 1))
-        y = max(0, min(y, h - 1))
 
         landmarks.append((x, y))
 
