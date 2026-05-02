@@ -3,7 +3,7 @@
     
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"  initial-scale=1.0">
+  <meta name="viewport" initial-scale=1.0">
   <title>Controls - Facial Image Analysis</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
@@ -72,10 +72,6 @@
       animation: fadeUp 0.7s 0.15s ease both;
     }
 
-    .control-group {
-      margin-bottom: 30px;
-    }
-
     .field-label {
       font-size: 12px;
       font-weight: 600;
@@ -86,37 +82,9 @@
       display: block;
     }
 
-    select {
-      width: 100%;
-      padding: 14px 18px;
-      border-radius: 14px;
-      border: 1.5px solid rgba(70, 70, 229, 0.15);
-      background: rgba(255, 255, 255, 0.6);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      color: #2a2a7a;
-      appearance: none;
-      cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234646e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-      background-size: 18px;
-      transition: all 0.3s ease;
-    }
-
-    select:focus {
-      outline: none;
-      border-color: #4646e5;
-      background-color: white;
-    }
-
-    .slider-container {
-      padding: 10px 0;
-    }
-
     input[type="range"] {
-      -webkit-appearance: none;
       appearance: none;
+      -webkit-appearance: none;
       width: 100%;
       height: 6px;
       background: rgba(70, 70, 229, 0.1);
@@ -127,7 +95,6 @@
 
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      appearance: none;
       width: 22px;
       height: 22px;
       background: #4646e5;
@@ -140,15 +107,6 @@
 
     input[type="range"]::-webkit-slider-thumb:hover {
       transform: scale(1.15);
-    }
-
-    .intensity-value {
-      text-align: center;
-      font-weight: 600;
-      color: #4646e5;
-      font-size: 18px;
-      margin-top: -10px;
-      display: block;
     }
 
     .nav-btn {
@@ -199,18 +157,17 @@
   <div class="blob blob-2"></div>
 
   <div class="page-header">
-    <div class="badge">Ajustment Studio</div>
+    <div class="badge">Adjustment Studio</div>
     <h1>Refine Results</h1>
   </div>
 
   <div class="card" style="max-width: 800px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-    <!-- Left Column: Preview -->
+    <!-- Sol: Önizleme -->
     <div class="preview-side">
       <div class="badge">Live Studio</div>
       <div class="preview-container" style="position: sticky; top: 0; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(70, 70, 229, 0.1); background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
         <img id="livePreview" src="/static/uploads/transformed.jpg?v={{ cache_buster }}" style="width: 100%; height: auto; display: block;">
       </div>
-      
       <div style="margin-top: 30px;">
         <button class="nav-btn" id="finishBtn">
           Finish & Analyze
@@ -222,10 +179,10 @@
       </div>
     </div>
 
-    <!-- Right Column: Controls -->
+    <!-- Sağ: Kontroller -->
     <div class="controls-side" style="display: flex; flex-direction: column; gap: 20px;">
       <span class="field-label" style="margin-bottom: 5px;">Adjust Features</span>
-      
+
       <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
           <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Smile Enhance</span>
@@ -236,7 +193,7 @@
 
       <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Face </span>
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Face</span>
           <span class="val-txt" id="slim_face-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
         </div>
         <input type="range" class="refine-slider" data-type="slim_face" min="0" max="100" value="0" style="margin: 5px 0;">
@@ -281,6 +238,30 @@
         </div>
         <input type="range" class="refine-slider" data-type="eyeshadow" min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
+
+      <!-- Hair Color -->
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Hair Color</span>
+          <span class="val-txt" id="hair_color-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+          <label style="font-size: 11px; color: #8888bb; font-weight: 600;">Color:</label>
+          <input type="color" id="hairColorPicker" value="#3b1f0a" style="width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0;">
+        </div>
+        <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <!-- Hair Overlay -->
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="margin-bottom: 10px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Hairstyle</span>
+        </div>
+        <div id="hairstyleList" style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span style="font-size: 12px; color: #8888bb;">Loading...</span>
+        </div>
+        <button onclick="clearHairstyle()" style="margin-top: 10px; font-size: 11px; color: #4646e5; background: none; border: 1px solid rgba(70,70,229,0.3); border-radius: 8px; padding: 4px 12px; cursor: pointer; font-family: inherit;">Remove</button>
+      </div>
     </div>
   </div>
 
@@ -289,21 +270,76 @@
     const livePreview = document.getElementById('livePreview');
     const finishBtn = document.getElementById('finishBtn');
     let debounceTimer;
-    let lastAppliedTransforms = [];
+    let selectedOverlay = null;
 
-    async function applyAllTransforms() {
+    // Saç stillerini yükle
+    fetch('/hairstyles')
+      .then(r => r.json())
+      .then(files => {
+        const container = document.getElementById('hairstyleList');
+        if (files.length === 0) {
+          container.innerHTML = '<span style="font-size:12px;color:#8888bb;">static/hairstyles/ klasörüne PNG ekle</span>';
+          return;
+        }
+        container.innerHTML = '';
+        files.forEach(file => {
+          const btn = document.createElement('button');
+          btn.textContent = file.replace('.png', '');
+          btn.dataset.overlay = file;
+          btn.style.cssText = 'padding:6px 14px;border-radius:10px;border:1.5px solid rgba(70,70,229,0.2);background:rgba(255,255,255,0.6);font-size:12px;color:#2a2a7a;cursor:pointer;transition:all 0.2s;font-family:inherit;';
+          btn.onclick = () => selectOverlay(file, btn);
+          container.appendChild(btn);
+        });
+      });
+
+    function selectOverlay(file, btn) {
+      selectedOverlay = file;
+      document.querySelectorAll('#hairstyleList button').forEach(b => {
+        b.style.borderColor = 'rgba(70,70,229,0.2)';
+        b.style.background = 'rgba(255,255,255,0.6)';
+        b.style.color = '#2a2a7a';
+      });
+      btn.style.borderColor = '#4646e5';
+      btn.style.background = 'rgba(70,70,229,0.1)';
+      btn.style.color = '#4646e5';
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearHairstyle() {
+      selectedOverlay = null;
+      document.querySelectorAll('#hairstyleList button').forEach(b => {
+        b.style.borderColor = 'rgba(70,70,229,0.2)';
+        b.style.background = 'rgba(255,255,255,0.6)';
+        b.style.color = '#2a2a7a';
+      });
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function buildTransforms() {
       const transforms = [];
+
       sliders.forEach(slider => {
         const val = parseInt(slider.value);
         if (val > 0) {
-          transforms.push({
-            type: slider.dataset.type,
-            intensity: val / 100
-          });
+          const t = { type: slider.dataset.type, intensity: val / 100 };
+          if (slider.dataset.type === 'hair_color') {
+            t.params = { color: document.getElementById('hairColorPicker').value };
+          }
+          transforms.push(t);
         }
       });
 
-      lastAppliedTransforms = transforms;
+      if (selectedOverlay) {
+        transforms.push({ type: 'hair_overlay', intensity: 1.0, params: { overlay: selectedOverlay } });
+      }
+
+      return transforms;
+    }
+
+    async function applyAllTransforms() {
+      const transforms = buildTransforms();
 
       if (transforms.length === 0) {
         livePreview.src = '/static/uploads/original.jpg?v=' + new Date().getTime();
@@ -319,7 +355,7 @@
             transforms: transforms
           })
         });
-        
+
         const data = await response.json();
         if (data.success) {
           livePreview.src = '/static/uploads/transformed.jpg?v=' + new Date().getTime();
@@ -333,21 +369,27 @@
       slider.addEventListener('input', (e) => {
         const type = e.target.dataset.type;
         document.getElementById(`${type}-val`).textContent = e.target.value + '%';
-        
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(applyAllTransforms, 400);
       });
+    });
+
+    document.getElementById('hairColorPicker').addEventListener('input', () => {
+      const val = parseInt(document.querySelector('[data-type="hair_color"]').value);
+      if (val > 0) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
+      }
     });
 
     finishBtn.addEventListener('click', async () => {
       finishBtn.disabled = true;
       finishBtn.textContent = 'Saving...';
 
-      const transformType = lastAppliedTransforms.length > 0
-        ? lastAppliedTransforms.map(t => t.type).join(', ')
-        : 'none';
-      const avgIntensity = lastAppliedTransforms.length > 0
-        ? lastAppliedTransforms.reduce((s, t) => s + t.intensity, 0) / lastAppliedTransforms.length
+      const transforms = buildTransforms();
+      const transformType = transforms.length > 0 ? transforms.map(t => t.type).join(', ') : 'none';
+      const avgIntensity = transforms.length > 0
+        ? transforms.reduce((s, t) => s + t.intensity, 0) / transforms.length
         : 0;
 
       try {

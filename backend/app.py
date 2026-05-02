@@ -93,6 +93,14 @@ def create_app():
 
         return render_template("history.html", history=history_data)
 
+    @app.route("/hairstyles")
+    def list_hairstyles():
+        folder = os.path.join(app.static_folder, "hairstyles")
+        if not os.path.exists(folder):
+            return jsonify([])
+        files = [f for f in os.listdir(folder) if f.lower().endswith(".png")]
+        return jsonify(files)
+
     @app.route("/save-history", methods=["POST"])
     def save_history():
         if not session.get("user_id"):
@@ -106,20 +114,16 @@ def create_app():
             transform_type = data.get("transform_type", "custom")
             intensity = float(data.get("intensity", 1.0))
 
-            # Mutlak yol kullan — göreceli yol Windows'ta çalışmıyor
             static_folder = current_app.static_folder
             original_src = os.path.join(static_folder, "uploads", "original.jpg")
             transformed_src = os.path.join(static_folder, "uploads", "transformed.jpg")
 
-            print(f"SAVE HISTORY: original_src={original_src}")
-            print(f"SAVE HISTORY: transformed_src={transformed_src}")
             print(f"SAVE HISTORY: original exists={os.path.exists(original_src)}")
             print(f"SAVE HISTORY: transformed exists={os.path.exists(transformed_src)}")
 
             if not os.path.exists(original_src):
                 return jsonify({"success": False, "message": "Original image not found"}), 400
             if not os.path.exists(transformed_src):
-                # Transform yapılmamışsa orijinali kopyala
                 shutil.copy(original_src, transformed_src)
 
             history_folder = os.path.join(static_folder, "results", "history")
@@ -132,7 +136,6 @@ def create_app():
             shutil.copy(original_src, os.path.join(history_folder, orig_filename))
             shutil.copy(transformed_src, os.path.join(history_folder, result_filename))
 
-            # DB'ye web'den erişilebilen görece yol kaydediyoruz
             rel_original = f"static/results/history/{orig_filename}"
             rel_transformed = f"static/results/history/{result_filename}"
 
@@ -146,7 +149,7 @@ def create_app():
             cursor.close()
             conn.close()
 
-            print(f"SAVE HISTORY: success — {rel_original} / {rel_transformed}")
+            print(f"SAVE HISTORY: success")
             return jsonify({"success": True})
 
         except Exception as e:
