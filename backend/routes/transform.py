@@ -17,11 +17,9 @@ TRANSFORM_MAP = {
     "smile": "smile",
     "eyebrow": "eyebrow_raise",
     "slim_face": "face_slimming",
-    "face": "face_slimming",
     "face_slimming": "face_slimming",
     "lip_widen": "lip_widen",
-    "lip_widening": "lip_widen",
-    "face_widening": "face_widening",
+    "face_widening": "face_slimming",
 }
 
 
@@ -84,43 +82,48 @@ def transform_image():
     try:
         for transform in transforms:
             t_type = transform.get("type")
-            t_intensity = float(transform.get("intensity", 0.5))
-            t_intensity = max(0.0, min(1.0, t_intensity))
-
-            print("TRANSFORM TYPE:", t_type)
-            print("INTENSITY:", t_intensity)
+            t_intensity = float(transform.get("intensity", 0.0))
+            
+            # 1. Yoğunluk Hesabı
+            actual_intensity = t_intensity
+            if t_type == "face_widening" and actual_intensity > 0:
+                actual_intensity = -t_intensity
+            
+            # Sınırları belirle
+            actual_intensity = max(-1.0, min(1.0, actual_intensity))
 
             if t_type in TRANSFORM_MAP:
                 landmark_result = process_landmark_pipeline(output_image)
-
-                if not landmark_result.get("success"):
-                    print(f"Landmark detection failed for {t_type}")
+                if not landmark_result.get("success"): 
                     continue
 
+                # 2. Efekti Tek Seferde Uygula (Try-Except içinde)
                 try:
                     output_image, _, _ = apply_expression(
                         image=output_image,
                         landmarks=landmark_result["landmarks"],
                         expression=TRANSFORM_MAP[t_type],
-                        intensity=t_intensity
+                        intensity=actual_intensity
                     )
                     results_meta.append(t_type)
-                    print("APPLIED:", t_type)
-
+                    print(f"APPLIED: {t_type} (Intensity: {actual_intensity})")
+                    
                 except Exception as expression_error:
                     print(f"Expression transform failed for {t_type}: {expression_error}")
-
+                    # Eğer face_widening başarısız olursa yedek plan:
                     if t_type == "face_widening":
-                        output_image, _, _ = apply_expression(
-                            image=output_image,
-                            landmarks=landmark_result["landmarks"],
-                            expression="face_slimming",
-                            intensity=-t_intensity
-                        )
-                        results_meta.append(t_type)
-                        print("APPLIED:", t_type)
+                        try:
+                            output_image, _, _ = apply_expression(
+                                image=output_image,
+                                landmarks=landmark_result["landmarks"],
+                                expression="face_slimming",
+                                intensity=-t_intensity
+                            )
+                            results_meta.append(t_type)
+                        except:
+                            pass
                     else:
-                        raise expression_error
+                        continue # Hata veren efekti atla, diğerine geç
 
             elif t_type in ["lipstick", "eyeshadow"]:
                 landmark_result = process_landmark_pipeline(output_image)

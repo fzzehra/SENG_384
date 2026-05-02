@@ -165,11 +165,11 @@
     <!-- Sol: Önizleme -->
     <div class="preview-side">
       <div class="badge">Live Studio</div>
-      <div class="preview-container" style="position: sticky; top: 0; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(70, 70, 229, 0.1); background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+      <div class="preview-container" style="position: sticky; top: 0; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(70, 70, 229, 0.1); background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05);align-self: start;">
         <img id="livePreview" src="/static/uploads/original.jpg?v={{ cache_buster }}" style="width: 100%; height: auto; display: block;">
       </div>
       <div style="margin-top: 30px;">
-        <button class="nav-btn" id="finishBtn">
+        <button class="nav-btn" id="finishBtn" >
           Finish & Analyze
           <svg viewBox="0 0 24 24" stroke-width="2" style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -184,20 +184,21 @@
       <span class="field-label" style="margin-bottom: 5px;">Adjust Features</span>
 
       <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Smile Enhance</span>
-          <span class="val-txt" id="smile-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
-        </div>
-        <input type="range" class="refine-slider" data-type="smile" min="0" max="100" value="0" style="margin: 5px 0;">
-      </div>
+  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+    <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Face Slim / Widen</span>
+    <span class="val-txt" id="slim_face-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+  </div>
+  <div style="position: relative;">
+    <input type="range" class="refine-slider" data-type="slim_face" min="-100" max="100" value="0" style="margin: 5px 0;">
+    <!-- Orta çentik -->
+    <div style="position: absolute; left: 50%; top: -4px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none;">
+      <div style="width: 2px; height: 10px; background: rgba(70,70,229,0.4); border-radius: 1px;"></div>
+    </div>
+  </div>
+  
+</div>
 
-      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Face</span>
-          <span class="val-txt" id="slim_face-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
-        </div>
-        <input type="range" class="refine-slider" data-type="slim_face" min="0" max="100" value="0" style="margin: 5px 0;">
-      </div>
+
 
       <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -318,25 +319,30 @@
     }
 
     function buildTransforms() {
-      const transforms = [];
+  const transforms = [];
 
-      sliders.forEach(slider => {
-        const val = parseInt(slider.value);
-        if (val > 0) {
-          const t = { type: slider.dataset.type, intensity: val / 100 };
-          if (slider.dataset.type === 'hair_color') {
-            t.params = { color: document.getElementById('hairColorPicker').value };
-          }
-          transforms.push(t);
-        }
-      });
-
-      if (selectedOverlay) {
-        transforms.push({ type: 'hair_overlay', intensity: 1.0, params: { overlay: selectedOverlay } });
+  sliders.forEach(slider => {
+    const val = parseInt(slider.value);
+    
+    // SIFIR DEĞİLSE gönder (Böylece hem pozitif hem negatif değerler gider)
+    // Eski hali 'val > 0' idi, bu negatifleri engelliyordu.
+    if (val !== 0) {
+      const t = { type: slider.dataset.type, intensity: val / 100 };
+      
+      if (slider.dataset.type === 'hair_color') {
+        t.params = { color: document.getElementById('hairColorPicker').value };
       }
-
-      return transforms;
+      
+      transforms.push(t);
     }
+  });
+
+  if (selectedOverlay) {
+    transforms.push({ type: 'hair_overlay', intensity: 1.0, params: { overlay: selectedOverlay } });
+  }
+
+  return transforms;
+}
 
     async function applyAllTransforms() {
       const transforms = buildTransforms();
@@ -365,22 +371,26 @@
       }
     }
 
-    sliders.forEach(slider => {
-      slider.addEventListener('input', (e) => {
-        const type = e.target.dataset.type;
-        document.getElementById(`${type}-val`).textContent = e.target.value + '%';
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(applyAllTransforms, 400);
-      });
-    });
+   sliders.forEach(slider => {
+  slider.addEventListener('input', (e) => {
+    let val = parseInt(e.target.value);
+    const type = e.target.dataset.type;
 
-    document.getElementById('hairColorPicker').addEventListener('input', () => {
-      const val = parseInt(document.querySelector('[data-type="hair_color"]').value);
-      if (val > 0) {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(applyAllTransforms, 400);
+    // Sadece Face Slim/Widen gibi çift yönlü sliderlarda 
+    // mıknatıs etkisi yapmak istersen bu kontrolü kullanabilirsin:
+    if (type === 'slim_face') {
+      if (val > -5 && val < 5) {
+        val = 0;
+        e.target.value = 0;
       }
-    });
+    }
+
+    document.getElementById(`${type}-val`).textContent = val + '%';
+    
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(applyAllTransforms, 400);
+  });
+});
 
     finishBtn.addEventListener('click', async () => {
       finishBtn.disabled = true;
