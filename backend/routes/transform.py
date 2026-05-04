@@ -1,8 +1,11 @@
+from backend.modules.accessories.jewelery import apply_jewelry_pipeline
 from backend.modules.makeup.makeup import apply_lip_color, apply_blush, apply_eyeshadow, apply_eye_color
 import os
 import cv2
 import numpy as np
 from flask import Blueprint, request
+from PIL import Image
+from ultralytics import YOLO
 
 from backend.modules.utils.helpers import error_response, success_response
 from backend.modules.landmark.landmark import process_landmark_pipeline
@@ -12,6 +15,7 @@ from backend.modules.aging.aging import apply_aging_effect
 from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay
 from backend.modules.hat_glasses.accessory_applier import apply_accessories
 
+pose_model = YOLO("yolov8n-pose.pt")
 transform_bp = Blueprint("transform", __name__)
 print("LOADED TRANSFORM FILE:", __file__)
 
@@ -55,6 +59,164 @@ def draw_landmarks_on_image(image, landmarks):
             continue
     return output
 
+def trim_transparent(pil_img):
+    pil_img = pil_img.convert("RGBA")
+    arr = np.array(pil_img)
+
+    if len(arr.shape) < 3 or arr.shape[2] < 4:
+        return pil_img
+
+    alpha = arr[:, :, 3]
+    coords = np.argwhere(alpha > 0)
+
+    if coords.size == 0:
+        return pil_img
+
+    y0, x0 = coords.min(axis=0)
+    y1, x1 = coords.max(axis=0) + 1
+
+    return pil_img.crop((x0, y0, x1, y1))
+
+
+def overlay_rgba(background_bgr, overlay_path, center_xy, target_width, angle_deg=0.0, opacity=1.0):
+    if not os.path.exists(overlay_path):
+        print("Overlay file not found:", overlay_path)
+        return background_bgr
+
+    try:
+        overlay_img = Image.open(overlay_path).convert("RGBA")
+    except Exception as e:
+        print("Overlay image could not be opened:", e)
+        return background_bgr
+
+    overlay_img = trim_transparent(overlay_img)
+
+    ow, oh = overlay_img.size
+    if ow <= 0 or oh <= 0:
+        return background_bgr
+
+    target_width = max(1, int(target_width))
+    scale = target_width / float(ow)
+
+    new_w = max(1, int(ow * scale))
+    new_h = max(1, int(oh * scale))
+
+    overlay_img = overlay_img.resize((new_w, new_h), Image.LANCZOS)
+
+    if abs(angle_deg) > 0.1:
+        overlay_img = overlay_img.rotate(angle_deg, expand=True, resample=Image.BICUBIC)
+
+    overlay_rgba_np = np.array(overlay_img)
+
+    opacity = float(max(0.0, min(1.0, opacity)))
+
+    bg_h, bg_w = background_bgr.shape[:2]
+    oh2, ow2 = overlay_rgba_np.shape[:2]
+
+    cx, cy = center_xy
+    x = int(cx - ow2 / 2)
+    y = int(cy - oh2 / 2)
+
+    x1 = max(0, x)
+    y1 = max(0, y)
+    x2 = min(bg_w, x + ow2)
+    y2 = min(bg_h, y + oh2)
+
+    if x1 >= x2 or y1 >= y2:
+        return background_bgr
+
+    ox1 = x1 - x
+    oy1 = y1 - y
+    ox2 = ox1 + (x2 - x1)
+    oy2 = oy1 + (y2 - y1)
+
+    crop = overlay_rgba_np[oy1:oy2, ox1:ox2]
+
+    alpha = crop[:, :, 3:4] / 255.0
+    alpha = alpha * opacity
+
+    overlay_bgr = cv2.cvtColor(crop[:, :, :3], cv2.COLOR_RGB2BGR)
+
+    background_bgr[y1:y2, x1:x2] = (
+        alpha * overlay_bgr +
+        (1.0 - alpha) * background_bgr[y1:y2, x1:x2]
+    ).astype(np.uint8)
+
+    return background_bgr
+
+
+def resolve_accessory_path(t_type, item_name):
+    category = "earrings" if t_type == "earring" else "necklaces"
+    folder = os.path.join("static", "accessories", category)
+
+    candidates = [
+        os.path.join(folder, item_name),
+        os.path.join(folder, f"{item_name}.png"),
+        os.path.join(folder, f"{item_name}.jpg"),
+        os.path.join(folder, f"{item_name}.jpeg"),
+        os.path.join(folder, f"{item_name}.webp"),
+    ]
+
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+
+    print("Accessory file candidates not found:")
+    for candidate in candidates:
+        print(" -", candidate)
+
+    return None
+
+
+def apply_jewelry_with_yolo(image, t_type, item_path, intensity=1.0):
+    output = image.copy()
+    results = pose_model(output, verbose=False)
+
+    if (
+        not results
+        or not hasattr(results[0], "keypoints")
+        or results[0].keypoints is None
+        or len(results[0].keypoints.xy) == 0
+    ):
+        print("YOLO: İnsan iskeleti algılanamadı.")
+        return output
+
+    keypoints = results[0].keypoints.xy[0].cpu().numpy()
+
+    if len(keypoints) < 7:
+        print("YOLO: Yeterli referans noktası algılanamadı.")
+        return output
+
+    left_ear = keypoints[3]
+    right_ear = keypoints[4]
+    left_shoulder = keypoints[5]
+    right_shoulder = keypoints[6]
+
+    face_width = float(np.linalg.norm(right_ear - left_ear))
+
+    if face_width < 10 or left_shoulder[0] == 0 or right_shoulder[0] == 0:
+        print("YOLO: İlgili bölgeler fotoğrafta kesik veya görünmüyor.")
+        return output
+
+    if t_type == "earring":
+        earring_width = 0.070 * face_width
+
+        left_earlobe = (left_ear[0], left_ear[1] + 0.15 * face_width)
+        right_earlobe = (right_ear[0], right_ear[1] + 0.15 * face_width)
+
+        output = overlay_rgba(output, item_path, left_earlobe, earring_width, opacity=intensity)
+        output = overlay_rgba(output, item_path, right_earlobe, earring_width, opacity=intensity)
+
+    elif t_type == "necklace":
+        neck_x = (left_shoulder[0] + right_shoulder[0]) / 2.0
+        neck_y = (left_shoulder[1] + right_shoulder[1]) / 2.0
+
+        necklace_center = (neck_x, neck_y + 0.10 * face_width)
+        necklace_width = 1.25 * face_width
+
+        output = overlay_rgba(output, item_path, necklace_center, necklace_width, opacity=intensity)
+
+    return output
 
 @transform_bp.route("/", methods=["POST"])
 def transform_image():
@@ -93,6 +255,7 @@ def transform_image():
     try:
         for transform in transforms:
             t_type = transform.get("type")
+            print("TRANSFORM TYPE:", t_type)
             t_intensity = float(transform.get("intensity", 0.0))
             
             # 1. Yoğunluk Hesabı
@@ -192,11 +355,29 @@ def transform_image():
                 params = transform.get("params", {})
                 hat_name = params.get("hat", None)
                 glasses_name = params.get("glasses", None)
+<<<<<<< Updated upstream
                 
                 # Dosya yollarını oluştur (static klasörü altında olduğunu varsayıyorum)
                 hat_path = os.path.join('static', 'accessories', hat_file) if hat_name else None
                 glasses_path = os.path.join('static', 'accessories', glasses_name) if glasses_name else None
+=======
+>>>>>>> Stashed changes
 
+                print("GLASSES NAME:", glasses_name)
+                print("HAT NAME:", hat_name)
+
+                hat_path = (
+                    os.path.join(os.getcwd(), "static", "accessories", "hats", hat_name)
+                    if hat_name else None
+                )
+
+                glasses_path = (
+                    os.path.join(os.getcwd(), "static", "accessories", "glasses", glasses_name)
+                    if glasses_name else None
+                )
+
+                print("HAT PATH:", hat_path)
+                print("GLASSES PATH:", glasses_path)
                 landmark_result = process_landmark_pipeline(output_image)
                 if landmark_result.get("success"):
                     output_image = apply_accessories(
@@ -311,7 +492,30 @@ def transform_image():
                     results_meta.append("eye_color")
                 else:
                     print("Landmark detection failed for eye_color.")
+            elif t_type in ["earring", "necklace"]:
+                params = transform.get("params", {})
+                item_name = params.get("item", "")
 
+                if not item_name:
+                    continue
+
+                item_path = os.path.join(
+                    os.getcwd(),
+                    "static",
+                    "accessories",
+                    "earrings" if t_type == "earring" else "necklaces",
+                    item_name
+                )
+
+                output_image = apply_jewelry_with_yolo(
+                    image=output_image,
+                    t_type=t_type,
+                    item_path=item_path,
+                    intensity=t_intensity
+                )
+
+                results_meta.append(f"{t_type}:{item_name}")
+                print("APPLIED:", t_type)
             else:
                 print("UNKNOWN TRANSFORM TYPE:", t_type)
 

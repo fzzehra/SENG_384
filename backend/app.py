@@ -100,6 +100,25 @@ def create_app():
             return jsonify([])
         files = [f for f in os.listdir(folder) if f.lower().endswith(".png")]
         return jsonify(files)
+       
+    @app.route("/accessories/<category>")
+    def list_accessories(category):
+        allowed_categories = ["earrings", "necklaces", "glasses", "hats"]
+
+        if category not in allowed_categories:
+            return jsonify([])
+
+        folder = os.path.join(app.static_folder, "accessories", category)
+
+        if not os.path.exists(folder):
+            return jsonify([])
+
+        files = [
+            f for f in os.listdir(folder)
+            if f.lower().endswith(".png")
+        ]
+
+        return jsonify(files)
 
     @app.route("/save-history", methods=["POST"])
     def save_history():

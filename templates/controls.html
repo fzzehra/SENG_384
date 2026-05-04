@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-    
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Controls - Facial Image Analysis</title>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
 
@@ -29,6 +29,7 @@
       opacity: 0.35;
       pointer-events: none;
     }
+
     .blob-1 { width: 320px; height: 320px; background: #b0b0ff; top: -80px; left: -80px; }
     .blob-2 { width: 260px; height: 260px; background: #a8f0c0; bottom: -60px; right: -60px; }
 
@@ -67,7 +68,7 @@
       border-radius: 28px;
       padding: 44px 48px;
       width: 100%;
-      max-width: 900px;
+      max-width: 980px;
       box-shadow: 0 20px 60px rgba(70, 70, 229, 0.1);
       animation: fadeUp 0.7s 0.15s ease both;
     }
@@ -80,6 +81,51 @@
       color: #6060aa;
       margin-bottom: 14px;
       display: block;
+    }
+
+    .preview-container {
+      position: sticky;
+      top: 0;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1.5px solid rgba(70, 70, 229, 0.1);
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      align-self: start;
+    }
+
+    .preview-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .controls-side {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-height: 78vh;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .control-item {
+      background: rgba(255,255,255,0.4);
+      padding: 15px;
+      border-radius: 16px;
+      border: 1px solid rgba(70,70,229,0.05);
+    }
+
+    .control-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2a2a7a;
+    }
+
+    .val-txt {
+      font-size: 13px;
+      color: #4646e5;
+      font-weight: 600;
     }
 
     input[type="range"] {
@@ -140,6 +186,47 @@
       transform: none;
     }
 
+    .mini-btn {
+      padding: 6px 14px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(70, 70, 229, 0.2);
+      background: rgba(255, 255, 255, 0.6);
+      font-size: 12px;
+      color: #2a2a7a;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .mini-btn.active {
+      border-color: #4646e5;
+      background: rgba(70, 70, 229, 0.1);
+      color: #4646e5;
+    }
+
+    .remove-btn {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #4646e5;
+      background: none;
+      border: 1px solid rgba(70,70,229,0.3);
+      border-radius: 8px;
+      padding: 4px 12px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    select {
+      width: 100%;
+      margin: 8px 0 12px 0;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(70,70,229,0.2);
+      font-family: inherit;
+      color: #2a2a7a;
+      background: rgba(255,255,255,0.7);
+    }
+
     @keyframes fadeDown {
       from { opacity: 0; transform: translateY(-20px); }
       to { opacity: 1; transform: translateY(0); }
@@ -151,8 +238,10 @@
     }
   </style>
 </head>
+
 <body>
-{% include 'base.html' %}
+  {% include 'base.html' %}
+
   <div class="blob blob-1"></div>
   <div class="blob blob-2"></div>
 
@@ -161,32 +250,16 @@
     <h1>Refine Results</h1>
   </div>
 
-  <div class="makeup-controls">
-  <label for="makeupType">Makeup Type</label>
-  <select id="makeupType" name="makeupType">
-    <option value="">Select makeup</option>
-    <option value="lip_color">Lip Color</option>
-    <option value="blush">Blush</option>
-    <option value="eyeshadow">Eyeshadow</option>
-    <option value="eye_color">Eye Color</option>
-  </select>
-
-  <label for="makeupColor">Choose Color</label>
-  <input type="color" id="makeupColor" name="makeupColor" value="#d96b86">
-
-  <label for="makeupIntensity">Intensity</label>
-  <input type="range" id="makeupIntensity" name="makeupIntensity" min="0.1" max="1.0" step="0.1" value="0.5">
-</div>
-
-  <div class="card" style="max-width: 800px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-    <!-- Sol: Önizleme -->
+  <div class="card" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
     <div class="preview-side">
       <div class="badge">Live Studio</div>
-      <div class="preview-container" style="position: sticky; top: 0; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(70, 70, 229, 0.1); background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05);align-self: start;">
-        <img id="livePreview" src="/static/uploads/original.jpg?v={{ cache_buster }}" style="width: 100%; height: auto; display: block;">
+
+      <div class="preview-container">
+        <img id="livePreview" src="/static/uploads/original.jpg?v={{ cache_buster }}" alt="Live Preview">
       </div>
+
       <div style="margin-top: 30px;">
-        <button class="nav-btn" id="finishBtn" >
+        <button class="nav-btn" id="finishBtn">
           Finish & Analyze
           <svg viewBox="0 0 24 24" stroke-width="2" style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -196,56 +269,63 @@
       </div>
     </div>
 
-    <!-- Sağ: Kontroller -->
-    <div class="controls-side" style="display: flex; flex-direction: column; gap: 20px;">
+    <div class="controls-side">
       <span class="field-label" style="margin-bottom: 5px;">Adjust Features</span>
 
-      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
-  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-    <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Face Slim / Widen</span>
-    <span class="val-txt" id="slim_face-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
-  </div>
-  <div style="position: relative;">
-    <input type="range" class="refine-slider" data-type="slim_face" min="-100" max="100" value="0" style="margin: 5px 0;">
-    <!-- Orta çentik -->
-    <div style="position: absolute; left: 50%; top: -4px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none;">
-      <div style="width: 2px; height: 10px; background: rgba(70,70,229,0.4); border-radius: 1px;"></div>
-    </div>
-  </div>
-  
-</div>
-<div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
-  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-    <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">De-Aging</span>
-    <span class="val-txt" id="deaging-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
-  </div>
-  <input type="range" class="refine-slider" data-type="deaging" min="0" max="100" value="0" style="margin: 5px 0;">
-</div>
-
-
-      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+      <div class="control-item">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Aging Effect</span>
-          <span class="val-txt" id="aging-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+          <span class="control-title">Smile Enhance</span>
+          <span class="val-txt" id="smile-val">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="smile" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="control-title">Face Slim / Widen</span>
+          <span class="val-txt" id="slim_face-val">0%</span>
+        </div>
+
+        <div style="position: relative;">
+          <input type="range" class="refine-slider" data-type="slim_face" min="-100" max="100" value="0" style="margin: 5px 0;">
+          <div style="position: absolute; left: 50%; top: -4px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none;">
+            <div style="width: 2px; height: 10px; background: rgba(70,70,229,0.4); border-radius: 1px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-item">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="control-title">De-Aging</span>
+          <span class="val-txt" id="deaging-val">0%</span>
+        </div>
+        <input type="range" class="refine-slider" data-type="deaging" min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="control-title">Aging Effect</span>
+          <span class="val-txt" id="aging-val">0%</span>
         </div>
         <input type="range" class="refine-slider" data-type="aging" min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
 
-      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+      <div class="control-item">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Eyebrow Thickening</span>
-          <span class="val-txt" id="eyebrow-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+          <span class="control-title">Eyebrow Thickening</span>
+          <span class="val-txt" id="eyebrow-val">0%</span>
         </div>
         <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
 
-      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+      <div class="control-item">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Lip Widening</span>
-          <span class="val-txt" id="lip_widen-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+          <span class="control-title">Lip Widening</span>
+          <span class="val-txt" id="lip_widen-val">0%</span>
         </div>
         <input type="range" class="refine-slider" data-type="lip_widen" min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
+<<<<<<< Updated upstream
       
       <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05); backdrop-filter: blur(10px);">
     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -256,68 +336,124 @@
   </div>
   
       <div class="control-item" style="background: rgba(70,70,229,0.05); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.1);">
+=======
+
+      <div class="control-item" style="background: rgba(70,70,229,0.05);">
+        <div style="margin-bottom: 10px;">
+          <span class="control-title" style="color:#4646e5;">Makeup</span>
+        </div>
+
+        <label style="font-size: 12px; color:#6060aa;">Makeup Type</label>
+        <select id="makeupType">
+          <option value="">Select makeup</option>
+          <option value="lip_color">Lip Color</option>
+          <option value="blush">Blush</option>
+          <option value="eyeshadow">Eyeshadow</option>
+          <option value="eye_color">Eye Color</option>
+        </select>
+
+        <label style="font-size: 12px; color:#6060aa;">Choose Color</label>
+        <input type="color" id="makeupColor" value="#d96b86" style="width: 42px; height: 30px; border: none; border-radius: 6px; cursor: pointer; padding: 0; margin: 8px 0 12px 0;">
+
+        <label style="font-size: 12px; color:#6060aa;">Intensity</label>
+        <input type="range" id="makeupIntensity" min="0.1" max="1.0" step="0.1" value="0.5" style="margin: 5px 0;">
+      </div>
+
+      <div class="control-item" style="background: rgba(70,70,229,0.05);">
+>>>>>>> Stashed changes
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 13px; font-weight: 600; color: #4646e5;">Lipstick (Red)</span>
-          <span class="val-txt" id="lipstick-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+          <span class="control-title" style="color:#4646e5;">Lipstick (Red)</span>
+          <span class="val-txt" id="lipstick-val">0%</span>
         </div>
         <input type="range" class="refine-slider" data-type="lipstick" min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
 
-      <div class="control-item" style="background: rgba(70,70,229,0.05); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.1);">
+      <div class="control-item" style="background: rgba(70,70,229,0.05);">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 13px; font-weight: 600; color: #4646e5;">Eyeshadow (Purple)</span>
-          <span class="val-txt" id="eyeshadow-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+          <span class="control-title" style="color:#4646e5;">Eyeshadow (Purple)</span>
+          <span class="val-txt" id="eyeshadow-val">0%</span>
         </div>
         <input type="range" class="refine-slider" data-type="eyeshadow" min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
 
-      <!-- Hair Color -->
-      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+      <div class="control-item">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Hair Color</span>
-          <span class="val-txt" id="hair_color-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+          <span class="control-title">Hair Color</span>
+          <span class="val-txt" id="hair_color-val">0%</span>
         </div>
+
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
           <label style="font-size: 11px; color: #8888bb; font-weight: 600;">Color:</label>
-          <input type="color" id="hairColorPicker" value="#3b1f0a" style="width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0;">
+          <input type="color" id="hairColorPicker" value="#3b1f0a"
+            style="width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0;">
         </div>
+
         <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
 
-      <!-- Hair Overlay -->
-      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+      <div class="control-item">
         <div style="margin-bottom: 10px;">
-          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Hairstyle</span>
+          <span class="control-title">Hairstyle</span>
         </div>
         <div id="hairstyleList" style="display: flex; flex-wrap: wrap; gap: 8px;">
           <span style="font-size: 12px; color: #8888bb;">Loading...</span>
         </div>
-        <button onclick="clearHairstyle()" style="margin-top: 10px; font-size: 11px; color: #4646e5; background: none; border: 1px solid rgba(70,70,229,0.3); border-radius: 8px; padding: 4px 12px; cursor: pointer; font-family: inherit;">Remove</button>
+        <button onclick="clearHairstyle()" class="remove-btn">Remove</button>
       </div>
-      <!-- Accessories -->
-<div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
-  <div style="margin-bottom: 10px;">
-    <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Accessories</span>
-  </div>
 
-  <label style="font-size: 12px; color:#6060aa;">Glasses</label>
-  <select id="glassesSelect" style="width:100%; margin:8px 0 12px 0; padding:8px; border-radius:10px;">
-  <option value="">No glasses</option>
-  <option value="glasses1.png">Glasses 1</option>
-  <option value="glasses2.png">Glasses 2</option>
-  <option value="glasses3.png">Glasses 3</option>
-  <option value="glasses4.png">Glasses 4</option>
-</select>
+      <div class="control-item">
+        <div style="margin-bottom: 10px;">
+          <span class="control-title">Accessories</span>
+        </div>
 
-  <label style="font-size: 12px; color:#6060aa;">Hat</label>
-  <select id="hatSelect" style="width:100%; margin-top:8px; padding:8px; border-radius:10px;">
-  <option value="">No hat</option>
-  <option value="hat1.png">Hat 1</option>
-  <option value="hat2.png">Hat 2</option>
-  <option value="hat3.png">Hat 3</option>
-  <option value="hat4.png">Hat 4</option>
-</select>
-</div>
+        <label style="font-size: 12px; color:#6060aa;">Glasses</label>
+        <select id="glassesSelect">
+          <option value="">No glasses</option>
+          <option value="glasses1.png">Glasses 1</option>
+          <option value="glasses2.png">Glasses 2</option>
+          <option value="glasses3.png">Glasses 3</option>
+          <option value="glasses4.png">Glasses 4</option>
+        </select>
+
+        <label style="font-size: 12px; color:#6060aa;">Hat</label>
+        <select id="hatSelect">
+          <option value="">No hat</option>
+          <option value="hat1.png">Hat 1</option>
+          <option value="hat2.png">Hat 2</option>
+          <option value="hat3.png">Hat 3</option>
+          <option value="hat4.png">Hat 4</option>
+        </select>
+
+        <div style="display: flex; gap: 8px; margin: 12px 0;">
+          <button type="button" onclick="showAccessoryCabinet('earrings')" class="mini-btn active" id="earringsTab">
+            Earrings
+          </button>
+
+          <button type="button" onclick="showAccessoryCabinet('necklaces')" class="mini-btn" id="necklacesTab">
+            Necklaces
+          </button>
+        </div>
+
+        <div id="earringsCabinet" class="accessory-cabinet">
+          <div style="font-size: 11px; color: #8888bb; font-weight: 600; margin-bottom: 8px;">Earring Cabinet</div>
+          <div id="earringList" style="display:flex; flex-wrap:wrap; gap:8px;">
+            <span style="font-size:12px;color:#8888bb;">Loading...</span>
+          </div>
+          <button type="button" onclick="clearAccessory('earring')" class="remove-btn">
+            Remove Earrings
+          </button>
+        </div>
+
+        <div id="necklacesCabinet" class="accessory-cabinet" style="display:none;">
+          <div style="font-size: 11px; color: #8888bb; font-weight: 600; margin-bottom: 8px;">Necklace Cabinet</div>
+          <div id="necklaceList" style="display:flex; flex-wrap:wrap; gap:8px;">
+            <span style="font-size:12px;color:#8888bb;">Loading...</span>
+          </div>
+          <button type="button" onclick="clearAccessory('necklace')" class="remove-btn">
+            Remove Necklace
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -325,9 +461,16 @@
     const sliders = document.querySelectorAll('.refine-slider');
     const livePreview = document.getElementById('livePreview');
     const finishBtn = document.getElementById('finishBtn');
+
     let debounceTimer;
     let selectedOverlay = null;
     let currentImagePath = 'static/uploads/original.jpg';
+
+    let selectedAccessories = {
+      earring: null,
+      necklace: null
+    };
+
     const makeupType = document.getElementById("makeupType");
     const makeupColor = document.getElementById("makeupColor");
     const makeupIntensity = document.getElementById("makeupIntensity");
@@ -339,21 +482,24 @@
       currentImagePath = imgFromURL;
       livePreview.src = "/" + currentImagePath;
     }
-    // Saç stillerini yükle
+
     fetch('/hairstyles')
       .then(r => r.json())
       .then(files => {
         const container = document.getElementById('hairstyleList');
-        if (files.length === 0) {
+
+        if (!files || files.length === 0) {
           container.innerHTML = '<span style="font-size:12px;color:#8888bb;">static/hairstyles/ klasörüne PNG ekle</span>';
           return;
         }
+
         container.innerHTML = '';
+
         files.forEach(file => {
           const btn = document.createElement('button');
           btn.textContent = file.replace('.png', '');
           btn.dataset.overlay = file;
-          btn.style.cssText = 'padding:6px 14px;border-radius:10px;border:1.5px solid rgba(70,70,229,0.2);background:rgba(255,255,255,0.6);font-size:12px;color:#2a2a7a;cursor:pointer;transition:all 0.2s;font-family:inherit;';
+          btn.className = 'mini-btn';
           btn.onclick = () => selectOverlay(file, btn);
           container.appendChild(btn);
         });
@@ -361,32 +507,35 @@
 
     function selectOverlay(file, btn) {
       selectedOverlay = file;
+
       document.querySelectorAll('#hairstyleList button').forEach(b => {
-        b.style.borderColor = 'rgba(70,70,229,0.2)';
-        b.style.background = 'rgba(255,255,255,0.6)';
-        b.style.color = '#2a2a7a';
+        b.classList.remove('active');
       });
-      btn.style.borderColor = '#4646e5';
-      btn.style.background = 'rgba(70,70,229,0.1)';
-      btn.style.color = '#4646e5';
+
+      btn.classList.add('active');
+
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyAllTransforms, 100);
     }
 
     function clearHairstyle() {
       selectedOverlay = null;
+
       document.querySelectorAll('#hairstyleList button').forEach(b => {
-        b.style.borderColor = 'rgba(70,70,229,0.2)';
-        b.style.background = 'rgba(255,255,255,0.6)';
-        b.style.color = '#2a2a7a';
+        b.classList.remove('active');
       });
+
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyAllTransforms, 100);
     }
 
-    function buildTransforms() {
-  const transforms = [];
+    function showAccessoryCabinet(category) {
+      const earringsCabinet = document.getElementById('earringsCabinet');
+      const necklacesCabinet = document.getElementById('necklacesCabinet');
+      const earringsTab = document.getElementById('earringsTab');
+      const necklacesTab = document.getElementById('necklacesTab');
 
+<<<<<<< Updated upstream
   if (makeupType && makeupType.value) {
   transforms.push({
     type: makeupType.value,
@@ -418,18 +567,156 @@ if (hatVal || glassesVal) {
       
       if (slider.dataset.type === 'hair_color') {
         t.params = { color: document.getElementById('hairColorPicker').value };
+=======
+      if (category === 'earrings') {
+        earringsCabinet.style.display = 'block';
+        necklacesCabinet.style.display = 'none';
+        earringsTab.classList.add('active');
+        necklacesTab.classList.remove('active');
+      } else {
+        earringsCabinet.style.display = 'none';
+        necklacesCabinet.style.display = 'block';
+        necklacesTab.classList.add('active');
+        earringsTab.classList.remove('active');
+>>>>>>> Stashed changes
       }
-      
-      transforms.push(t);
     }
-  });
 
-  if (selectedOverlay) {
-    transforms.push({ type: 'hair_overlay', intensity: 1.0, params: { overlay: selectedOverlay } });
-  }
+    function loadAccessories(category, listId, typeName) {
+      fetch(`/accessories/${category}`)
+        .then(r => r.json())
+        .then(files => {
+          const container = document.getElementById(listId);
 
-  return transforms;
-}
+          if (!files || files.length === 0) {
+            container.innerHTML = `<span style="font-size:12px;color:#8888bb;">static/accessories/${category}/ içine PNG ekle</span>`;
+            return;
+          }
+
+          container.innerHTML = '';
+
+          files.forEach(file => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = file.replace('.png', '');
+            btn.dataset.item = file;
+            btn.className = 'mini-btn';
+            btn.onclick = () => selectAccessory(typeName, file, btn, listId);
+            container.appendChild(btn);
+          });
+        })
+        .catch(err => {
+          console.error('Accessory load error:', err);
+          document.getElementById(listId).innerHTML =
+            '<span style="font-size:12px;color:#cc4444;">Could not load accessories</span>';
+        });
+    }
+
+    function selectAccessory(typeName, file, btn, listId) {
+      selectedAccessories[typeName] = file;
+
+      document.querySelectorAll(`#${listId} button`).forEach(b => {
+        b.classList.remove('active');
+      });
+
+      btn.classList.add('active');
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearAccessory(typeName) {
+      selectedAccessories[typeName] = null;
+
+      const listId = typeName === 'earring' ? 'earringList' : 'necklaceList';
+
+      document.querySelectorAll(`#${listId} button`).forEach(b => {
+        b.classList.remove('active');
+      });
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    loadAccessories('earrings', 'earringList', 'earring');
+    loadAccessories('necklaces', 'necklaceList', 'necklace');
+
+    function buildTransforms() {
+      const transforms = [];
+
+      if (makeupType && makeupType.value) {
+        transforms.push({
+          type: makeupType.value,
+          color: makeupColor ? makeupColor.value : "#d96b86",
+          intensity: makeupIntensity ? parseFloat(makeupIntensity.value) : 0.5
+        });
+      }
+
+      const selectedGlasses = document.getElementById("glassesSelect")?.value;
+      const selectedHat = document.getElementById("hatSelect")?.value;
+
+      if (selectedGlasses || selectedHat) {
+        transforms.push({
+          type: "accessories",
+          intensity: 1,
+          params: {
+            glasses: selectedGlasses || null,
+            hat: selectedHat || null
+          }
+        });
+      }
+
+      sliders.forEach(slider => {
+        const val = parseInt(slider.value, 10);
+
+        if (val !== 0) {
+          const t = {
+            type: slider.dataset.type,
+            intensity: val / 100
+          };
+
+          if (slider.dataset.type === 'hair_color') {
+            t.params = {
+              color: document.getElementById('hairColorPicker').value
+            };
+          }
+
+          transforms.push(t);
+        }
+      });
+
+      if (selectedOverlay) {
+        transforms.push({
+          type: 'hair_overlay',
+          intensity: 1.0,
+          params: {
+            overlay: selectedOverlay
+          }
+        });
+      }
+
+      if (selectedAccessories.earring) {
+        transforms.push({
+          type: 'earring',
+          intensity: 1.0,
+          params: {
+            item: selectedAccessories.earring
+          }
+        });
+      }
+
+      if (selectedAccessories.necklace) {
+        transforms.push({
+          type: 'necklace',
+          intensity: 1.0,
+          params: {
+            item: selectedAccessories.necklace
+          }
+        });
+      }
+
+      return transforms;
+    }
 
     async function applyAllTransforms() {
       const transforms = buildTransforms();
@@ -442,7 +729,9 @@ if (hatVal || glassesVal) {
       try {
         const response = await fetch('/transform/', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({
             image_path: currentImagePath,
             transforms: transforms
@@ -450,43 +739,75 @@ if (hatVal || glassesVal) {
         });
 
         const data = await response.json();
+
         if (data.success) {
           livePreview.src = '/static/uploads/transformed.jpg?v=' + new Date().getTime();
+        } else {
+          console.error('Transform failed:', data);
+          alert(data.message || data.error || 'Transform failed.');
         }
+
       } catch (err) {
         console.error('Transform error:', err);
       }
     }
 
-   sliders.forEach(slider => {
-  slider.addEventListener('input', (e) => {
-    let val = parseInt(e.target.value);
-    const type = e.target.dataset.type;
+    sliders.forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        let val = parseInt(e.target.value, 10);
+        const type = e.target.dataset.type;
 
-    // Sadece Face Slim/Widen gibi çift yönlü sliderlarda 
-    // mıknatıs etkisi yapmak istersen bu kontrolü kullanabilirsin:
-    if (type === 'slim_face') {
-      if (val > -5 && val < 5) {
-        val = 0;
-        e.target.value = 0;
+        if (type === 'slim_face') {
+          if (val > -5 && val < 5) {
+            val = 0;
+            e.target.value = 0;
+          }
+        }
+
+        const label = document.getElementById(`${type}-val`);
+        if (label) {
+          label.textContent = val + '%';
+        }
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
+      });
+    });
+
+    document.getElementById("glassesSelect")?.addEventListener("change", () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    });
+
+    document.getElementById("hatSelect")?.addEventListener("change", () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    });
+
+    document.getElementById('hairColorPicker')?.addEventListener('input', () => {
+      const val = parseInt(document.querySelector('[data-type="hair_color"]').value, 10);
+
+      if (val > 0) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
       }
+    });
+
+    if (makeupType) {
+      makeupType.addEventListener("change", applyAllTransforms);
     }
 
-    document.getElementById(`${type}-val`).textContent = val + '%';
-    
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(applyAllTransforms, 400);
-  });
-});
-if (makeupType) {
-  makeupType.addEventListener("change", applyAllTransforms);
-}
+    if (makeupColor) {
+      makeupColor.addEventListener("input", applyAllTransforms);
+      makeupColor.addEventListener("change", applyAllTransforms);
+    }
 
-if (makeupColor) {
-  makeupColor.addEventListener("input", applyAllTransforms);
-  makeupColor.addEventListener("change", applyAllTransforms);
-}
+    if (makeupIntensity) {
+      makeupIntensity.addEventListener("input", applyAllTransforms);
+      makeupIntensity.addEventListener("change", applyAllTransforms);
+    }
 
+<<<<<<< Updated upstream
 if (makeupIntensity) {
   makeupIntensity.addEventListener("input", applyAllTransforms);
   makeupIntensity.addEventListener("change", applyAllTransforms);
@@ -500,21 +821,32 @@ document.getElementById('glassesSelect').addEventListener('change', () => {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(applyAllTransforms, 100);
 });
+=======
+>>>>>>> Stashed changes
     finishBtn.addEventListener('click', async () => {
       finishBtn.disabled = true;
       finishBtn.textContent = 'Saving...';
 
       const transforms = buildTransforms();
-      const transformType = transforms.length > 0 ? transforms.map(t => t.type).join(', ') : 'none';
+
+      const transformType = transforms.length > 0
+        ? transforms.map(t => t.type).join(', ')
+        : 'none';
+
       const avgIntensity = transforms.length > 0
-        ? transforms.reduce((s, t) => s + t.intensity, 0) / transforms.length
+        ? transforms.reduce((s, t) => s + Math.abs(t.intensity || 0), 0) / transforms.length
         : 0;
 
       try {
         await fetch('/save-history', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transform_type: transformType, intensity: avgIntensity })
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            transform_type: transformType,
+            intensity: avgIntensity
+          })
         });
       } catch (e) {
         console.error('History save error:', e);
@@ -523,6 +855,5 @@ document.getElementById('glassesSelect').addEventListener('change', () => {
       window.location.href = '{{ url_for("preview_page") }}';
     });
   </script>
-
 </body>
 </html>
