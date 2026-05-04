@@ -228,6 +228,8 @@ def transform_image():
 
     image_path = data.get("image_path")
     transforms = data.get("transforms", [])
+    print("FULL REQUEST DATA:", data)
+    print("TRANSFORMS PAYLOAD:", transforms)
 
     if not transforms and data.get("transform_type"):
         transforms = [{
@@ -324,34 +326,7 @@ def transform_image():
 
             # Mevcut transform handler'ında, diğer elif'lerin yanına:
 
-            elif t_type == "accessories":
-                params = transform.get("params", {})
-                hat_name = params.get("hat", None)
-                glasses_name = params.get("glasses", None)
-                
-                hat_path = os.path.join('static', 'accessories', hat_name) if hat_name else None
-                glasses_path = os.path.join('static', 'accessories', glasses_name) if glasses_name else None
-
-                landmark_result = process_landmark_pipeline(output_image)
-                if landmark_result.get("success"):
-                    output_image = apply_accessories(
-                        image=output_image,
-                        landmarks=landmark_result["landmarks"],
-                        hat_path=hat_path,
-                        glasses_path=glasses_path
-                    )
-                    results_meta.append("accessories")
-                    print(f"APPLIED: accessories (Hat: {hat_name}, Glasses: {glasses_name})")
-                else:
-                    print("Landmark detection failed for accessories.")
-                    landmark_result = process_landmark_pipeline(output_image)
-                    landmarks = None
-                if landmark_result.get("success"):
-                    landmarks = landmark_result["landmarks"]
-
-                output_image = apply_aging_effect(output_image, t_intensity, landmarks)
-                results_meta.append("aging")
-                print("APPLIED: aging")
+            
             elif t_type == "accessories":
                 params = transform.get("params", {})
                 hat_name = params.get("hat", None)
@@ -384,10 +359,7 @@ def transform_image():
                     print(f"APPLIED: accessories (Hat: {hat_name}, Glasses: {glasses_name})")
                 else:
                     print("Landmark detection failed for accessories.")
-            elif t_type == "deaging":
-                output_image = apply_deaging_effect(output_image, t_intensity)
-                results_meta.append("deaging")
-                print("APPLIED: deaging")
+            
 
             elif t_type == "landmarks":
                 landmark_result = process_landmark_pipeline(output_image)
