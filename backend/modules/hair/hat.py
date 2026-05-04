@@ -10,7 +10,13 @@ from typing import List, Tuple, Optional
 import cv2
 import numpy as np
 
-# Tip alias
+HAT_CONFIG = {
+    "hat1.png": {"width_scale": 1.35, "vertical_offset": 0.85},
+    "hat2.png": {"width_scale": 1.55, "vertical_offset": 0.75},
+    "hat3.png": {"width_scale": 2.85, "vertical_offset": 0.60},
+    "hat4.png": {"width_scale": 1.35, "vertical_offset": 0.40},
+}
+
 LandmarkList = List[Tuple[int, int]]
 
 # ─────────────────────────────────────────────
@@ -129,13 +135,9 @@ def _overlay_png(
 # ─────────────────────────────────────────────
 # Ana fonksiyon
 # ─────────────────────────────────────────────
-def place_hat(
-    image: np.ndarray,
-    landmarks: LandmarkList,
-    hat_image: np.ndarray,
-    width_scale: float = 1.35,
-    vertical_offset: float = 0.85,
-) -> np.ndarray:
+def place_hat(image: np.ndarray, landmarks: LandmarkList, hat_image: np.ndarray, 
+              hat_name: Optional[str] = None, width_scale: float = 1.35, 
+              vertical_offset: float = 0.85) -> np.ndarray:
     """
     Şapkayı yüz landmark'larına göre yerleştirir.
 
@@ -143,62 +145,60 @@ def place_hat(
     ----------
     image          : BGR veya BGRA kaynak görüntü.
     landmarks      : detect_landmarks() çıktısı, (x, y) tuple listesi.
-    hat_image      : Şapka görüntüsü (BGRA önerilir, şeffaflık için).
-    width_scale    : Şapka genişliği = iki şakak arası mesafe × bu katsayı.
-                     Varsayılan 1.35 — şakakların biraz dışına taşar.
-    vertical_offset: 0.0 → şapka alt kenarı alın ortasında,
-                     1.0 → şapka tamamen alnın üstünde.
-                     Varsayılan 0.85 (şapka hafifçe alına iner).
-
-    Returns
-    -------
-    BGR görüntü — şapka yerleştirilmiş.
+    hat_image      : Şapka görüntüsü (BGRA önerilir).
+    hat_name       : HAT_CONFIG içindeki anahtar kelime (hat1.png vb.). 
+                     Eğer bulunursa width_scale ve vertical_offset değerlerini ezer.
+    width_scale    : Şapka genişlik çarpanı.
+    vertical_offset: Şapkanın dikey pozisyon kaydırması.
     """
+    
+    # 1. Giriş Kontrolleri
     if image is None:
         raise ValueError("image cannot be None.")
-    if not landmarks:
-        raise ValueError("landmarks is empty — run detect_landmarks() first.")
+    if not landmarks or len(landmarks) < 468:
+        raise ValueError("landmarks is empty or insufficient — run detect_landmarks() first.")
     if hat_image is None:
         raise ValueError("hat_image cannot be None.")
 
+    # 2. Konfigürasyon Ayarları (Eğer hat_name config'de varsa oradaki değerleri kullan)
+    if hat_name in HAT_CONFIG:
+        width_scale = HAT_CONFIG[hat_name]["width_scale"]
+        vertical_offset = HAT_CONFIG[hat_name]["vertical_offset"]
+
     pts = _get_hat_points(landmarks)
 
-    # ── 1. Şapka genişliği: şakaklar arası mesafe ──────────────────────────
+    # 3. Şapka genişliği: şakaklar arası mesafe
     left_temple  = np.array(pts["temple_left"])
     right_temple = np.array(pts["temple_right"])
     face_width   = int(np.linalg.norm(right_temple - left_temple))
-    target_w     = int(face_width * width_scale)
+    target_w     = max(int(face_width * width_scale), 1)
 
-    # En az 1 piksel
-    target_w = max(target_w, 1)
-
-    # ── 2. Şapka yüksekliği: oranı koru ───────────────────────────────────
+    # 4. Şapka yüksekliği: oranı koru
     hat_h_orig, hat_w_orig = hat_image.shape[:2]
     aspect      = hat_h_orig / max(hat_w_orig, 1)
-    target_h    = int(target_w * aspect)
-    target_h    = max(target_h, 1)
+    target_h    = max(int(target_w * aspect), 1)
 
-    # ── 3. Ölçekle ─────────────────────────────────────────────────────────
+    # 5. Ölçekle
     hat_resized = cv2.resize(hat_image, (target_w, target_h),
                              interpolation=cv2.INTER_AREA)
 
-    # ── 4. Baş açısına göre döndür ─────────────────────────────────────────
+    # 6. Baş açısına göre döndür
     angle = _compute_head_angle(pts)
     hat_rotated = _rotate_image(hat_resized, angle)
 
-    # ── 5. Yerleşim koordinatları ──────────────────────────────────────────
+    # 7. Yerleşim koordinatları
     # Yatay: şakak merkezine hizala
     center_x = int((left_temple[0] + right_temple[0]) / 2)
     hat_place_x = center_x - hat_rotated.shape[1] // 2
 
-    # Dikey: alın noktasından yukarı çık
+    # Dikey: alın noktasından (landmark 10) yukarı çık
     forehead_y = pts["forehead_center"][1]
+    # Not: rotated image boyutu değiştiği için yüksekliği yeniden alıyoruz
     hat_place_y = int(forehead_y - hat_rotated.shape[0] * vertical_offset)
 
-    # ── 6. Bindirme ────────────────────────────────────────────────────────
+    # 8. Bindirme (Overlay)
     result = _overlay_png(image, hat_rotated, hat_place_x, hat_place_y)
     return result
-
 
 # ─────────────────────────────────────────────
 # Opsiyonel: landmark noktalarını debug görsel

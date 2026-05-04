@@ -14,7 +14,7 @@ from backend.modules.makeup.makeup import apply_makeup_pipeline
 from backend.modules.aging.aging import apply_aging_effect
 from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay
 from backend.modules.hat_glasses.glasses import place_glasses
-from backend.modules.hat_glasses.hat import place_hat
+from backend.modules.hair.hat import place_hat
 
 pose_model = YOLO("yolov8n-pose.pt")
 transform_bp = Blueprint("transform", __name__)
@@ -334,18 +334,29 @@ def transform_image():
                 hat_name = params.get("hat", None)
 
                 glasses_path = os.path.join('static', 'accessories', 'glasses', glasses_name) if glasses_name else None
+                hat_path = os.path.join('static', 'accessories', 'hats', hat_name) if hat_name else None
 
                 landmark_result = process_landmark_pipeline(output_image)
                 if landmark_result.get("success"):
                     if glasses_path:
                         output_image = place_glasses(
+                        output_image,
+                        landmark_result["landmarks"],
+                        glasses_path
+            )
+                if hat_path:
+                    print(f"HAT PATH: {hat_path}")
+                    hat_img = cv2.imread(hat_path, cv2.IMREAD_UNCHANGED)
+                    print(f"hat_img: {hat_img is not None}")
+                    if hat_img is not None:
+                        output_image = place_hat(
                             output_image,
                             landmark_result["landmarks"],
-                            glasses_path
+                            hat_img,
+                            hat_name=hat_name
                         )
-                    results_meta.append("accessories")
-                    print(f"APPLIED: accessories")
-                        
+                results_meta.append("accessories")
+                print(f"APPLIED: accessories")
 
             elif t_type == "landmarks":
                 landmark_result = process_landmark_pipeline(output_image)
