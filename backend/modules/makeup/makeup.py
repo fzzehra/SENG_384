@@ -1,8 +1,5 @@
 import cv2
 import numpy as np
-
-
-<<<<<<< Updated upstream
 def _create_soft_mask(shape, points, blur_ksize=15):
     mask = np.zeros(shape[:2], dtype=np.uint8)
 
@@ -130,7 +127,6 @@ def apply_makeup_pipeline(image, landmarks, makeup_type, intensity=0.5):
     elif makeup_type == "eyeshadow":
         print("MAKEUP: applying eyeshadow")
         return apply_eyeshadow(image, landmarks, color=(180, 0, 180), intensity=intensity)
-=======
 def hex_to_bgr(hex_color: str):
     hex_color = hex_color.lstrip("#")
     r = int(hex_color[0:2], 16)
@@ -359,6 +355,5 @@ def apply_makeup_pipeline(image, landmarks, makeup_type, color_hex="#d96b86", in
         return apply_blush(image, landmarks, color_hex=color_hex, intensity=intensity)
     elif makeup_type == "eyeshadow":
         return apply_eyeshadow(image, landmarks, color_hex=color_hex, intensity=intensity)
->>>>>>> Stashed changes
 
     return image

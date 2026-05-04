@@ -146,57 +146,8 @@
     }
 
     @keyframes fadeUp {
-<<<<<<< Updated upstream
       from { opacity: 0; transform: translateY(24px); }
       to { opacity: 1; transform: translateY(0); }
-=======
-      from {
-        opacity: 0;
-        transform: translateY(24px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @media (max-width: 800px) {
-      .main-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .card {
-        padding: 30px 24px;
-      }
-
-      .page-header h1 {
-        font-size: 34px;
-      }
-      .makeup-controls {
-    margin-top: 20px;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.makeup-controls label {
-    font-size: 14px;
-    color: #4646e5;
-    font-weight: 600;
-}
-
-.makeup-controls select,
-.makeup-controls input[type="color"] {
-    height: 34px;
-}
-
-.makeup-controls input[type="range"] {
-    width: 280px;
-}
->>>>>>> Stashed changes
     }
   </style>
 </head>
@@ -209,29 +160,26 @@
     <div class="badge">Adjustment Studio</div>
     <h1>Refine Results</h1>
   </div>
-<div class="makeup-controls">
-    <label for="makeupType">Makeup Type</label>
-    <select id="makeupType">
-        <option value="">Select makeup</option>
-        <option value="lip_color">Lip Color</option>
-        <option value="blush">Blush</option>
-        <option value="eyeshadow">Eyeshadow</option>
-        <option value="eye_color">Eye Color</option>
-    </select>
 
-<<<<<<< Updated upstream
+  <div class="makeup-controls">
+  <label for="makeupType">Makeup Type</label>
+  <select id="makeupType" name="makeupType">
+    <option value="">Select makeup</option>
+    <option value="lip_color">Lip Color</option>
+    <option value="blush">Blush</option>
+    <option value="eyeshadow">Eyeshadow</option>
+    <option value="eye_color">Eye Color</option>
+  </select>
+
+  <label for="makeupColor">Choose Color</label>
+  <input type="color" id="makeupColor" name="makeupColor" value="#d96b86">
+
+  <label for="makeupIntensity">Intensity</label>
+  <input type="range" id="makeupIntensity" name="makeupIntensity" min="0.1" max="1.0" step="0.1" value="0.5">
+</div>
+
   <div class="card" style="max-width: 800px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
     <!-- Sol: Önizleme -->
-=======
-    <label for="makeupColor">Choose Color</label>
-    <input type="color" id="makeupColor" value="#d96b86">
-
-    <label for="makeupIntensity">Intensity</label>
-    <input type="range" id="makeupIntensity" min="0.1" max="1.0" step="0.1" value="0.5">
-</div>
-  <div class="card main-grid">
-
->>>>>>> Stashed changes
     <div class="preview-side">
       <div class="badge">Live Studio</div>
       <div class="preview-container" style="position: sticky; top: 0; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(70, 70, 229, 0.1); background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05);align-self: start;">
@@ -364,12 +312,7 @@
 </div>
     </div>
   </div>
-<script>
-const sliders = document.querySelectorAll('.refine-slider');
-const livePreview = document.getElementById('livePreview');
-const resetBtn = document.getElementById('resetBtn');
 
-<<<<<<< Updated upstream
   <script>
     const sliders = document.querySelectorAll('.refine-slider');
     const livePreview = document.getElementById('livePreview');
@@ -377,6 +320,9 @@ const resetBtn = document.getElementById('resetBtn');
     let debounceTimer;
     let selectedOverlay = null;
     let currentImagePath = 'static/uploads/original.jpg';
+    const makeupType = document.getElementById("makeupType");
+    const makeupColor = document.getElementById("makeupColor");
+    const makeupIntensity = document.getElementById("makeupIntensity");
 
     const params = new URLSearchParams(window.location.search);
     const imgFromURL = params.get("img");
@@ -433,6 +379,14 @@ const resetBtn = document.getElementById('resetBtn');
     function buildTransforms() {
   const transforms = [];
 
+  if (makeupType && makeupType.value) {
+  transforms.push({
+    type: makeupType.value,
+    color: makeupColor ? makeupColor.value : "#d96b86",
+    intensity: makeupIntensity ? parseFloat(makeupIntensity.value) : 0.5
+  });
+}
+
   sliders.forEach(slider => {
     const val = parseInt(slider.value);
     
@@ -461,86 +415,28 @@ const resetBtn = document.getElementById('resetBtn');
 
       if (transforms.length === 0) {
         livePreview.src = '/' + currentImagePath + '?v=' + new Date().getTime();
-=======
-const makeupType = document.getElementById("makeupType");
-const makeupColor = document.getElementById("makeupColor");
-const makeupIntensity = document.getElementById("makeupIntensity");
-
-let debounceTimer;
-
-async function applyAllTransforms() {
-    const transforms = [];
-
-    if (makeupType && makeupType.value) {
-        transforms.push({
-            type: makeupType.value,
-            color: makeupColor.value,
-            intensity: parseFloat(makeupIntensity.value)
-        });
-    }
-
-    sliders.forEach(slider => {
-        const value = parseInt(slider.value);
-
-        if (value > 0) {
-            transforms.push({
-                type: slider.dataset.type,
-                intensity: value / 100
-            });
-        }
-    });
-
-    if (transforms.length === 0) {
-        if (livePreview) {
-            livePreview.src = '/static/uploads/original.jpg?v=' + new Date().getTime();
-        }
->>>>>>> Stashed changes
         return;
-    }
+      }
 
-    try {
+      try {
         const response = await fetch('/transform/', {
-<<<<<<< Updated upstream
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             image_path: currentImagePath,
             transforms: transforms
           })
-=======
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                image_path: 'static/uploads/original.jpg',
-                transforms: transforms
-            })
->>>>>>> Stashed changes
         });
 
         const data = await response.json();
         if (data.success) {
-<<<<<<< Updated upstream
           livePreview.src = '/static/uploads/transformed.jpg?v=' + new Date().getTime();
         }
       } catch (err) {
         console.error('Transform error:', err);
       }
-=======
-            if (livePreview) {
-                livePreview.src = '/static/uploads/transformed.jpg?v=' + new Date().getTime();
-            }
-        } else {
-            console.error(data.error);
-        }
-    } catch (error) {
-        console.error(error);
->>>>>>> Stashed changes
     }
-}
 
-<<<<<<< Updated upstream
    sliders.forEach(slider => {
   slider.addEventListener('input', (e) => {
     let val = parseInt(e.target.value);
@@ -561,7 +457,19 @@ async function applyAllTransforms() {
     debounceTimer = setTimeout(applyAllTransforms, 400);
   });
 });
+if (makeupType) {
+  makeupType.addEventListener("change", applyAllTransforms);
+}
 
+if (makeupColor) {
+  makeupColor.addEventListener("input", applyAllTransforms);
+  makeupColor.addEventListener("change", applyAllTransforms);
+}
+
+if (makeupIntensity) {
+  makeupIntensity.addEventListener("input", applyAllTransforms);
+  makeupIntensity.addEventListener("change", applyAllTransforms);
+}
     finishBtn.addEventListener('click', async () => {
       finishBtn.disabled = true;
       finishBtn.textContent = 'Saving...';
@@ -583,48 +491,8 @@ async function applyAllTransforms() {
       }
 
       window.location.href = '{{ url_for("preview_page") }}';
-=======
-sliders.forEach(slider => {
-    slider.addEventListener('input', () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(applyAllTransforms, 200);
     });
-});
-
-if (resetBtn) {
-    resetBtn.addEventListener('click', function () {
-        sliders.forEach(slider => {
-            slider.value = 0;
-
-            const type = slider.dataset.type;
-            const valueText = document.getElementById(`${type}-val`);
-
-            if (valueText) {
-                valueText.textContent = '0%';
-            }
-        });
-
-        if (livePreview) {
-            livePreview.src = '/static/uploads/original.jpg?v=' + new Date().getTime();
-        }
->>>>>>> Stashed changes
-    });
-}
-
-if (makeupType) {
-    makeupType.addEventListener("change", applyAllTransforms);
-}
-
-if (makeupColor) {
-    makeupColor.addEventListener("input", applyAllTransforms);
-    makeupColor.addEventListener("change", applyAllTransforms);
-}
-
-if (makeupIntensity) {
-    makeupIntensity.addEventListener("input", applyAllTransforms);
-    makeupIntensity.addEventListener("change", applyAllTransforms);
-}
-</script>    
+  </script>
 
 </body>
 </html>

@@ -18,8 +18,6 @@ print("LOADED TRANSFORM FILE:", __file__)
 TRANSFORM_MAP = {
     "smile": "smile",
     "eyebrow": "eyebrow_raise",
-<<<<<<< Updated upstream
-=======
     "lip_widening": "lip_widen",
     "face_widening": "face_widening",
 
@@ -29,7 +27,6 @@ TRANSFORM_MAP = {
 
     # Eski isimlerle uyumluluk için bırakıldı.
     "lip_widen": "lip_widen",
->>>>>>> Stashed changes
     "slim_face": "face_slimming",
     "face_slimming": "face_slimming",
     "lip_widen": "lip_widen",
@@ -96,7 +93,6 @@ def transform_image():
     try:
         for transform in transforms:
             t_type = transform.get("type")
-<<<<<<< Updated upstream
             t_intensity = float(transform.get("intensity", 0.0))
             
             # 1. Yoğunluk Hesabı
@@ -106,14 +102,12 @@ def transform_image():
             
             # Sınırları belirle
             actual_intensity = max(-1.0, min(1.0, actual_intensity))
-=======
             t_intensity = float(transform.get("intensity", 0.5))
             color = transform.get("color", "#d96b86")
             t_intensity = max(0.0, min(1.0, t_intensity))
 
             print("TRANSFORM TYPE:", t_type)
             print("INTENSITY:", t_intensity)
->>>>>>> Stashed changes
 
             if t_type in TRANSFORM_MAP and t_type not in {"lip_color", "blush", "eyeshadow"}:
                 landmark_result = process_landmark_pipeline(output_image)
@@ -211,7 +205,6 @@ def transform_image():
                 else:
                     print("Landmark detection failed for landmarks display.")
 
-<<<<<<< Updated upstream
             elif t_type == "hair_color":
                 params = transform.get("params", {})
                 color_hex = params.get("color", "#3b1f0a")
@@ -242,7 +235,6 @@ def transform_image():
                     )
                     results_meta.append("hair_overlay")
                     print("APPLIED: hair_overlay")
-=======
             elif t_type == "lip_color":
                 landmark_result = process_landmark_pipeline(output_image)
 
@@ -298,7 +290,6 @@ def transform_image():
                     results_meta.append("eye_color")
                 else:
                     print("Landmark detection failed for eye_color.")
->>>>>>> Stashed changes
 
             else:
                 print("UNKNOWN TRANSFORM TYPE:", t_type)
