@@ -13,8 +13,8 @@ from backend.modules.warping import apply_expression
 from backend.modules.makeup.makeup import apply_makeup_pipeline
 from backend.modules.aging.aging import apply_aging_effect
 from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay
-
-from backend.modules.hat_glasses.accessory_applier import apply_accessories
+from backend.modules.hat_glasses.glasses import place_glasses
+from backend.modules.hat_glasses.hat import place_hat
 
 pose_model = YOLO("yolov8n-pose.pt")
 transform_bp = Blueprint("transform", __name__)
@@ -330,37 +330,22 @@ def transform_image():
             
             elif t_type == "accessories":
                 params = transform.get("params", {})
-                hat_name = params.get("hat", None)
                 glasses_name = params.get("glasses", None)
+                hat_name = params.get("hat", None)
 
-                print("GLASSES NAME:", glasses_name)
-                print("HAT NAME:", hat_name)
+                glasses_path = os.path.join('static', 'accessories', 'glasses', glasses_name) if glasses_name else None
 
-                hat_path = (
-                    os.path.join(os.getcwd(), "static", "accessories", "hats", hat_name)
-                    if hat_name else None
-                )
-
-                glasses_path = (
-                    os.path.join(os.getcwd(), "static", "accessories", "glasses", glasses_name)
-                    if glasses_name else None
-                )
-
-                print("HAT PATH:", hat_path)
-                print("GLASSES PATH:", glasses_path)
                 landmark_result = process_landmark_pipeline(output_image)
                 if landmark_result.get("success"):
-                    output_image = apply_accessories(
-                        image=output_image,
-                        landmarks=landmark_result["landmarks"],
-                        hat_path=hat_path,
-                        glasses_path=glasses_path
-                    )
+                    if glasses_path:
+                        output_image = place_glasses(
+                            output_image,
+                            landmark_result["landmarks"],
+                            glasses_path
+                        )
                     results_meta.append("accessories")
-                    print(f"APPLIED: accessories (Hat: {hat_name}, Glasses: {glasses_name})")
-                else:
-                    print("Landmark detection failed for accessories.")
-            
+                    print(f"APPLIED: accessories")
+                        
 
             elif t_type == "landmarks":
                 landmark_result = process_landmark_pipeline(output_image)
