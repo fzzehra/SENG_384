@@ -208,6 +208,7 @@ def apply_jewelry_with_yolo(image, t_type, item_path, intensity=1.0):
         output = overlay_rgba(output, item_path, left_earlobe, earring_width, opacity=intensity)
         output = overlay_rgba(output, item_path, right_earlobe, earring_width, opacity=intensity)
 
+    
     elif t_type == "necklace":
         neck_x = (left_shoulder[0] + right_shoulder[0]) / 2.0
         neck_y = (left_shoulder[1] + right_shoulder[1]) / 2.0
@@ -387,7 +388,28 @@ def transform_image():
                     )
                     results_meta.append("hair_color")
                     print("APPLIED: hair_color")
+            elif t_type == "aging":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    # aging.py içindeki fonksiyonu çağırıyoruz
+                    output_image = apply_aging_effect(
+                        image=output_image,
+                        intensity=t_intensity,
+                        landmarks=landmark_result["landmarks"]
+                    )
+                    results_meta.append("aging")
+                    print(f"APPLIED: aging (Intensity: {t_intensity})")
+                else:
+                    print("Landmark detection failed for aging.")
 
+            elif t_type == "deaging":
+                # Kendi dosyan içindeki basit deaging fonksiyonunu çağırır
+                output_image = apply_deaging_effect(
+                    image=output_image, 
+                    intensity=t_intensity
+                )
+                results_meta.append("deaging")
+                print(f"APPLIED: deaging (Intensity: {t_intensity})")
             elif t_type == "hair_overlay":
                 params = transform.get("params", {})
                 overlay_name = params.get("overlay", "")
