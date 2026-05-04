@@ -398,8 +398,7 @@
 
 
       <div class="transform-option" style="margin-bottom: 30px;">
-    <!-- Radio yerine Checkbox yaptık, böylece kullanıcı tıklayıp seçimi kaldırabilir -->
-    <input type="radio" name="operation" id="opt7" value="Landmarks" onchange="updateLivePreview()">
+    <input type="radio" name="operation" id="opt7" value="Landmarks" onclick="toggleRadio(this)" onchange="updateLivePreview()">
     <label for="opt7"><span class="dot"></span>Show Landmarks</label>
 </div>
 
@@ -433,7 +432,16 @@
       alert("Camera access denied or not available: " + err);
     }
   }
-
+  function toggleRadio(radio) {
+      if (radio.wasChecked) {
+          radio.checked = false;
+          radio.wasChecked = false;
+          updateLivePreview();
+      } else {
+          document.querySelectorAll(`input[name="${radio.name}"]`).forEach(el => el.wasChecked = false);
+          radio.wasChecked = true;
+      }
+  }
   function takeSnapshot() {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
