@@ -1,120 +1,260 @@
+from typing import List, Tuple
 import cv2
 import numpy as np
-from typing import List, Tuple
 
-def overlay_transparent(background, overlay, x, y, size=None):
-    bg_img = background.copy()
+LandmarkList = List[Tuple[int, int]]
 
-    if overlay is None or overlay.shape[2] < 4:
-        return bg_img
 
-    if size:
-        overlay = cv2.resize(overlay, size, interpolation=cv2.INTER_AREA)
+# ─────────────────────────────────────────────
+# 1. SAÇ MASKESI — landmark + renk hibrit
+# ─────────────────────────────────────────────
+def _build_hair_mask(image: np.ndarray, landmarks, intensity: float) -> np.ndarray:
+    h, w = image.shape[:2]
+    hair_region = np.zeros((h, w), dtype=np.uint8)
+    face_mask   = np.zeros((h, w), dtype=np.uint8)
 
-    h, w = overlay.shape[:2]
-    bg_h, bg_w = bg_img.shape[:2]
+    if landmarks is not None and len(landmarks) >= 100:
+        top    = landmarks[10]
+        bottom = landmarks[152]
+        left   = landmarks[234]
+        right  = landmarks[454]
 
-    x1 = max(0, x)
-    y1 = max(0, y)
-    x2 = min(bg_w, x + w)
-    y2 = min(bg_h, y + h)
+        # Yüz maskesi (saçtan çıkaracağız)
+        face_cx = (left[0] + right[0]) // 2
+        face_cy = (top[1] + bottom[1]) // 2
+        face_ax = int(abs(right[0] - left[0]) * 0.56)
+        face_ay = int(abs(bottom[1] - top[1]) * 0.60)
+        cv2.ellipse(face_mask, (face_cx, face_cy), (face_ax, face_ay),
+                    0, 0, 360, 255, -1)
 
-    if x1 >= x2 or y1 >= y2:
-        return bg_img
+        # Saç bölgesi: yüzün üstü + yanlar (daha dar tutuyoruz)
+        hx1 = max(0, int(left[0]  - w * 0.22))
+        hx2 = min(w, int(right[0] + w * 0.22))
+        hy1 = max(0, int(top[1]   - h * 0.30))
+        hy2 = min(h, int(top[1]   + h * 0.15))   # sadece üst saç bandı
 
-    ox1 = x1 - x
-    oy1 = y1 - y
-    ox2 = ox1 + (x2 - x1)
-    oy2 = oy1 + (y2 - y1)
+        cv2.ellipse(
+            hair_region,
+            ((hx1 + hx2) // 2, (hy1 + hy2) // 2),
+            ((hx2 - hx1) // 2, (hy2 - hy1) // 2),
+            0, 0, 360, 255, -1
+        )
 
-    overlay_crop = overlay[oy1:oy2, ox1:ox2]
+        # Yan saç bantları (kulak üstü)
+        for side_x, side_cx in [(left[0], int(left[0] - w * 0.08)),
+                                  (right[0], int(right[0] + w * 0.08))]:
+            cv2.ellipse(
+                hair_region,
+                (side_cx, int((top[1] + bottom[1]) * 0.45)),
+                (int(w * 0.10), int(h * 0.20)),
+                0, 0, 360, 255, -1
+            )
+    else:
+        cv2.rectangle(hair_region,
+                      (int(w * 0.1), 0),
+                      (int(w * 0.9), int(h * 0.45)), 255, -1)
 
-    overlay_rgb = overlay_crop[:, :, :3].astype(float)
-    alpha = overlay_crop[:, :, 3].astype(float) / 255.0
-    alpha = alpha[:, :, None]
+    # Yüzü saç bölgesinden çıkar
+    face_blur = cv2.GaussianBlur(face_mask, (31, 31), 0)
+    hair_region[face_blur > 60] = 0
 
-    bg_region = bg_img[y1:y2, x1:x2].astype(float)
+    # ── Renk maskesi (karışık saç için geniş aralık) ──
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    hue, sat, val = cv2.split(hsv)
 
-    blended = (1 - alpha) * bg_region + alpha * overlay_rgb
-    bg_img[y1:y2, x1:x2] = blended.astype(np.uint8)
+    # Koyu/siyah saç
+    dark  = cv2.inRange(val, 0, 110)
+    dark  = cv2.bitwise_and(dark, cv2.inRange(sat, 15, 255))
 
-    return bg_img
+    # Kahverengi saç
+    brown = cv2.inRange(hue, 5, 30)
+    brown = cv2.bitwise_and(brown, cv2.inRange(sat, 35, 255))
+    brown = cv2.bitwise_and(brown, cv2.inRange(val, 30, 210))
 
-def get_content_bbox(img_rgba):
-    """Şeffaf olmayan piksellerin bounding box'ını döner."""
-    alpha = img_rgba[:, :, 3]
-    cols = np.any(alpha > 10, axis=0)
-    rows = np.any(alpha > 10, axis=1)
-    if not cols.any() or not rows.any():
-        return 0, 0, img_rgba.shape[1], img_rgba.shape[0]
-    x1, x2 = np.where(cols)[0][[0, -1]]
-    y1, y2 = np.where(rows)[0][[0, -1]]
-    return int(x1), int(y1), int(x2 - x1), int(y2 - y1)
+    # Koyu sarı / kumral
+    blonde = cv2.inRange(hue, 15, 40)
+    blonde = cv2.bitwise_and(blonde, cv2.inRange(sat, 40, 200))
+    blonde = cv2.bitwise_and(blonde, cv2.inRange(val, 60, 220))
 
-def apply_accessories(image, landmarks, hat_path=None, glasses_path=None):
-    """
-    Landmark noktalarına göre şapka ve gözlük ekler.
-    """
+    # Mavi/gri arka planı çıkar
+    bg_blue = cv2.inRange(hue, 85, 140)
+    bg_gray = cv2.inRange(sat, 0, 20)
+
+    color_mask = cv2.bitwise_or(dark, brown)
+    color_mask = cv2.bitwise_or(color_mask, blonde)
+    color_mask[bg_blue > 0] = 0
+    color_mask[bg_gray > 0] = 0
+
+    # Renk maskesi + bölge maskesi birleştir
+    hair_mask = cv2.bitwise_and(color_mask, hair_region)
+
+    # Temizle
+    k = np.ones((7, 7), np.uint8)
+    hair_mask = cv2.morphologyEx(hair_mask, cv2.MORPH_OPEN,  k)
+    hair_mask = cv2.morphologyEx(hair_mask, cv2.MORPH_CLOSE, k)
+    hair_mask = cv2.GaussianBlur(hair_mask, (15, 15), 0)
+
+    # Eğer renk maskesi çok az yakaladıysa sadece bölgeyi kullan (fallback)
+    if cv2.countNonZero(hair_mask) < (image.shape[0] * image.shape[1] * 0.005):
+        hair_mask = cv2.GaussianBlur(hair_region, (15, 15), 0)
+
+    return hair_mask
+
+
+# ─────────────────────────────────────────────
+# 2. SAÇ AĞARTMA
+# ─────────────────────────────────────────────
+def _apply_hair_graying(image: np.ndarray, hair_mask: np.ndarray,
+                         intensity: float) -> np.ndarray:
+    mask_f = np.clip(hair_mask.astype(np.float32) / 255.0, 0.0, 0.75)
+    mask_f = np.repeat(mask_f[:, :, None], 3, axis=2)
+
+    gray     = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray_bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+
+    # Saf beyaz yerine gri-beyaz karışımı (daha doğal)
+    white = np.full_like(image, 210)
+    white_hair = cv2.addWeighted(gray_bgr, 0.6, white, 0.4, 0)
+
+    strength = np.clip(intensity * 0.95, 0.0, 0.95)
+    result = image * (1 - mask_f * strength) + white_hair * (mask_f * strength)
+    return np.clip(result, 0, 255).astype(np.uint8)
+
+
+# ─────────────────────────────────────────────
+# 3. CİLT YAŞLANDIRMA
+# ─────────────────────────────────────────────
+def _build_face_mask(image: np.ndarray, landmarks) -> np.ndarray:
+    h, w = image.shape[:2]
+    face_mask = np.zeros((h, w), dtype=np.uint8)
+
+    if landmarks is not None and len(landmarks) >= 100:
+        top    = landmarks[10]
+        bottom = landmarks[152]
+        left   = landmarks[234]
+        right  = landmarks[454]
+
+        cx = (left[0] + right[0]) // 2
+        cy = (top[1] + bottom[1]) // 2
+        ax = int(abs(right[0] - left[0]) * 0.52)
+        ay = int(abs(bottom[1] - top[1]) * 0.58)
+        cv2.ellipse(face_mask, (cx, cy), (ax, ay), 0, 0, 360, 255, -1)
+    else:
+        cx, cy = w // 2, int(h * 0.42)
+        cv2.ellipse(face_mask, (cx, cy), (int(w * 0.35), int(h * 0.42)),
+                    0, 0, 360, 255, -1)
+
+    return cv2.GaussianBlur(face_mask, (21, 21), 0)
+
+
+def _apply_skin_aging(image: np.ndarray, face_mask: np.ndarray,
+                       intensity: float) -> np.ndarray:
+    h, w = image.shape[:2]
+    output = image.copy().astype(np.float32)
+    mask_f = face_mask.astype(np.float32) / 255.0
+
+    # ── a) Cilt tonu: sarı/mat ──
+    tone_shift = np.zeros_like(output)
+    tone_shift[:, :, 0] -= 4   * intensity   # B azalt
+    tone_shift[:, :, 1] -= 3   * intensity   # G hafif azalt
+    tone_shift[:, :, 2] += 8   * intensity   # R artır (sarımsı)
+    output += tone_shift * mask_f[:, :, None]
+
+    # ── b) Kontrast düşür (mat görünüm) ──
+    output = output * (1 - 0.08 * intensity * mask_f[:, :, None]) + \
+             128 * (0.08 * intensity * mask_f[:, :, None])
+
+    # ── c) Kırışıklık dokusu (noise tabanlı) ──
+    wrinkle_strength = intensity * 18
+    noise = np.random.randn(h, w).astype(np.float32) * wrinkle_strength
+
+    # Sadece belirli frekanslarda (ince çizgiler gibi)
+    noise_blur   = cv2.GaussianBlur(noise, (0, 0), 1.2)
+    noise_detail = noise - noise_blur   # yüksek frekans = ince çizgi
+    noise_detail = cv2.GaussianBlur(noise_detail, (3, 3), 0)
+
+    # Göz, alın, ağız çevresi ağırlıklı
+    wrinkle_map = np.zeros((h, w), dtype=np.float32)
+    if landmarks is not None:
+        pass  # landmark bazlı bölge sonraki adımda
+
+    for c in range(3):
+        output[:, :, c] += noise_detail * mask_f * 0.6
+
+    # ── d) Hafif bulanıklık (cilt elastikiyeti kaybı) ──
+    blurred = cv2.GaussianBlur(output.astype(np.uint8), (0, 0), 1.5)
+    blend   = intensity * 0.25
+    output  = output * (1 - blend) + blurred.astype(np.float32) * blend
+
+    return np.clip(output, 0, 255).astype(np.uint8)
+
+
+def _apply_wrinkles_landmark(image: np.ndarray, landmarks,
+                              intensity: float) -> np.ndarray:
+    """Landmark bazlı kırışıklık bölgeleri: alın, göz kenarı, ağız çevresi."""
     if landmarks is None or len(landmarks) < 100:
         return image
 
-    output = image.copy()
     h, w = image.shape[:2]
+    wrinkle_mask = np.zeros((h, w), dtype=np.float32)
 
-    # --- GÖZLÜK YERLEŞİMİ ---
-    if glasses_path:
-        glasses_img = cv2.imread(glasses_path, cv2.IMREAD_UNCHANGED)
-        if glasses_img is not None:
-            # Göz landmarkları: 33 (Sol dış), 263 (Sağ dış)
-            left_eye = landmarks[33]
-            right_eye = landmarks[263]
-            
-            # Gözlük genişliği iki göz arası mesafeye göre (biraz pay ekleyerek)
-            eye_width = int(abs(right_eye[0] - left_eye[0]) * 1.55)
-            # Gözlük yüksekliği (oranı koruyarak)
-            aspect_ratio = glasses_img.shape[1] / glasses_img.shape[0]
-            eye_height = int(eye_width / aspect_ratio)
-            
-            # Yerleşim noktası (Gözlerin ortası)
-            center_x = (left_eye[0] + right_eye[0]) // 2
-            center_y = (left_eye[1] + right_eye[1]) // 2
-            
-            top_left_x = center_x - (eye_width // 2)
-            top_left_y = center_y - (eye_height // 2)
-            
-            output = overlay_transparent(output, glasses_img, top_left_x, top_left_y, (eye_width, eye_height))
+    def add_region(cx, cy, rx, ry, weight=1.0):
+        region = np.zeros((h, w), dtype=np.uint8)
+        cv2.ellipse(region, (int(cx), int(cy)), (int(rx), int(ry)),
+                    0, 0, 360, 255, -1)
+        region_f = cv2.GaussianBlur(region, (0, 0), rx // 3 + 1)
+        wrinkle_mask[:] += region_f.astype(np.float32) / 255.0 * weight
 
-    # --- ŞAPKA YERLEŞİMİ ---
-    # --- ŞAPKA YERLEŞİMİ ---
-    if hat_path:
-        hat_img = cv2.imread(hat_path, cv2.IMREAD_UNCHANGED)
-        if hat_img is not None:
-            top_head = landmarks[10]
-            left_face = landmarks[234]
-            right_face = landmarks[454]
+    # Alın
+    top = landmarks[10]
+    add_region(top[0], top[1] + h * 0.04, w * 0.18, h * 0.04, 0.8)
 
-            face_width = abs(right_face[0] - left_face[0])
+    # Sol göz kenarı (kaz ayağı)
+    le = landmarks[33]
+    add_region(le[0] - w * 0.03, le[1], w * 0.04, h * 0.025, 1.0)
 
-            # Şeffaf alanı çıkar, gerçek içerik genişliğini bul
-            cx, cy, cw, ch = get_content_bbox(hat_img)
-            content_ratio = hat_img.shape[1] / max(cw, 1)  # canvas/içerik oranı
+    # Sağ göz kenarı
+    re = landmarks[263]
+    add_region(re[0] + w * 0.03, re[1], w * 0.04, h * 0.025, 1.0)
 
-            # Hedef genişlik: yüz genişliğine göre
-            hat_width = int(face_width * 1.6)
-            # Canvas boyutunu içerik oranına göre ölçekle
-            hat_width_canvas = int(hat_width * content_ratio)
+    # Ağız kenarları (nasolabial)
+    lm = landmarks[61]
+    rm = landmarks[291]
+    add_region(lm[0] - w * 0.02, lm[1] + h * 0.02, w * 0.03, h * 0.03, 0.7)
+    add_region(rm[0] + w * 0.02, rm[1] + h * 0.02, w * 0.03, h * 0.03, 0.7)
 
-            aspect_ratio = hat_img.shape[1] / max(hat_img.shape[0], 1)
-            hat_height_canvas = int(hat_width_canvas / aspect_ratio)
+    wrinkle_mask = np.clip(wrinkle_mask, 0, 1)
 
-            center_x = (left_face[0] + right_face[0]) // 2
-            hat_x = center_x - (hat_width_canvas // 2)
+    # Kırışıklık dokusu
+    noise = np.random.randn(h, w).astype(np.float32)
+    noise = cv2.GaussianBlur(noise, (0, 0), 0.8)
 
-            # İçerik alanının alt kısmını alın üstüne hizala
-            content_bottom_ratio = (cy + ch) / max(hat_img.shape[0], 1)
-            hat_y = int(top_head[1] - hat_height_canvas * content_bottom_ratio)
-            hat_y -= int(h * 0.02)
+    output = image.astype(np.float32)
+    strength = intensity * 14
+    for c in range(3):
+        output[:, :, c] += noise * wrinkle_mask * strength * (0.6 if c < 2 else 0.3)
 
-            output = overlay_transparent(output, hat_img, hat_x, hat_y, 
-                                        (hat_width_canvas, hat_height_canvas))
+    return np.clip(output, 0, 255).astype(np.uint8)
+
+
+# ─────────────────────────────────────────────
+# 4. ANA FONKSİYON
+# ─────────────────────────────────────────────
+def apply_aging_effect(image: np.ndarray,
+                        intensity: float = 0.5,
+                        landmarks=None) -> np.ndarray:
+    intensity = float(np.clip(intensity, 0.0, 1.0))
+    output = image.copy()
+
+    # Saç ağartma
+    hair_mask = _build_hair_mask(output, landmarks, intensity)
+    output    = _apply_hair_graying(output, hair_mask, intensity)
+
+    # Cilt yaşlandırma
+    face_mask = _build_face_mask(output, landmarks)
+    output    = _apply_skin_aging(output, face_mask, intensity)
+
+    # Landmark bazlı kırışıklıklar
+    output = _apply_wrinkles_landmark(output, landmarks, intensity)
+
     return output
