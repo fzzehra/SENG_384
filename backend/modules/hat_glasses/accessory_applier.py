@@ -258,3 +258,111 @@ def apply_aging_effect(image: np.ndarray,
     output = _apply_wrinkles_landmark(output, landmarks, intensity)
 
     return output
+def _overlay_png(base_image, overlay_image, x, y, target_w):
+    if overlay_image is None or target_w <= 0:
+        return base_image
+
+    h0, w0 = overlay_image.shape[:2]
+    if w0 == 0 or h0 == 0:
+        return base_image
+
+    scale = target_w / w0
+    target_h = int(h0 * scale)
+
+    if target_h <= 0:
+        return base_image
+
+    overlay_resized = cv2.resize(
+        overlay_image,
+        (int(target_w), int(target_h)),
+        interpolation=cv2.INTER_AREA
+    )
+
+    base_h, base_w = base_image.shape[:2]
+
+    x1 = int(x)
+    y1 = int(y)
+    x2 = x1 + overlay_resized.shape[1]
+    y2 = y1 + overlay_resized.shape[0]
+
+    crop_x1 = max(0, x1)
+    crop_y1 = max(0, y1)
+    crop_x2 = min(base_w, x2)
+    crop_y2 = min(base_h, y2)
+
+    if crop_x1 >= crop_x2 or crop_y1 >= crop_y2:
+        return base_image
+
+    overlay_x1 = crop_x1 - x1
+    overlay_y1 = crop_y1 - y1
+    overlay_x2 = overlay_x1 + (crop_x2 - crop_x1)
+    overlay_y2 = overlay_y1 + (crop_y2 - crop_y1)
+
+    overlay_crop = overlay_resized[overlay_y1:overlay_y2, overlay_x1:overlay_x2]
+
+    if overlay_crop.shape[2] == 4:
+        alpha = overlay_crop[:, :, 3] / 255.0
+        alpha = alpha[:, :, None]
+
+        overlay_rgb = overlay_crop[:, :, :3]
+        base_region = base_image[crop_y1:crop_y2, crop_x1:crop_x2]
+
+        blended = (alpha * overlay_rgb + (1 - alpha) * base_region).astype(np.uint8)
+        base_image[crop_y1:crop_y2, crop_x1:crop_x2] = blended
+    else:
+        base_image[crop_y1:crop_y2, crop_x1:crop_x2] = overlay_crop[:, :, :3]
+
+    return base_image
+
+
+def apply_accessories(image, landmarks=None, hat_path=None, glasses_path=None):
+    output = image.copy()
+
+    if landmarks is None or len(landmarks) < 468:
+        return output
+
+    try:
+        left_face = landmarks[234]
+        right_face = landmarks[454]
+        top_face = landmarks[10]
+
+        face_width = abs(right_face[0] - left_face[0])
+        face_center_x = int((left_face[0] + right_face[0]) / 2)
+
+        if hat_path:
+            hat_img = cv2.imread(hat_path, cv2.IMREAD_UNCHANGED)
+
+            if hat_img is not None:
+                hat_w = int(face_width * 1.45)
+                hat_x = int(face_center_x - hat_w / 2)
+                hat_y = int(top_face[1] - hat_w * 0.55)
+
+                output = _overlay_png(output, hat_img, hat_x, hat_y, hat_w)
+            else:
+                print("Hat image could not be loaded:", hat_path)
+
+        if glasses_path:
+            glasses_img = cv2.imread(glasses_path, cv2.IMREAD_UNCHANGED)
+
+            if glasses_img is not None:
+                left_eye = landmarks[33]
+                right_eye = landmarks[263]
+
+                eye_dist = abs(right_eye[0] - left_eye[0])
+                glasses_w = int(eye_dist * 1.55)
+
+                glasses_center_x = int((left_eye[0] + right_eye[0]) / 2)
+                glasses_center_y = int((left_eye[1] + right_eye[1]) / 2)
+
+                glasses_x = int(glasses_center_x - glasses_w / 2)
+                glasses_y = int(glasses_center_y - glasses_w * 0.22)
+
+                output = _overlay_png(output, glasses_img, glasses_x, glasses_y, glasses_w)
+            else:
+                print("Glasses image could not be loaded:", glasses_path)
+
+    except Exception as e:
+        print("Accessory apply error:", repr(e))
+        return image
+
+    return output
