@@ -325,18 +325,6 @@
         </div>
         <input type="range" class="refine-slider" data-type="lip_widen" min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
-<<<<<<< Updated upstream
-      
-      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05); backdrop-filter: blur(10px);">
-    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-      <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Smile Enhancement</span>
-      <span class="val-txt" id="smile-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
-    </div>
-    <input type="range" class="refine-slider" data-type="smile" min="0" max="100" value="0" style="width: 100%; accent-color: #4646e5; cursor: pointer;">
-  </div>
-  
-      <div class="control-item" style="background: rgba(70,70,229,0.05); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.1);">
-=======
 
       <div class="control-item" style="background: rgba(70,70,229,0.05);">
         <div style="margin-bottom: 10px;">
@@ -360,7 +348,6 @@
       </div>
 
       <div class="control-item" style="background: rgba(70,70,229,0.05);">
->>>>>>> Stashed changes
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
           <span class="control-title" style="color:#4646e5;">Lipstick (Red)</span>
           <span class="val-txt" id="lipstick-val">0%</span>
@@ -535,39 +522,6 @@
       const earringsTab = document.getElementById('earringsTab');
       const necklacesTab = document.getElementById('necklacesTab');
 
-<<<<<<< Updated upstream
-  if (makeupType && makeupType.value) {
-  transforms.push({
-    type: makeupType.value,
-    color: makeupColor ? makeupColor.value : "#d96b86",
-    intensity: makeupIntensity ? parseFloat(makeupIntensity.value) : 0.5
-  });
-}
-const hatVal = document.getElementById('hatSelect').value;
-const glassesVal = document.getElementById('glassesSelect').value;
-
-if (hatVal || glassesVal) {
-  transforms.push({
-    type: 'accessories',
-    intensity: 1.0,
-    params: {
-      hat: hatVal || null,
-      glasses: glassesVal || null
-    }
-  });
-}
-
-  sliders.forEach(slider => {
-    const val = parseInt(slider.value);
-    
-    // SIFIR DEĞİLSE gönder (Böylece hem pozitif hem negatif değerler gider)
-    // Eski hali 'val > 0' idi, bu negatifleri engelliyordu.
-    if (val !== 0) {
-      const t = { type: slider.dataset.type, intensity: val / 100 };
-      
-      if (slider.dataset.type === 'hair_color') {
-        t.params = { color: document.getElementById('hairColorPicker').value };
-=======
       if (category === 'earrings') {
         earringsCabinet.style.display = 'block';
         necklacesCabinet.style.display = 'none';
@@ -578,7 +532,6 @@ if (hatVal || glassesVal) {
         necklacesCabinet.style.display = 'block';
         necklacesTab.classList.add('active');
         earringsTab.classList.remove('active');
->>>>>>> Stashed changes
       }
     }
 
@@ -807,22 +760,6 @@ if (hatVal || glassesVal) {
       makeupIntensity.addEventListener("change", applyAllTransforms);
     }
 
-<<<<<<< Updated upstream
-if (makeupIntensity) {
-  makeupIntensity.addEventListener("input", applyAllTransforms);
-  makeupIntensity.addEventListener("change", applyAllTransforms);
-}
-document.getElementById('hatSelect').addEventListener('change', () => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(applyAllTransforms, 100);
-});
-
-document.getElementById('glassesSelect').addEventListener('change', () => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(applyAllTransforms, 100);
-});
-=======
->>>>>>> Stashed changes
     finishBtn.addEventListener('click', async () => {
       finishBtn.disabled = true;
       finishBtn.textContent = 'Saving...';

@@ -13,6 +13,7 @@ from backend.modules.warping import apply_expression
 from backend.modules.makeup.makeup import apply_makeup_pipeline
 from backend.modules.aging.aging import apply_aging_effect
 from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay
+
 from backend.modules.hat_glasses.accessory_applier import apply_accessories
 
 pose_model = YOLO("yolov8n-pose.pt")
@@ -355,13 +356,6 @@ def transform_image():
                 params = transform.get("params", {})
                 hat_name = params.get("hat", None)
                 glasses_name = params.get("glasses", None)
-<<<<<<< Updated upstream
-                
-                # Dosya yollarını oluştur (static klasörü altında olduğunu varsayıyorum)
-                hat_path = os.path.join('static', 'accessories', hat_file) if hat_name else None
-                glasses_path = os.path.join('static', 'accessories', glasses_name) if glasses_name else None
-=======
->>>>>>> Stashed changes
 
                 print("GLASSES NAME:", glasses_name)
                 print("HAT NAME:", hat_name)
