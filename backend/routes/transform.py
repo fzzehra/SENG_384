@@ -158,9 +158,30 @@ def transform_image():
                 results_meta.append(t_type)
                 print("APPLIED:", t_type)
 
-            elif t_type == "aging":
+            # Mevcut transform handler'ında, diğer elif'lerin yanına:
+
+            elif t_type == "accessories":
+                params = transform.get("params", {})
+                hat_name = params.get("hat", None)
+                glasses_name = params.get("glasses", None)
+                
+                hat_path = os.path.join('static', 'accessories', hat_name) if hat_name else None
+                glasses_path = os.path.join('static', 'accessories', glasses_name) if glasses_name else None
+
                 landmark_result = process_landmark_pipeline(output_image)
-                landmarks = None
+                if landmark_result.get("success"):
+                    output_image = apply_accessories(
+                        image=output_image,
+                        landmarks=landmark_result["landmarks"],
+                        hat_path=hat_path,
+                        glasses_path=glasses_path
+                    )
+                    results_meta.append("accessories")
+                    print(f"APPLIED: accessories (Hat: {hat_name}, Glasses: {glasses_name})")
+                else:
+                    print("Landmark detection failed for accessories.")
+                    landmark_result = process_landmark_pipeline(output_image)
+                    landmarks = None
                 if landmark_result.get("success"):
                     landmarks = landmark_result["landmarks"]
 
@@ -173,8 +194,8 @@ def transform_image():
                 glasses_name = params.get("glasses", None)
                 
                 # Dosya yollarını oluştur (static klasörü altında olduğunu varsayıyorum)
-                hat_path = os.path.join(os.getcwd(), "static", "accessories", hat_name) if hat_name else None
-                glasses_path = os.path.join(os.getcwd(), "static", "accessories", glasses_name) if glasses_name else None
+                hat_path = os.path.join('static', 'accessories', hat_file) if hat_name else None
+                glasses_path = os.path.join('static', 'accessories', glasses_name) if glasses_name else None
 
                 landmark_result = process_landmark_pipeline(output_image)
                 if landmark_result.get("success"):

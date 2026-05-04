@@ -246,6 +246,14 @@
         </div>
         <input type="range" class="refine-slider" data-type="lip_widen" min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
+      
+      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05); backdrop-filter: blur(10px);">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Smile Enhancement</span>
+        <span class="val-txt" id="smile-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+      </div>
+      <input type="range" class="refine-slider" data-type="smile" min="0" max="100" value="0" style="width: 100%; accent-color: #4646e5; cursor: pointer;">
+    </div>
 
       <div class="control-item" style="background: rgba(70,70,229,0.05); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.1);">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -386,6 +394,19 @@
     intensity: makeupIntensity ? parseFloat(makeupIntensity.value) : 0.5
   });
 }
+const hatVal = document.getElementById('hatSelect').value;
+const glassesVal = document.getElementById('glassesSelect').value;
+
+if (hatVal || glassesVal) {
+  transforms.push({
+    type: 'accessories',
+    intensity: 1.0,
+    params: {
+      hat: hatVal || null,
+      glasses: glassesVal || null
+    }
+  });
+}
 
   sliders.forEach(slider => {
     const val = parseInt(slider.value);
@@ -470,6 +491,15 @@ if (makeupIntensity) {
   makeupIntensity.addEventListener("input", applyAllTransforms);
   makeupIntensity.addEventListener("change", applyAllTransforms);
 }
+document.getElementById('hatSelect').addEventListener('change', () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(applyAllTransforms, 100);
+});
+
+document.getElementById('glassesSelect').addEventListener('change', () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(applyAllTransforms, 100);
+});
     finishBtn.addEventListener('click', async () => {
       finishBtn.disabled = true;
       finishBtn.textContent = 'Saving...';

@@ -40,11 +40,22 @@ def overlay_transparent(background, overlay, x, y, size=None):
 
     return bg_img
 
+def get_content_bbox(img_rgba):
+    """Şeffaf olmayan piksellerin bounding box'ını döner."""
+    alpha = img_rgba[:, :, 3]
+    cols = np.any(alpha > 10, axis=0)
+    rows = np.any(alpha > 10, axis=1)
+    if not cols.any() or not rows.any():
+        return 0, 0, img_rgba.shape[1], img_rgba.shape[0]
+    x1, x2 = np.where(cols)[0][[0, -1]]
+    y1, y2 = np.where(rows)[0][[0, -1]]
+    return int(x1), int(y1), int(x2 - x1), int(y2 - y1)
+
 def apply_accessories(image, landmarks, hat_path=None, glasses_path=None):
     """
     Landmark noktalarına göre şapka ve gözlük ekler.
     """
-    if landmarks is None or len(landmarks) < 468:
+    if landmarks is None or len(landmarks) < 100:
         return image
 
     output = image.copy()
@@ -84,24 +95,26 @@ def apply_accessories(image, landmarks, hat_path=None, glasses_path=None):
 
             face_width = abs(right_face[0] - left_face[0])
 
-            # Daha doğal: 2.2 çok büyük kalıyordu
-            hat_width = int(face_width * 1.38)
+            # Şeffaf alanı çıkar, gerçek içerik genişliğini bul
+            cx, cy, cw, ch = get_content_bbox(hat_img)
+            content_ratio = hat_img.shape[1] / max(cw, 1)  # canvas/içerik oranı
 
-            aspect_ratio = hat_img.shape[1] / hat_img.shape[0]
-            hat_height = int(hat_width / aspect_ratio)
+            # Hedef genişlik: yüz genişliğine göre
+            hat_width = int(face_width * 1.6)
+            # Canvas boyutunu içerik oranına göre ölçekle
+            hat_width_canvas = int(hat_width * content_ratio)
+
+            aspect_ratio = hat_img.shape[1] / max(hat_img.shape[0], 1)
+            hat_height_canvas = int(hat_width_canvas / aspect_ratio)
 
             center_x = (left_face[0] + right_face[0]) // 2
+            hat_x = center_x - (hat_width_canvas // 2)
 
-            # Şapkayı kafanın üstüne daha doğal oturt
-            hat_x = center_x - (hat_width // 2)
-            hat_y = int(top_head[1] - hat_height * 0.80)
+            # İçerik alanının alt kısmını alın üstüne hizala
+            content_bottom_ratio = (cy + ch) / max(hat_img.shape[0], 1)
+            hat_y = int(top_head[1] - hat_height_canvas * content_bottom_ratio)
+            hat_y -= int(h * 0.02)
 
-            hat_y -= int(h * 0.03)
-            output = overlay_transparent(
-                output,
-                hat_img,
-                hat_x,
-                hat_y,
-                (hat_width, hat_height)
-            )
-        return output
+            output = overlay_transparent(output, hat_img, hat_x, hat_y, 
+                                        (hat_width_canvas, hat_height_canvas))
+    return output
