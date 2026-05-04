@@ -373,20 +373,26 @@ def transform_image():
                     )
                     results_meta.append("hair_color")
                     print("APPLIED: hair_color")
+            # SONRA (yeni):
             elif t_type == "aging":
                 landmark_result = process_landmark_pipeline(output_image)
                 if landmark_result.get("success"):
-                    # aging.py içindeki fonksiyonu çağırıyoruz
                     output_image = apply_aging_effect(
                         image=output_image,
                         intensity=t_intensity,
-                        landmarks=landmark_result["landmarks"]
+                        landmarks=landmark_result["landmarks"]  # kırışıklık + saç ağarması
                     )
                     results_meta.append("aging")
                     print(f"APPLIED: aging (Intensity: {t_intensity})")
                 else:
-                    print("Landmark detection failed for aging.")
-
+                    # Landmark olmadan sadece saç ağarması çalışır, kırışıklık atlanır
+                    output_image = apply_aging_effect(
+                        image=output_image,
+                        intensity=t_intensity,
+                        landmarks=None
+                    )
+                    results_meta.append("aging")
+                    print(f"APPLIED: aging without landmarks (Intensity: {t_intensity})")
             elif t_type == "deaging":
                 # Kendi dosyan içindeki basit deaging fonksiyonunu çağırır
                 output_image = apply_deaging_effect(
