@@ -15,6 +15,7 @@ from backend.modules.aging.aging import apply_aging_effect
 from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay
 from backend.modules.hat_glasses.glasses import place_glasses
 from backend.modules.hair.hat import place_hat
+from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay, apply_eyebrow_color
 
 pose_model = YOLO("yolov8n-pose.pt")
 transform_bp = Blueprint("transform", __name__)
@@ -369,7 +370,18 @@ def transform_image():
                     print("APPLIED: landmarks")
                 else:
                     print("Landmark detection failed for landmarks display.")
-
+            elif t_type == "eyebrow_color":
+                params = transform.get("params", {})
+                color_hex = params.get("color", "#000000")
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_eyebrow_color(
+                        output_image,
+                        landmark_result["landmarks"],
+                        color_hex=color_hex,
+                        intensity=t_intensity
+                    )
+                    results_meta.append("eyebrow_color")
             elif t_type == "hair_color":
                 params = transform.get("params", {})
                 color_hex = params.get("color", "#3b1f0a")

@@ -13,7 +13,7 @@ import numpy as np
 HAT_CONFIG = {
     "hat1.png": {"width_scale": 1.35, "vertical_offset": 0.85},
     "hat2.png": {"width_scale": 1.55, "vertical_offset": 0.75},
-    "hat3.png": {"width_scale": 2.85, "vertical_offset": 0.60},
+    "hat3.png": {"width_scale": 2.85, "vertical_offset": 0.55},
     "hat4.png": {"width_scale": 1.35, "vertical_offset": 0.40},
 }
 

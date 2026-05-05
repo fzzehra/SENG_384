@@ -131,5 +131,28 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0):
         result[y1:y2, x1:x2] * (1 - alpha) +
         crop[:, :, :3].astype(np.float32) * alpha
     )
-
     return np.clip(result, 0, 255).astype(np.uint8)
+EYEBROW_LANDMARKS = {
+    "left":  [70, 63, 105, 66, 107, 55, 65, 52, 53, 46],
+    "right": [336, 296, 334, 293, 300, 285, 295, 282, 283, 276],
+}
+
+def apply_eyebrow_color(image, landmarks, color_hex='#000000', intensity=0.5):
+    h, w = image.shape[:2]
+    color_bgr = _hex_to_bgr(color_hex)
+    
+    mask = np.zeros((h, w), dtype=np.uint8)
+    
+    for side, indices in EYEBROW_LANDMARKS.items():
+        pts = np.array([landmarks[i] for i in indices], dtype=np.int32)
+        cv2.fillConvexPoly(mask, pts, 255)
+    
+    mask = cv2.GaussianBlur(mask, (7, 7), 0)
+    
+    color_layer = np.full_like(image, color_bgr, dtype=np.float32)
+    alpha = (mask.astype(np.float32) / 255.0 * intensity)[:, :, None]
+    
+    result = image.astype(np.float32) * (1 - alpha) + color_layer * alpha
+    return np.clip(result, 0, 255).astype(np.uint8)
+
+   
