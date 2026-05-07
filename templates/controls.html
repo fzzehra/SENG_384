@@ -375,15 +375,35 @@
         <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
 
-      <div class="control-item">
-        <div style="margin-bottom: 10px;">
-          <span class="control-title">Hairstyle</span>
+            <div class="control-item">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="control-title">Saç Şekli</span>
+          <span class="val-txt" id="hair_texture-val">0%</span>
         </div>
-        <div id="hairstyleList" style="display: flex; flex-wrap: wrap; gap: 8px;">
-          <span style="font-size: 12px; color: #8888bb;">Loading...</span>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <button type="button" class="mini-btn" id="btnCurly" onclick="selectHairTexture('curly', this)">Kıvırcık</button>
+          <button type="button" class="mini-btn" id="btnStraight" onclick="selectHairTexture('straight', this)">Düz</button>
+          <button type="button" class="remove-btn" style="margin:0;" onclick="clearHairTexture()">Temizle</button>
         </div>
-        <button onclick="clearHairstyle()" class="remove-btn">Remove</button>
+        <input type="range" class="refine-slider" id="hairTextureSlider" data-type="hair_texture"
+               min="0" max="100" value="0" style="margin: 5px 0;">
       </div>
+
+      <div class="control-item">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="control-title">Saç Modeli</span>
+          <span class="val-txt" id="hair_style-val">0%</span>
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <button type="button" class="mini-btn" id="btnLoose" onclick="selectHairStyle('loose', this)">Salık</button>
+          <button type="button" class="mini-btn" id="btnPonytail" onclick="selectHairStyle('ponytail', this)">At Kuyruğu</button>
+          <button type="button" class="mini-btn" id="btnBun" onclick="selectHairStyle('bun', this)">Topuz</button>
+          <button type="button" class="remove-btn" style="margin:0;" onclick="clearHairStyle()">Temizle</button>
+        </div>
+        <input type="range" class="refine-slider" id="hairStyleSlider" data-type="hair_style"
+               min="0" max="100" value="0" style="margin: 5px 0;">
+      </div>
+
       <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
   <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
     <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Eyebrow Color</span>
@@ -458,7 +478,8 @@
     const finishBtn = document.getElementById('finishBtn');
 
     let debounceTimer;
-    let selectedOverlay = null;
+    let selectedHairTexture = null;
+    let selectedHairStyle = null;
     let currentImagePath = 'static/uploads/original.jpg';
 
     let selectedAccessories = {
@@ -476,41 +497,6 @@
     if (imgFromURL) {
       currentImagePath = imgFromURL;
       livePreview.src = "/" + currentImagePath;
-    }
-
-    fetch('/hairstyles')
-      .then(r => r.json())
-      .then(files => {
-        const container = document.getElementById('hairstyleList');
-
-        if (!files || files.length === 0) {
-          container.innerHTML = '<span style="font-size:12px;color:#8888bb;">static/hairstyles/ klasörüne PNG ekle</span>';
-          return;
-        }
-
-        container.innerHTML = '';
-
-        files.forEach(file => {
-          const btn = document.createElement('button');
-          btn.textContent = file.replace('.png', '');
-          btn.dataset.overlay = file;
-          btn.className = 'mini-btn';
-          btn.onclick = () => selectOverlay(file, btn);
-          container.appendChild(btn);
-        });
-      });
-
-    function selectOverlay(file, btn) {
-      selectedOverlay = file;
-
-      document.querySelectorAll('#hairstyleList button').forEach(b => {
-        b.classList.remove('active');
-      });
-
-      btn.classList.add('active');
-
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(applyAllTransforms, 100);
     }
 
     function clearHairstyle() {
@@ -599,6 +585,40 @@
       debounceTimer = setTimeout(applyAllTransforms, 100);
     }
 
+        function selectHairTexture(type, btn) {
+      selectedHairTexture = type;
+      document.querySelectorAll('#btnCurly, #btnStraight').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearHairTexture() {
+      selectedHairTexture = null;
+      document.querySelectorAll('#btnCurly, #btnStraight').forEach(b => b.classList.remove('active'));
+      document.getElementById('hairTextureSlider').value = 0;
+      document.getElementById('hair_texture-val').textContent = '0%';
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function selectHairStyle(style, btn) {
+      selectedHairStyle = style;
+      document.querySelectorAll('#btnLoose, #btnPonytail, #btnBun').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearHairStyle() {
+      selectedHairStyle = null;
+      document.querySelectorAll('#btnLoose, #btnPonytail, #btnBun').forEach(b => b.classList.remove('active'));
+      document.getElementById('hairStyleSlider').value = 0;
+      document.getElementById('hair_style-val').textContent = '0%';
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
     loadAccessories('earrings', 'earringList', 'earring');
     loadAccessories('necklaces', 'necklaceList', 'necklace');
 
@@ -649,14 +669,26 @@
     transforms.push(t);
   }
 });
-      if (selectedOverlay) {
-        transforms.push({
-          type: 'hair_overlay',
-          intensity: 1.0,
-          params: {
-            overlay: selectedOverlay
-          }
-        });
+            if (selectedHairTexture) {
+        const textureIntensity = parseInt(document.getElementById('hairTextureSlider').value, 10) / 100;
+        if (textureIntensity > 0) {
+          transforms.push({
+            type: 'hair_texture',
+            intensity: textureIntensity,
+            params: { texture: selectedHairTexture }
+          });
+        }
+      }
+
+      if (selectedHairStyle && selectedHairStyle !== 'loose') {
+        const styleIntensity = parseInt(document.getElementById('hairStyleSlider').value, 10) / 100;
+        if (styleIntensity > 0) {
+          transforms.push({
+            type: 'hair_style',
+            intensity: styleIntensity,
+            params: { style: selectedHairStyle }
+          });
+        }
       }
 
       if (selectedAccessories.earring) {

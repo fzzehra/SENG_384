@@ -12,10 +12,9 @@ from backend.modules.landmark.landmark import process_landmark_pipeline
 from backend.modules.warping import apply_expression
 from backend.modules.makeup.makeup import apply_makeup_pipeline
 from backend.modules.aging.aging import apply_aging_effect
-from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay
 from backend.modules.hat_glasses.glasses import place_glasses
 from backend.modules.hair.hat import place_hat
-from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay, apply_eyebrow_color
+from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay, apply_eyebrow_color, apply_hair_texture, apply_hair_style
 from backend.modules.beard.beard import apply_beard_effect
 
 pose_model = YOLO("yolov8n-pose.pt")
@@ -440,6 +439,34 @@ def transform_image():
                     )
                     results_meta.append("hair_overlay")
                     print("APPLIED: hair_overlay")
+            elif t_type == "hair_texture":
+                params = transform.get("params", {})
+                texture_type = params.get("texture", "curly")
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_hair_texture(
+                        output_image,
+                        landmark_result["landmarks"],
+                        texture_type=texture_type,
+                        intensity=t_intensity
+                    )
+                    results_meta.append("hair_texture")
+                    print(f"APPLIED: hair_texture ({texture_type})")
+
+            elif t_type == "hair_style":
+                params = transform.get("params", {})
+                style = params.get("style", "loose")
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_hair_style(
+                        output_image,
+                        landmark_result["landmarks"],
+                        style=style,
+                        intensity=t_intensity
+                    )
+                    results_meta.append("hair_style")
+                    print(f"APPLIED: hair_style ({style})")
+
             elif t_type == "beard":
                 landmark_result = process_landmark_pipeline(output_image)
 
