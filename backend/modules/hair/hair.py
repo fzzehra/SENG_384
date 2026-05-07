@@ -115,9 +115,7 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0):
 
     crop = overlay_resized[oy1:oy1 + (y2 - y1), ox1:ox1 + (x2 - x1)]
 
-    # -------------------------
-    # 🔥 FIX 4: SAFE ALPHA
-    # -------------------------
+   
     alpha = crop[:, :, 3:4].astype(np.float32) / 255.0
     alpha = cv2.GaussianBlur(alpha, (21, 21), 0)
     alpha = alpha * intensity

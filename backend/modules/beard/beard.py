@@ -3,38 +3,39 @@ import numpy as np
 import random
 import math
 
+
 def apply_beard_effect(image, landmarks, intensity=0.7, hair_len=8, color=(10, 10, 10)):
     if landmarks is None:
         return image
 
     h, w = image.shape[:2]
     output = image.copy().astype(np.float32)
-    
-    # Landmark'ları doğrudan resim piksel koordinatlarına çeviriyoruz
-    # Eğer landmarks listesi zaten (x,y) piksel cinsindeyse çarpmaya gerek yok
-    # Ama genelde MediaPipe 0-1 arası verir, o yüzden kontrol ekledim:
+
+    # Landmark'ları piksel koordinatına çevir
     coords = []
+
     for lm in landmarks:
         lx, ly = lm[0], lm[1]
-        if lx <= 1.0 and ly <= 1.0: # Normalize değerse
+
+        # MediaPipe normalize değer veriyorsa
+        if lx <= 1.0 and ly <= 1.0:
             coords.append((int(lx * w), int(ly * h)))
-        else: # Zaten piksel değeriyse
+        else:
             coords.append((int(lx), int(ly)))
 
     def get_pts(idxs):
         return np.array([coords[i] for i in idxs], np.int32)
 
     # 1. BÖLGELER
+
     CHIN_ZONE = [
         172, 136, 150, 149, 176, 148, 152,
         377, 400, 378, 379, 365, 397
     ]
 
-    # yanak altı
     CHEEK_L = [234, 93, 132, 58, 172]
     CHEEK_R = [454, 323, 361, 288, 397]
 
-    # tam bıyık
     MUSTACHE_ZONE = [
         61, 185, 40, 39, 37, 0,
         267, 269, 270, 409, 291,
@@ -42,15 +43,16 @@ def apply_beard_effect(image, landmarks, intensity=0.7, hair_len=8, color=(10, 1
         84, 181, 91, 146
     ]
 
-    # dudak koruma
+    # Dudak koruma
     LIPS = [
         61, 185, 40, 39, 37, 0,
         267, 269, 270, 409, 291,
         375, 321, 405, 314, 17,
         84, 181, 91, 146
     ]
+
     # 2. MASKELEME
-    
+
     mask = np.zeros((h, w), dtype=np.uint8)
 
     cv2.fillPoly(mask, [get_pts(CHIN_ZONE)], 255)
@@ -58,8 +60,9 @@ def apply_beard_effect(image, landmarks, intensity=0.7, hair_len=8, color=(10, 1
     cv2.fillPoly(mask, [get_pts(CHEEK_R)], 255)
     cv2.fillPoly(mask, [get_pts(MUSTACHE_ZONE)], 255)
 
-    # dudak çıkar
+    # Dudakları çıkar
     lip_m = np.zeros((h, w), dtype=np.uint8)
+
     cv2.fillPoly(lip_m, [get_pts(LIPS)], 255)
 
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
@@ -67,55 +70,63 @@ def apply_beard_effect(image, landmarks, intensity=0.7, hair_len=8, color=(10, 1
 
     mask = cv2.subtract(mask, lip_m)
 
-    # blur azalt
+    # Blur
     mask_f = cv2.GaussianBlur(mask, (21, 21), 0).astype(np.float32) / 255.0
+
     # 3. KIL ÇİZİMİ
-hair_layer = np.zeros_like(image, dtype=np.float32)
 
-ys, xs = np.where(mask > 25)
+    hair_layer = np.zeros_like(image, dtype=np.float32)
 
-density = 0.45 + intensity * 0.55
+    ys, xs = np.where(mask > 25)
 
-for i in range(len(xs)):
+    density = 0.45 + intensity * 0.55
 
-    if random.random() > density:
-        continue
+    for i in range(len(xs)):
 
-    x, y = xs[i], ys[i]
+        if random.random() > density:
+            continue
 
-    local_strength = mask_f[y, x]
+        x, y = xs[i], ys[i]
 
-    if random.random() > local_strength:
-        continue
+        local_strength = mask_f[y, x]
 
-    # kısa doğal sakal
-    angle = math.radians(random.uniform(82, 98))
+        if random.random() > local_strength:
+            continue
 
-    length = (
-        hair_len *
-        random.uniform(0.45, 1.15) *
-        local_strength
-    )
+        # Doğal açı
+        angle = math.radians(random.uniform(82, 98))
 
-    x2 = int(x + length * math.cos(angle))
-    y2 = int(y + length * math.sin(angle))
+        # Doğal uzunluk
+        length = (
+            hair_len *
+            random.uniform(0.45, 1.15) *
+            local_strength
+        )
 
-    # doğal renk varyasyonu
-    v = random.randint(-18, 12)
+        x2 = int(x + length * math.cos(angle))
+        y2 = int(y + length * math.sin(angle))
 
-    c = (
-        int(np.clip(color[0] + v, 0, 255)),
-        int(np.clip(color[1] + v, 0, 255)),
-        int(np.clip(color[2] + v, 0, 255))
-    )
+        # Renk varyasyonu
+        v = random.randint(-18, 12)
 
-    thickness = 1
+        c = (
+            int(np.clip(color[0] + v, 0, 255)),
+            int(np.clip(color[1] + v, 0, 255)),
+            int(np.clip(color[2] + v, 0, 255))
+        )
 
-    cv2.line(
-        hair_layer,
-        (x, y),
-        (x2, y2),
-        c,
-        thickness,
-        cv2.LINE_AA
-    )
+        thickness = 1
+
+        cv2.line(
+            hair_layer,
+            (x, y),
+            (x2, y2),
+            c,
+            thickness,
+            cv2.LINE_AA
+        )
+
+    # Katmanı birleştir
+    output = cv2.addWeighted(output, 1.0, hair_layer, intensity, 0)
+
+    return np.clip(output, 0, 255).astype(np.uint8)
