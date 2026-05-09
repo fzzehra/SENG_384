@@ -382,6 +382,11 @@
         <div id="hairstyleList" style="display: flex; flex-wrap: wrap; gap: 8px;">
           <span style="font-size: 12px; color: #8888bb;">Loading...</span>
         </div>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+          <span style="font-size:12px; color:#8888bb;">Length</span>
+          <span class="val-txt" id="hair_length-val">100%</span>
+        </div>
+        <input type="range" class="refine-slider" id="hairLengthSlider" data-type="hair_length" min="75" max="125" value="100" style="margin: 8px 0 12px 0;">
         <button onclick="clearHairstyle()" class="remove-btn">Remove</button>
       </div>
       <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
@@ -460,6 +465,7 @@
     let debounceTimer;
     let selectedOverlay = null;
     let currentImagePath = 'static/uploads/original.jpg';
+    let selectedHairScale = 1.0;
 
     let selectedAccessories = {
       earring: null,
@@ -512,6 +518,14 @@
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyAllTransforms, 100);
     }
+
+    document.getElementById('hairLengthSlider')?.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      document.getElementById('hair_length-val').textContent = val + '%';
+      selectedHairScale = val / 100;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 200);
+    });
 
     function clearHairstyle() {
       selectedOverlay = null;
@@ -630,6 +644,10 @@
       }
 
      sliders.forEach(slider => {
+  if (slider.dataset.type === 'hair_length') {
+    return; // uzunluk kontrolleri sadece scale faktörü için, transform tipi değil
+  }
+
   const val = parseInt(slider.value, 10);
 
   if (val !== 0) {
@@ -654,7 +672,8 @@
           type: 'hair_overlay',
           intensity: 1.0,
           params: {
-            overlay: selectedOverlay
+            overlay: selectedOverlay,
+            scale: selectedHairScale
           }
         });
       }

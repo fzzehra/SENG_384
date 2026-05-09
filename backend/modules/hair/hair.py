@@ -60,52 +60,68 @@ def apply_hair_color(image, landmarks, color_hex='#000000', intensity=0.5):
     return np.clip(result, 0, 255).astype(np.uint8)
 
 
-def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0):
+def _rotate_image(image: np.ndarray, angle: float) -> np.ndarray:
+    if abs(angle) < 0.1:
+        return image
+
+    h, w = image.shape[:2]
+    cx, cy = w // 2, h // 2
+    M = cv2.getRotationMatrix2D((cx, cy), angle, 1.0)
+    cos_a = abs(M[0, 0])
+    sin_a = abs(M[0, 1])
+    new_w = int(h * sin_a + w * cos_a)
+    new_h = int(h * cos_a + w * sin_a)
+
+    M[0, 2] += (new_w - w) / 2
+    M[1, 2] += (new_h - h) / 2
+
+    if image.shape[2] == 4:
+        return cv2.warpAffine(image, M, (new_w, new_h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
+    return cv2.warpAffine(image, M, (new_w, new_h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))
+
+
+def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_factor=1.0):
     overlay = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
     if overlay is None or overlay.shape[2] != 4:
         return image
 
     h, w = image.shape[:2]
 
-    # -------------------------
-    # FACE KEY POINTS
-    # -------------------------
-    top_head     = landmarks[10]
-    chin         = landmarks[152]
-    left_temple  = landmarks[234]
+    top_head = landmarks[10]
+    chin = landmarks[152]
+    left_temple = landmarks[234]
     right_temple = landmarks[454]
 
     face_w = abs(right_temple[0] - left_temple[0])
     face_h = abs(chin[1] - top_head[1])
     cx = (left_temple[0] + right_temple[0]) // 2
 
-    # -------------------------
-    # 🔥 FIX 1: HAIRLINE ALIGNMENT
-    # -------------------------
-    hair_anchor_y = top_head[1] - int(face_h * 0.18)
+    hairline_y = top_head[1]
+    if len(landmarks) > 299:
+        left_hairline = landmarks[299]
+        right_hairline = landmarks[70]
+        hairline_y = int((left_hairline[1] + right_hairline[1]) / 2)
 
-    # -------------------------
-    # 🔥 FIX 2: PROPORTIONAL SCALE
-    # -------------------------
-    target_w = int(face_w * 1.45)
-    scale = target_w / overlay.shape[1]
-    target_h = int(overlay.shape[0] * scale)
+    target_w = max(int(face_w * 1.45 * scale_factor), 1)
+    scale = target_w / float(overlay.shape[1])
+    target_h = max(int(overlay.shape[0] * scale), 1)
 
-    overlay_resized = cv2.resize(overlay, (target_w, target_h))
+    overlay_resized = cv2.resize(overlay, (target_w, target_h), interpolation=cv2.INTER_AREA)
 
-    # -------------------------
-    # 🔥 FIX 3: CENTERING (critical)
-    # -------------------------
-    x_start = cx - target_w // 2
-    y_start = hair_anchor_y - int(target_h * 0.22)
+    angle = 0.0
+    if len(landmarks) > 454:
+        delta = np.array(right_temple) - np.array(left_temple)
+        angle = float(np.degrees(np.arctan2(delta[1], delta[0])))
 
-    # -------------------------
-    # bounds
-    # -------------------------
+    overlay_rotated = _rotate_image(overlay_resized, angle)
+
+    x_start = cx - overlay_rotated.shape[1] // 2
+    y_start = hairline_y - int(overlay_rotated.shape[0] * 0.15)
+
     x1 = max(0, x_start)
     y1 = max(0, y_start)
-    x2 = min(w, x_start + target_w)
-    y2 = min(h, y_start + target_h)
+    x2 = min(w, x_start + overlay_rotated.shape[1])
+    y2 = min(h, y_start + overlay_rotated.shape[0])
 
     if x1 >= x2 or y1 >= y2:
         return image
@@ -113,22 +129,21 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0):
     ox1 = x1 - x_start
     oy1 = y1 - y_start
 
-    crop = overlay_resized[oy1:oy1 + (y2 - y1), ox1:ox1 + (x2 - x1)]
+    crop = overlay_rotated[oy1:oy1 + (y2 - y1), ox1:ox1 + (x2 - x1)]
 
-   
+    if crop.size == 0:
+        return image
+
     alpha = crop[:, :, 3:4].astype(np.float32) / 255.0
     alpha = cv2.GaussianBlur(alpha, (21, 21), 0)
-    alpha = alpha * intensity
+    alpha = np.clip(alpha * intensity, 0.0, 1.0)
 
-    # -------------------------
-    # BLEND
-    # -------------------------
     result = image.astype(np.float32)
-
     result[y1:y2, x1:x2] = (
-        result[y1:y2, x1:x2] * (1 - alpha) +
+        result[y1:y2, x1:x2] * (1.0 - alpha) +
         crop[:, :, :3].astype(np.float32) * alpha
     )
+
     return np.clip(result, 0, 255).astype(np.uint8)
 EYEBROW_LANDMARKS = {
     "left":  [70, 63, 105, 66, 107, 55, 65, 52, 53, 46],
