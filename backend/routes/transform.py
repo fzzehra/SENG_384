@@ -3,7 +3,7 @@ from backend.modules.makeup.makeup import apply_lip_color, apply_blush, apply_ey
 import os
 import cv2
 import numpy as np
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from PIL import Image
 from ultralytics import YOLO
 
@@ -16,6 +16,7 @@ from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay
 from backend.modules.hat_glasses.glasses import place_glasses
 from backend.modules.hair.hat import place_hat
 from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay, apply_eyebrow_color
+from backend.modules.beard.beard import apply_beard_effect
 
 pose_model = YOLO("yolov8n-pose.pt")
 transform_bp = Blueprint("transform", __name__)
@@ -242,10 +243,10 @@ def transform_image():
     if not image_path:
         return error_response("image_path is required.", 400)
     
+    # Normalize paths for Windows and remove leading slash if present
+    image_path = image_path.lstrip('/\\')
     clean_image_path = image_path.replace("transformed.jpg", "original.jpg")
     
-    # Dosya sisteminde original.jpg var mı diye kontrol et (opsiyonel ama güvenli)
-    import os
     if os.path.exists(clean_image_path):
         image = cv2.imread(clean_image_path)
     else:
@@ -427,18 +428,33 @@ def transform_image():
             elif t_type == "hair_overlay":
                 params = transform.get("params", {})
                 overlay_name = params.get("overlay", "")
-                overlay_path = os.path.join(os.getcwd(), "static", "hairstyles", overlay_name)
+                scale_factor = float(params.get("scale", 1.0)) if params.get("scale") is not None else 1.0
+                overlay_path = os.path.join(current_app.static_folder, "hairstyles", overlay_name)
 
                 landmark_result = process_landmark_pipeline(output_image)
-                if landmark_result.get("success"):
+                if landmark_result.get("success") and overlay_name:
                     output_image = apply_hair_overlay(
                         output_image,
                         landmark_result["landmarks"],
                         overlay_path=overlay_path,
-                        intensity=t_intensity
+                        intensity=max(0.0, min(1.0, t_intensity)),
+                        scale_factor=max(0.5, min(1.5, scale_factor))
                     )
                     results_meta.append("hair_overlay")
-                    print("APPLIED: hair_overlay")
+                    print(f"APPLIED: hair_overlay ({overlay_name}, scale={scale_factor})")
+            elif t_type == "beard":
+                landmark_result = process_landmark_pipeline(output_image)
+
+                if landmark_result.get("success"):
+                    output_image = apply_beard_effect(
+                        output_image,
+                        landmark_result["landmarks"],
+                        intensity=t_intensity
+                    )
+                    results_meta.append("beard")
+                    print("APPLIED: beard")
+                else:
+                    print("Landmark detection failed for beard.")
             elif t_type == "lip_color":
                 landmark_result = process_landmark_pipeline(output_image)
 
