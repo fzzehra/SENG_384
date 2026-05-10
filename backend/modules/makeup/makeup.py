@@ -81,8 +81,8 @@ def apply_blush(image, landmarks, color_hex="#f4a7b9", intensity=0.35):
     left_face_edge = p(234)
     right_face_edge = p(454)
 
-    left_center = (left_anchor * 0.72 + nose * 0.28).astype(np.int32)
-    right_center = (right_anchor * 0.72 + nose * 0.28).astype(np.int32)
+    left_center = (left_anchor * 0.88 + nose * 0.12).astype(np.int32)
+    right_center = (right_anchor * 0.88 + nose * 0.12).astype(np.int32)
 
     shift_down = int(h * 0.015)
     left_center[1] += shift_down

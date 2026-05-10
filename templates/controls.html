@@ -520,6 +520,58 @@
       transform: rotate(35deg);
     }
 
+    /* Eyeshadow Items */
+    .eyeshadow-item {
+      width: 55px;
+      height: 42px;
+      background: #111;
+      border-radius: 6px;
+      border: 1px solid #333;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 5px;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .eyeshadow-item:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .eyeshadow-pan {
+      flex: 1;
+      width: 100%;
+      background: var(--eyeshadow-color);
+      border-radius: 3px;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .eyeshadow-brush {
+      height: 4px;
+      width: 85%;
+      background: linear-gradient(90deg, #333, #555, #333);
+      border-radius: 2px;
+      align-self: center;
+      position: relative;
+    }
+
+    .eyeshadow-brush::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: -1px;
+      width: 8px;
+      height: 6px;
+      background: #ccc;
+      border-radius: 1px;
+      box-shadow: inset 0 1px 1px white;
+    }
+
     /* Alt Gümüş Topuz (Dior İmzası) */
     .lipstick-knob {
       position: absolute;
@@ -972,6 +1024,35 @@
           <div class="color-grid" id="blushColorGrid"></div>
         </div>
 
+        <div class="field-label" style="margin-top: 25px;">Eyeshadow Shelf</div>
+        <div class="shelf-row" style="margin-bottom: 10px;">
+          <!-- Brown Eyeshadow -->
+          <button class="eyeshadow-item" style="--eyeshadow-color:#8b4513;" onclick="chooseShelfEyeshadow('#8b4513')" title="Kahve Far">
+            <div class="eyeshadow-pan"></div>
+            <div class="eyeshadow-brush"></div>
+          </button>
+          <!-- Purple Eyeshadow -->
+          <button class="eyeshadow-item" style="--eyeshadow-color:#6a0dad;" onclick="chooseShelfEyeshadow('#6a0dad')" title="Mor Far">
+            <div class="eyeshadow-pan"></div>
+            <div class="eyeshadow-brush"></div>
+          </button>
+          <!-- Gold Eyeshadow -->
+          <button class="eyeshadow-item" style="--eyeshadow-color:#ffd700;" onclick="chooseShelfEyeshadow('#ffd700')" title="Altın Far">
+            <div class="eyeshadow-pan"></div>
+            <div class="eyeshadow-brush"></div>
+          </button>
+          <!-- Smoky Eyeshadow -->
+          <button class="eyeshadow-item" style="--eyeshadow-color:#333333;" onclick="chooseShelfEyeshadow('#333333')" title="Dumanlı Far">
+            <div class="eyeshadow-pan"></div>
+            <div class="eyeshadow-brush"></div>
+          </button>
+        </div>
+        <button class="shelf-mini-btn" onclick="clearShelfEyeshadow()">Farı Kaldır</button>
+        <button class="palette-toggle-btn" onclick="toggleColorPalette('eyeshadowColorPalette')">Diğer Far Renkleri...</button>
+        <div id="eyeshadowColorPalette" class="color-palette-container">
+          <div class="color-grid" id="eyeshadowColorGrid"></div>
+        </div>
+
         <div class="field-label" style="margin-top: 25px;">Eye Lens Shelf</div>
         <div class="shelf-row" style="margin-bottom: 10px;">
           <!-- Blue Lens -->
@@ -1314,11 +1395,15 @@
     function chooseShelfLipstick(color) {
       shelfMakeup.type = "lip_color";
       shelfMakeup.color = color;
-      shelfMakeup.intensity = 0.65;
+      shelfMakeup.intensity = 0.8;
 
       if (makeupType) makeupType.value = "lip_color";
       if (makeupColor) makeupColor.value = color;
-      if (makeupIntensity) makeupIntensity.value = 0.65;
+      if (makeupIntensity) {
+        makeupIntensity.value = 0.8;
+        const valTxt = document.getElementById('makeup_intensity-val');
+        if (valTxt) valTxt.textContent = "80%";
+      }
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyAllTransforms, 100);
@@ -1342,7 +1427,16 @@
 
     function chooseShelfLens(color) {
       shelfLens.color = color;
-      shelfLens.intensity = 0.7;
+      shelfLens.intensity = 0.85;
+
+      // Sync with main makeup controls
+      if (makeupType) makeupType.value = 'eye_color';
+      if (makeupColor) makeupColor.value = color;
+      if (makeupIntensity) {
+        makeupIntensity.value = 0.85;
+        const valTxt = document.getElementById('makeup_intensity-val');
+        if (valTxt) valTxt.textContent = "85%";
+      }
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyAllTransforms, 100);
@@ -1367,18 +1461,29 @@
       } else {
         if (paletteId.includes('lens')) btn.textContent = "Diğer Lens Renkleri...";
         else if (paletteId.includes('blush')) btn.textContent = "Diğer Allık Renkleri...";
+        else if (paletteId.includes('eyeshadow')) btn.textContent = "Diğer Far Renkleri...";
         else btn.textContent = "Diğer Ruj Renkleri...";
       }
     }
 
     let shelfBlush = {
       color: null,
-      intensity: 0.5
+      intensity: 0.75
     };
 
     function chooseShelfBlush(color) {
       shelfBlush.color = color;
-      shelfBlush.intensity = 0.5;
+      shelfBlush.intensity = 0.75;
+
+      // Sync with main makeup controls
+      if (makeupType) makeupType.value = 'blush';
+      if (makeupColor) makeupColor.value = color;
+      if (makeupIntensity) {
+        makeupIntensity.value = 0.75;
+        const valTxt = document.getElementById('makeup_intensity-val');
+        if (valTxt) valTxt.textContent = "75%";
+      }
+
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyAllTransforms, 100);
     }
@@ -1389,11 +1494,40 @@
       debounceTimer = setTimeout(applyAllTransforms, 100);
     }
 
+    let shelfEyeshadow = {
+      color: null,
+      intensity: 0.7
+    };
+
+    function chooseShelfEyeshadow(color) {
+      shelfEyeshadow.color = color;
+      shelfEyeshadow.intensity = 0.7;
+
+      // Sync with main makeup controls
+      if (makeupType) makeupType.value = 'eyeshadow';
+      if (makeupColor) makeupColor.value = color;
+      if (makeupIntensity) {
+        makeupIntensity.value = 0.7;
+        const valTxt = document.getElementById('makeup_intensity-val');
+        if (valTxt) valTxt.textContent = "70%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearShelfEyeshadow() {
+      shelfEyeshadow.color = null;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
     function initColorPalette() {
       const lipstickGrid = document.getElementById('lipstickColorGrid');
       const lensGrid = document.getElementById('lensColorGrid');
       const blushGrid = document.getElementById('blushColorGrid');
-      if (!lipstickGrid && !lensGrid && !blushGrid) return;
+      const eyeshadowGrid = document.getElementById('eyeshadowColorGrid');
+      if (!lipstickGrid && !lensGrid && !blushGrid && !eyeshadowGrid) return;
 
       const colors = [
         // Reds & Pinks
@@ -1436,6 +1570,15 @@
           blushSwatch.title = color;
           blushSwatch.onclick = () => chooseShelfBlush(color);
           blushGrid.appendChild(blushSwatch);
+        }
+
+        if (eyeshadowGrid) {
+          const eyeshadowSwatch = document.createElement('div');
+          eyeshadowSwatch.className = 'color-swatch';
+          eyeshadowSwatch.style.background = color;
+          eyeshadowSwatch.title = color;
+          eyeshadowSwatch.onclick = () => chooseShelfEyeshadow(color);
+          eyeshadowGrid.appendChild(eyeshadowSwatch);
         }
       });
     }
@@ -1507,16 +1650,64 @@
 
     function buildTransforms() {
       const transforms = [];
+      const activeTypes = new Set();
 
+      // 1. Check Shelf Selections (Priority)
       if (shelfMakeup.type) {
+        let intensity = shelfMakeup.intensity;
+        if (makeupType && makeupType.value === shelfMakeup.type) {
+          intensity = parseFloat(makeupIntensity.value);
+        }
         transforms.push({
           type: shelfMakeup.type,
           color: shelfMakeup.color,
-          intensity: shelfMakeup.intensity
+          intensity: intensity
         });
-      } else if (makeupType && makeupType.value) {
-        const intensityVal = parseFloat(makeupIntensity.value);
+        activeTypes.add(shelfMakeup.type);
+      }
 
+      if (shelfBlush.color) {
+        let intensity = shelfBlush.intensity;
+        if (makeupType && (makeupType.value === 'blush')) {
+          intensity = parseFloat(makeupIntensity.value);
+        }
+        transforms.push({
+          type: 'blush',
+          color: shelfBlush.color,
+          intensity: intensity
+        });
+        activeTypes.add('blush');
+      }
+
+      if (shelfEyeshadow.color) {
+        let intensity = shelfEyeshadow.intensity;
+        if (makeupType && (makeupType.value === 'eyeshadow')) {
+          intensity = parseFloat(makeupIntensity.value);
+        }
+        transforms.push({
+          type: 'eyeshadow',
+          color: shelfEyeshadow.color,
+          intensity: intensity
+        });
+        activeTypes.add('eyeshadow');
+      }
+
+      if (shelfLens.color) {
+        let intensity = shelfLens.intensity;
+        if (makeupType && (makeupType.value === 'eye_color')) {
+          intensity = parseFloat(makeupIntensity.value);
+        }
+        transforms.push({
+          type: 'eye_color',
+          color: shelfLens.color,
+          intensity: intensity
+        });
+        activeTypes.add('eye_color');
+      }
+
+      // 2. Check Manual Selection (Only if not already handled by shelf)
+      if (makeupType && makeupType.value && !activeTypes.has(makeupType.value)) {
+        const intensityVal = parseFloat(makeupIntensity.value);
         transforms.push({
           type: makeupType.value,
           color: makeupColor ? makeupColor.value : "#d96b86",
@@ -1526,22 +1717,6 @@
 
       const selectedGlasses = document.getElementById("glassesSelect")?.value;
       const selectedHat = document.getElementById("hatSelect")?.value;
-
-      if (shelfLens.color) {
-        transforms.push({
-          type: 'eye_color',
-          color: shelfLens.color,
-          intensity: shelfLens.intensity
-        });
-      }
-
-      if (shelfBlush.color) {
-        transforms.push({
-          type: 'blush',
-          color: shelfBlush.color,
-          intensity: shelfBlush.intensity
-        });
-      }
 
       if (selectedGlasses || selectedHat) {
         transforms.push({
@@ -1707,8 +1882,25 @@
     });
 
     function syncMakeupFromPanel() {
-      shelfMakeup.type = null;
-      shelfMakeup.color = null;
+      const type = makeupType ? makeupType.value : "";
+      const color = makeupColor ? makeupColor.value : "";
+      const intensity = makeupIntensity ? parseFloat(makeupIntensity.value) : 0.5;
+
+      // Update corresponding shelf object to keep it persistent
+      if (type === 'lip_color') {
+        shelfMakeup.type = 'lip_color';
+        shelfMakeup.color = color;
+        shelfMakeup.intensity = intensity;
+      } else if (type === 'blush') {
+        shelfBlush.color = color;
+        shelfBlush.intensity = intensity;
+      } else if (type === 'eyeshadow') {
+        shelfEyeshadow.color = color;
+        shelfEyeshadow.intensity = intensity;
+      } else if (type === 'eye_color') {
+        shelfLens.color = color;
+        shelfLens.intensity = intensity;
+      }
 
       const label = document.getElementById("makeup_intensity-val");
       if (label && makeupIntensity) {

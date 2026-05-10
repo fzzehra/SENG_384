@@ -391,6 +391,7 @@ def transform_image():
                     image=output_image,
                     landmarks=landmark_result["landmarks"],
                     makeup_type=t_type,
+                    color_hex=color,
                     intensity=t_intensity
                 )
                 results_meta.append(t_type)
