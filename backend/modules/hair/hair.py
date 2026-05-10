@@ -80,15 +80,27 @@ def _rotate_image(image: np.ndarray, angle: float) -> np.ndarray:
     return cv2.warpAffine(image, M, (new_w, new_h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))
 
 
-def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_factor=1.0, x_offset=0, y_offset=0):
+def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_factor=1.0, x_offset=0, y_offset=0, wig_color=None, wig_color_intensity=0.0):
     overlay = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
     if overlay is None:
         return image
     
     # Remove baked-in background (white or checkerboard) if needed
     b, g, r = cv2.split(overlay[:, :, :3])
-    # Assume pixels where all BGR channels are > 200 are background (covers white and typical gray checkerboard)
-    bg_mask = np.where((b > 200) & (g > 200) & (r > 200), 0, 255).astype(np.uint8)
+    gray = cv2.cvtColor(overlay[:, :, :3], cv2.COLOR_BGR2GRAY)
+    
+    # Fake transparency checkerboards are made of white and light gray squares.
+    # They are grayscale (R ~= G ~= B) and light (value > 170).
+    diff_rg = np.abs(r.astype(int) - g.astype(int))
+    diff_gb = np.abs(g.astype(int) - b.astype(int))
+    is_gray = (diff_rg < 15) & (diff_gb < 15)
+    is_light = gray > 170
+    
+    bg_mask = np.where(is_gray & is_light, 0, 255).astype(np.uint8)
+    
+    # Smooth the mask slightly to avoid jagged edges on the hair
+    bg_mask = cv2.GaussianBlur(bg_mask, (3, 3), 0)
+    _, bg_mask = cv2.threshold(bg_mask, 127, 255, cv2.THRESH_BINARY)
     
     if overlay.shape[2] == 4:
         # Combine existing alpha with our new background mask
@@ -146,6 +158,14 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_fact
 
     if crop.size == 0:
         return image
+
+    if wig_color and wig_color_intensity > 0:
+        bgr = _hex_to_bgr(wig_color)
+        color_layer = np.full_like(crop[:, :, :3], bgr, dtype=np.float32)
+        crop_rgb = crop[:, :, :3].astype(np.float32)
+        # Blend the color into the wig
+        blended = crop_rgb * (1.0 - wig_color_intensity) + color_layer * wig_color_intensity
+        crop[:, :, :3] = np.clip(blended, 0, 255).astype(np.uint8)
 
     alpha = crop[:, :, 3:4].astype(np.float32) / 255.0
     alpha = cv2.GaussianBlur(alpha, (21, 21), 0)

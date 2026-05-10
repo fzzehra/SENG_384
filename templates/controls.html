@@ -1324,6 +1324,14 @@
   }
 });
       if (selectedOverlay) {
+        const hcSlider = Array.from(sliders).find(s => s.dataset.type === 'hair_color');
+        let overlayColor = null;
+        let overlayColorIntensity = 0;
+        if (hcSlider && parseInt(hcSlider.value, 10) !== 0) {
+           overlayColor = document.getElementById('hairColorPicker').value;
+           overlayColorIntensity = parseInt(hcSlider.value, 10) / 100;
+        }
+
         transforms.push({
           type: 'hair_overlay',
           intensity: 1.0,
@@ -1331,7 +1339,9 @@
             overlay: selectedOverlay,
             scale: selectedHairScale,
             x_offset: selectedHairX,
-            y_offset: selectedHairY
+            y_offset: selectedHairY,
+            color: overlayColor,
+            color_intensity: overlayColorIntensity
           }
         });
       }

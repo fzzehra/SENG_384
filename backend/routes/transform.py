@@ -500,6 +500,8 @@ def transform_image():
                 scale_factor = float(params.get("scale", 1.0)) if params.get("scale") is not None else 1.0
                 x_offset = int(params.get("x_offset", 0))
                 y_offset = int(params.get("y_offset", 0))
+                wig_color = params.get("color", None)
+                wig_color_intensity = float(params.get("color_intensity", 0.0))
                 overlay_path = os.path.join(current_app.static_folder, "hairstyles", overlay_name)
 
                 landmark_result = process_landmark_pipeline(output_image)
@@ -511,7 +513,9 @@ def transform_image():
                         intensity=max(0.0, min(1.0, t_intensity)),
                         scale_factor=max(0.5, min(3.0, scale_factor)),
                         x_offset=x_offset,
-                        y_offset=y_offset
+                        y_offset=y_offset,
+                        wig_color=wig_color,
+                        wig_color_intensity=wig_color_intensity
                     )
                     results_meta.append("hair_overlay")
                     print(f"APPLIED: hair_overlay ({overlay_name}, scale={scale_factor})")
