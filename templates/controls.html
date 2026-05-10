@@ -563,13 +563,67 @@
     .eyeshadow-brush::after {
       content: '';
       position: absolute;
-      right: 0;
-      top: -1px;
-      width: 8px;
-      height: 6px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
       background: #ccc;
+      border-radius: 2px 2px 0 0;
+    }
+
+    /* Eyebrow Items */
+    .eyebrow-item {
+      width: 55px;
+      height: 42px;
+      background: #1a1a1a;
+      border-radius: 6px;
+      border: 1px solid #333;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .eyebrow-item:hover {
+      transform: translateY(-3px);
+      border-color: #4646e5;
+      box-shadow: 0 6px 15px rgba(70, 70, 229, 0.2);
+    }
+
+    .eyebrow-tube {
+      width: 32px;
+      height: 10px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 2px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .eyebrow-wand {
+      width: 25px;
+      height: 2px;
+      background: #444;
+      position: absolute;
+      top: 15px;
+      left: 12px;
+      transform: rotate(-15deg);
+    }
+
+    .eyebrow-brush-tip {
+      width: 8px;
+      height: 4px;
+      background: var(--eyebrow-color, #333);
+      position: absolute;
+      right: -2px;
+      top: -1px;
       border-radius: 1px;
-      box-shadow: inset 0 1px 1px white;
+      box-shadow: 0 0 4px var(--eyebrow-color, transparent);
     }
 
     /* Alt Gümüş Topuz (Dior İmzası) */
@@ -1075,6 +1129,35 @@
         <div id="lensColorPalette" class="color-palette-container">
           <div class="color-grid" id="lensColorGrid"></div>
         </div>
+
+        <div class="field-label" style="margin-top: 25px;">Eyebrow Color Shelf</div>
+        <div class="shelf-row" style="margin-bottom: 10px;">
+          <!-- Brown Brow -->
+          <button class="eyebrow-item" style="--eyebrow-color:#4a2c1a;" onclick="chooseShelfEyebrow('#4a2c1a')" title="Kahve Kaş">
+            <div class="eyebrow-tube"></div>
+            <div class="eyebrow-wand"><div class="eyebrow-brush-tip"></div></div>
+          </button>
+          <!-- Charcoal Brow -->
+          <button class="eyebrow-item" style="--eyebrow-color:#1a1a1a;" onclick="chooseShelfEyebrow('#1a1a1a')" title="Kömür Kaş">
+            <div class="eyebrow-tube"></div>
+            <div class="eyebrow-wand"><div class="eyebrow-brush-tip"></div></div>
+          </button>
+          <!-- Auburn Brow -->
+          <button class="eyebrow-item" style="--eyebrow-color:#8b4513;" onclick="chooseShelfEyebrow('#8b4513')" title="Kızıl Kaş">
+            <div class="eyebrow-tube"></div>
+            <div class="eyebrow-wand"><div class="eyebrow-brush-tip"></div></div>
+          </button>
+          <!-- Blonde Brow -->
+          <button class="eyebrow-item" style="--eyebrow-color:#c4a484;" onclick="chooseShelfEyebrow('#c4a484')" title="Sarı Kaş">
+            <div class="eyebrow-tube"></div>
+            <div class="eyebrow-wand"><div class="eyebrow-brush-tip"></div></div>
+          </button>
+        </div>
+        <button class="shelf-mini-btn" onclick="clearShelfEyebrow()">Kaş Boyasını Kaldır</button>
+        <button class="palette-toggle-btn" style="margin-top: 10px;" onclick="toggleColorPalette('eyebrowColorPalette')">Diğer Kaş Renkleri...</button>
+        <div id="eyebrowColorPalette" class="color-palette-container">
+          <div class="color-grid" id="eyebrowColorGrid"></div>
+        </div>
       </div>
     </div>
 
@@ -1469,9 +1552,68 @@
         if (paletteId.includes('lens')) btn.textContent = "Diğer Lens Renkleri...";
         else if (paletteId.includes('blush')) btn.textContent = "Diğer Allık Renkleri...";
         else if (paletteId.includes('eyeshadow')) btn.textContent = "Diğer Far Renkleri...";
+        else if (paletteId.includes('eyebrow')) btn.textContent = "Diğer Kaş Renkleri...";
         else if (paletteId.includes('hair')) btn.textContent = "Diğer Saç Renkleri...";
         else btn.textContent = "Diğer Ruj Renkleri...";
       }
+    }
+
+    let shelfEyebrow = {
+      color: null,
+      intensity: 0.6
+    };
+
+    function chooseShelfEyebrow(color) {
+      shelfEyebrow.color = color;
+      shelfEyebrow.intensity = 0.7;
+
+      // Sync with main eyebrow controls
+      const picker = document.getElementById('eyebrowColorPicker');
+      const sliders = document.querySelectorAll('.refine-slider');
+      const ebSlider = Array.from(sliders).find(s => s.dataset.type === 'eyebrow_color');
+
+      if (picker) picker.value = color;
+      if (ebSlider) {
+        ebSlider.value = 70;
+        const valTxt = document.getElementById('eyebrow_color-val');
+        if (valTxt) valTxt.textContent = "70%";
+      }
+
+      // Also sync with makeup panel if it happens to be selected there
+      if (makeupType) makeupType.value = 'eyebrow_color';
+      if (makeupColor) makeupColor.value = color;
+      if (makeupIntensity) {
+        makeupIntensity.value = 0.7;
+        const valTxt = document.getElementById('makeup_intensity-val');
+        if (valTxt) valTxt.textContent = "70%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearShelfEyebrow() {
+      shelfEyebrow.color = null;
+
+      // Sync with main eyebrow controls
+      const picker = document.getElementById('eyebrowColorPicker');
+      const sliders = document.querySelectorAll('.refine-slider');
+      const ebSlider = Array.from(sliders).find(s => s.dataset.type === 'eyebrow_color');
+
+      if (picker) picker.value = "#3b1f0a"; // Default brown
+      if (ebSlider) {
+        ebSlider.value = 0;
+        const valTxt = document.getElementById('eyebrow_color-val');
+        if (valTxt) valTxt.textContent = "0%";
+      }
+
+      // Also sync with makeup panel if needed
+      if (makeupType && makeupType.value === 'eyebrow_color') {
+        makeupType.value = "";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
     }
 
     function chooseShelfHairColor(color) {
@@ -1551,8 +1693,9 @@
       const lensGrid = document.getElementById('lensColorGrid');
       const blushGrid = document.getElementById('blushColorGrid');
       const eyeshadowGrid = document.getElementById('eyeshadowColorGrid');
+      const eyebrowGrid = document.getElementById('eyebrowColorGrid');
       const hairGrid = document.getElementById('hairColorGrid');
-      if (!lipstickGrid && !lensGrid && !blushGrid && !eyeshadowGrid && !hairGrid) return;
+      if (!lipstickGrid && !lensGrid && !blushGrid && !eyeshadowGrid && !eyebrowGrid && !hairGrid) return;
 
       const colors = [
         // Reds & Pinks
@@ -1621,6 +1764,17 @@
           swatch.title = color;
           swatch.onclick = () => chooseShelfHairColor(color);
           hairGrid.appendChild(swatch);
+        });
+      }
+
+      if (eyebrowGrid) {
+        hairColors.slice(0, 15).forEach(color => {
+          const swatch = document.createElement('div');
+          swatch.className = 'color-swatch';
+          swatch.style.background = color;
+          swatch.title = color;
+          swatch.onclick = () => chooseShelfEyebrow(color);
+          eyebrowGrid.appendChild(swatch);
         });
       }
     }
@@ -1747,6 +1901,25 @@
         activeTypes.add('eye_color');
       }
 
+      if (shelfEyebrow.color) {
+        let intensity = shelfEyebrow.intensity;
+        // Check if main makeup slider or eyebrow color slider is being used
+        const ebSlider = Array.from(document.querySelectorAll('.refine-slider')).find(s => s.dataset.type === 'eyebrow_color');
+        
+        if (makeupType && (makeupType.value === 'eyebrow_color')) {
+          intensity = parseFloat(makeupIntensity.value);
+        } else if (ebSlider && parseInt(ebSlider.value, 10) !== 0) {
+          intensity = parseInt(ebSlider.value, 10) / 100;
+        }
+
+        transforms.push({
+          type: 'eyebrow_color',
+          params: { color: shelfEyebrow.color },
+          intensity: intensity
+        });
+        activeTypes.add('eyebrow_color');
+      }
+
       // 2. Check Manual Selection (Only if not already handled by shelf)
       if (makeupType && makeupType.value && !activeTypes.has(makeupType.value)) {
         const intensityVal = parseFloat(makeupIntensity.value);
@@ -1772,8 +1945,8 @@
       }
 
       sliders.forEach(slider => {
-        if (slider.dataset.type === 'hair_length') {
-          return; // uzunluk kontrolleri sadece scale faktörü için, transform tipi değil
+        if (slider.dataset.type === 'hair_length' || activeTypes.has(slider.dataset.type)) {
+          return; // Skip if already handled by shelf
         }
 
         const val = parseInt(slider.value, 10);
@@ -1939,6 +2112,9 @@
       } else if (type === 'eyeshadow') {
         shelfEyeshadow.color = color;
         shelfEyeshadow.intensity = intensity;
+      } else if (type === 'eyebrow_color') {
+        shelfEyebrow.color = color;
+        shelfEyebrow.intensity = intensity;
       } else if (type === 'eye_color') {
         shelfLens.color = color;
         shelfLens.intensity = intensity;
@@ -1966,6 +2142,26 @@
     if (makeupIntensity) {
       makeupIntensity.addEventListener("input", syncMakeupFromPanel);
       makeupIntensity.addEventListener("change", syncMakeupFromPanel);
+    }
+
+    // NEW: Sync manual color pickers back to shelf state
+    const ebPicker = document.getElementById('eyebrowColorPicker');
+    if (ebPicker) {
+      ebPicker.addEventListener('input', (e) => {
+        shelfEyebrow.color = e.target.value;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
+      });
+    }
+
+    const hcPicker = document.getElementById('hairColorPicker');
+    if (hcPicker) {
+      hcPicker.addEventListener('input', (e) => {
+        // Hair doesn't have a shelf object yet, but it's handled via buildTransforms directly
+        // So no extra shelf object update needed here, but we trigger the transform
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
+      });
     }
 
     finishBtn.addEventListener('click', async () => {
