@@ -835,8 +835,37 @@
     <div id="hairShelf" class="shelf-section">
       <div class="shelf-board">
         <div class="field-label">Hair Shelf</div>
-        <p class="shelf-note">Saç seçenekleri şimdilik soldaki Hairstyle bölümünden geliyor.</p>
         <div id="shelfHairstyleList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
+        
+        <div class="position-controls" style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(70,70,229,0.2);">
+          <div class="field-label" style="font-size: 13px; color: #4646e5; margin-bottom: 12px;">Hizalama Ayarları</div>
+          
+          <div style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
+              <span>Dikey Konum (Yukarı/Aşağı)</span>
+              <span id="hair-y-val">0</span>
+            </div>
+            <input type="range" id="hairYSlider" min="-150" max="150" value="0" class="mini-slider" style="width: 100%; height: 4px; margin: 8px 0;">
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
+              <span>Yatay Konum (Sağ/Sol)</span>
+              <span id="hair-x-val">0</span>
+            </div>
+            <input type="range" id="hairXSlider" min="-100" max="100" value="0" class="mini-slider" style="width: 100%; height: 4px; margin: 8px 0;">
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
+              <span>Boyut (Büyült/Küçült)</span>
+              <span id="hair-scale-shelf-val">100%</span>
+            </div>
+            <input type="range" id="hairScaleShelfSlider" min="50" max="300" value="100" class="mini-slider" style="width: 100%; height: 4px; margin: 8px 0;">
+          </div>
+          
+          <p class="shelf-note" style="margin-top: 10px; font-style: italic;">Saçın tam oturması için yukarıdaki sürgüleri kullanabilirsiniz.</p>
+        </div>
       </div>
     </div>
 
@@ -868,8 +897,40 @@
 
     let debounceTimer;
     let selectedOverlay = null;
-    let currentImagePath = 'static/uploads/original.jpg';
     let selectedHairScale = 1.0;
+    let selectedHairX = 0;
+    let selectedHairY = 0;
+    let currentImagePath = 'static/uploads/original.jpg';
+
+    // Hair Position Listeners
+    document.getElementById('hairYSlider')?.addEventListener('input', (e) => {
+      selectedHairY = parseInt(e.target.value, 10);
+      document.getElementById('hair-y-val').textContent = selectedHairY;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 150);
+    });
+
+    document.getElementById('hairXSlider')?.addEventListener('input', (e) => {
+      selectedHairX = parseInt(e.target.value, 10);
+      document.getElementById('hair-x-val').textContent = selectedHairX;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 150);
+    });
+
+    document.getElementById('hairScaleShelfSlider')?.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      selectedHairScale = val / 100;
+      document.getElementById('hair-scale-shelf-val').textContent = val + '%';
+      
+      // Sync main slider if it exists
+      const mainSlider = document.getElementById('hairLengthSlider');
+      if (mainSlider) mainSlider.value = val;
+      const mainLabel = document.getElementById('hair_length-val');
+      if (mainLabel) mainLabel.textContent = val + '%';
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 150);
+    });
 
     let selectedAccessories = {
       earring: null,
@@ -905,29 +966,37 @@
         if(shelfContainer) shelfContainer.innerHTML = '';
 
         files.forEach(file => {
+          // Sol Panel Butonu
           const btn = document.createElement('button');
-          btn.textContent = file.replace('.png', '');
-          btn.dataset.overlay = file;
           btn.className = 'mini-btn';
+          btn.dataset.overlay = file;
+          btn.innerHTML = `<img src="/static/hairstyles/${file}" style="width:100%; height:100%; object-fit:contain;" title="${file.replace('.png','')}">`;
           btn.onclick = () => selectOverlay(file, btn);
+          if(container) container.appendChild(btn);
           
-          if(container) container.appendChild(btn.cloneNode(true));
-          
-          // For shelf, maybe use a slightly different style or just the same
-          const shelfBtn = btn.cloneNode(true);
-          shelfBtn.onclick = () => selectOverlay(file, shelfBtn);
-          if(shelfContainer) shelfContainer.appendChild(shelfBtn);
+          // Sağ Raf Kartı
+          if(shelfContainer) {
+            const shelfBtn = document.createElement('div');
+            shelfBtn.className = 'shelf-item-card';
+            shelfBtn.dataset.overlay = file;
+            shelfBtn.innerHTML = `<img src="/static/hairstyles/${file}" title="${file.replace('.png','')}">`;
+            shelfBtn.onclick = () => selectOverlay(file, shelfBtn);
+            if(shelfContainer) shelfContainer.appendChild(shelfBtn);
+          }
         });
       });
 
     function selectOverlay(file, btn) {
-      selectedOverlay = file;
-
-      document.querySelectorAll('#hairstyleList button').forEach(b => {
-        b.classList.remove('active');
-      });
-
-      btn.classList.add('active');
+      if (selectedOverlay === file) {
+        selectedOverlay = null;
+        btn.classList.remove('active');
+      } else {
+        selectedOverlay = file;
+        document.querySelectorAll('#hairstyleList button, #shelfHairstyleList .shelf-item-card').forEach(b => {
+          b.classList.remove('active');
+        });
+        btn.classList.add('active');
+      }
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyAllTransforms, 100);
@@ -1260,7 +1329,9 @@
           intensity: 1.0,
           params: {
             overlay: selectedOverlay,
-            scale: selectedHairScale
+            scale: selectedHairScale,
+            x_offset: selectedHairX,
+            y_offset: selectedHairY
           }
         });
       }

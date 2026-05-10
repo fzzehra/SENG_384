@@ -80,7 +80,7 @@ def _rotate_image(image: np.ndarray, angle: float) -> np.ndarray:
     return cv2.warpAffine(image, M, (new_w, new_h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))
 
 
-def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_factor=1.0):
+def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_factor=1.0, x_offset=0, y_offset=0):
     overlay = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
     if overlay is None or overlay.shape[2] != 4:
         return image
@@ -115,8 +115,9 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_fact
 
     overlay_rotated = _rotate_image(overlay_resized, angle)
 
-    x_start = cx - overlay_rotated.shape[1] // 2
-    y_start = hairline_y - int(overlay_rotated.shape[0] * 0.15)
+    # Apply offsets here
+    x_start = cx - overlay_rotated.shape[1] // 2 + x_offset
+    y_start = hairline_y - int(overlay_rotated.shape[0] * 0.15) + y_offset
 
     x1 = max(0, x_start)
     y1 = max(0, y_start)
@@ -136,6 +137,8 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_fact
 
     alpha = crop[:, :, 3:4].astype(np.float32) / 255.0
     alpha = cv2.GaussianBlur(alpha, (21, 21), 0)
+    if len(alpha.shape) == 2:
+        alpha = alpha[:, :, np.newaxis]
     alpha = np.clip(alpha * intensity, 0.0, 1.0)
 
     result = image.astype(np.float32)
