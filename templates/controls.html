@@ -1084,6 +1084,13 @@
         <div id="shelfHairstyleList"
           style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
 
+        <div class="field-label" style="margin-top: 15px;">Saç Rengi</div>
+        <button class="palette-toggle-btn" style="margin-top: 5px;"
+          onclick="toggleColorPalette('hairColorPalette')">Diğer Saç Renkleri...</button>
+        <div id="hairColorPalette" class="color-palette-container">
+          <div class="color-grid" id="hairColorGrid"></div>
+        </div>
+
         <div class="position-controls"
           style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(70,70,229,0.2);">
           <div class="field-label" style="font-size: 13px; color: #4646e5; margin-bottom: 12px;">Hizalama Ayarları</div>
@@ -1462,8 +1469,25 @@
         if (paletteId.includes('lens')) btn.textContent = "Diğer Lens Renkleri...";
         else if (paletteId.includes('blush')) btn.textContent = "Diğer Allık Renkleri...";
         else if (paletteId.includes('eyeshadow')) btn.textContent = "Diğer Far Renkleri...";
+        else if (paletteId.includes('hair')) btn.textContent = "Diğer Saç Renkleri...";
         else btn.textContent = "Diğer Ruj Renkleri...";
       }
+    }
+
+    function chooseShelfHairColor(color) {
+      const picker = document.getElementById('hairColorPicker');
+      const sliders = document.querySelectorAll('.refine-slider');
+      const hcSlider = Array.from(sliders).find(s => s.dataset.type === 'hair_color');
+
+      if (picker) picker.value = color;
+      if (hcSlider) {
+        hcSlider.value = 35;
+        const valTxt = document.getElementById('hair_color-val');
+        if (valTxt) valTxt.textContent = "35%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
     }
 
     let shelfBlush = {
@@ -1527,7 +1551,8 @@
       const lensGrid = document.getElementById('lensColorGrid');
       const blushGrid = document.getElementById('blushColorGrid');
       const eyeshadowGrid = document.getElementById('eyeshadowColorGrid');
-      if (!lipstickGrid && !lensGrid && !blushGrid && !eyeshadowGrid) return;
+      const hairGrid = document.getElementById('hairColorGrid');
+      if (!lipstickGrid && !lensGrid && !blushGrid && !eyeshadowGrid && !hairGrid) return;
 
       const colors = [
         // Reds & Pinks
@@ -1539,9 +1564,15 @@
         // Nudes & Oranges
         "#bc8f8f", "#cd853f", "#d2b48c", "#deb887", "#f4a460", "#e9967a", "#fa8072", "#ffa07a", "#ff7f50", "#ff6347",
         "#ff4500", "#ff8c00", "#ffa500", "#ffd700", "#f0e68c", "#bdb76b", "#a0522d", "#8b4513", "#5d3a1a", "#3d2b1f",
-        // Others/Fantasy (Blues, Greens, etc suitable for lenses too)
+        // Others/Fantasy
         "#000000", "#1a1a1a", "#333333", "#4d4d4d", "#666666", "#808080", "#999999", "#b3b3b3", "#cccccc", "#e6e6e6",
         "#0000ff", "#008000", "#00ffff", "#008080", "#4a90e2", "#50C878", "#C9A86A", "#9b59b6", "#27ae60", "#2980b9"
+      ];
+
+      const hairColors = [
+        "#000000", "#1a1a1a", "#2b1a12", "#3b1f0a", "#4a2c1a", "#5d3a24", "#704214", "#8b4513", "#a0522d", "#cd853f",
+        "#deb887", "#f5deb3", "#fff8dc", "#ffd700", "#daa520", "#b8860b", "#800000", "#8b0000", "#a52a2a", "#b22222",
+        "#c71585", "#db7093", "#ff69b4", "#ff1493", "#4b0082", "#8a2be2", "#9400d3", "#9932cc", "#0000ff", "#00008b"
       ];
 
       colors.forEach(color => {
@@ -1581,6 +1612,17 @@
           eyeshadowGrid.appendChild(eyeshadowSwatch);
         }
       });
+
+      if (hairGrid) {
+        hairColors.forEach(color => {
+          const swatch = document.createElement('div');
+          swatch.className = 'color-swatch';
+          swatch.style.background = color;
+          swatch.title = color;
+          swatch.onclick = () => chooseShelfHairColor(color);
+          hairGrid.appendChild(swatch);
+        });
+      }
     }
 
     function initAccessoryShelves() {
