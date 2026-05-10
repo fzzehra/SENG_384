@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,11 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       min-height: 100vh;
@@ -30,8 +35,21 @@
       pointer-events: none;
     }
 
-    .blob-1 { width: 320px; height: 320px; background: #b0b0ff; top: -80px; left: -80px; }
-    .blob-2 { width: 260px; height: 260px; background: #a8f0c0; bottom: -60px; right: -60px; }
+    .blob-1 {
+      width: 320px;
+      height: 320px;
+      background: #b0b0ff;
+      top: -80px;
+      left: -80px;
+    }
+
+    .blob-2 {
+      width: 260px;
+      height: 260px;
+      background: #a8f0c0;
+      bottom: -60px;
+      right: -60px;
+    }
 
     .page-header {
       text-align: center;
@@ -64,7 +82,7 @@
       background: rgba(255, 255, 255, 0.72);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.85);
+      border: 1px solid rgba(255, 255, 255, 0.85);
       border-radius: 28px;
       padding: 44px 48px;
       width: 100%;
@@ -90,7 +108,7 @@
       overflow: hidden;
       border: 1.5px solid rgba(70, 70, 229, 0.1);
       background: #fff;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
       align-self: start;
     }
 
@@ -110,10 +128,10 @@
     }
 
     .control-item {
-      background: rgba(255,255,255,0.4);
+      background: rgba(255, 255, 255, 0.4);
       padding: 15px;
       border-radius: 16px;
-      border: 1px solid rgba(70,70,229,0.05);
+      border: 1px solid rgba(70, 70, 229, 0.05);
     }
 
     .control-title {
@@ -209,7 +227,7 @@
       font-size: 11px;
       color: #4646e5;
       background: none;
-      border: 1px solid rgba(70,70,229,0.3);
+      border: 1px solid rgba(70, 70, 229, 0.3);
       border-radius: 8px;
       padding: 4px 12px;
       cursor: pointer;
@@ -221,20 +239,34 @@
       margin: 8px 0 12px 0;
       padding: 8px;
       border-radius: 10px;
-      border: 1px solid rgba(70,70,229,0.2);
+      border: 1px solid rgba(70, 70, 229, 0.2);
       font-family: inherit;
       color: #2a2a7a;
-      background: rgba(255,255,255,0.7);
+      background: rgba(255, 255, 255, 0.7);
     }
 
     @keyframes fadeDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     /* RIGHT BEAUTY SHELF PANEL */
@@ -244,12 +276,12 @@
       top: 110px;
       width: 260px;
       max-height: calc(100vh - 135px);
-      background: rgba(255,255,255,0.78);
+      background: rgba(255, 255, 255, 0.78);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255,255,255,0.9);
+      border: 1px solid rgba(255, 255, 255, 0.9);
       border-radius: 24px;
-      box-shadow: 0 18px 45px rgba(70,70,229,0.18);
+      box-shadow: 0 18px 45px rgba(70, 70, 229, 0.18);
       padding: 16px;
       z-index: 50;
       overflow-y: auto;
@@ -276,7 +308,7 @@
       border: none;
       border-radius: 14px;
       padding: 10px 12px;
-      background: rgba(70,70,229,0.08);
+      background: rgba(70, 70, 229, 0.08);
       color: #2a2a7a;
       font-weight: 600;
       cursor: pointer;
@@ -286,7 +318,7 @@
     }
 
     .shelf-tab:hover {
-      background: rgba(70,70,229,0.15);
+      background: rgba(70, 70, 229, 0.15);
     }
 
     .shelf-tab.active {
@@ -306,7 +338,7 @@
       background: linear-gradient(180deg, #fff7fb, #f6efff);
       border-radius: 18px;
       padding: 14px;
-      border: 1px solid rgba(70,70,229,0.08);
+      border: 1px solid rgba(70, 70, 229, 0.08);
     }
 
     .shelf-row {
@@ -328,7 +360,7 @@
       height: 8px;
       border-radius: 999px;
       background: linear-gradient(90deg, #3d3d5c, #74749a, #3d3d5c);
-      box-shadow: 0 5px 12px rgba(0,0,0,0.18);
+      box-shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
     }
 
     .lipstick-item {
@@ -339,7 +371,7 @@
       cursor: pointer;
       position: relative;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      filter: drop-shadow(0 12px 18px rgba(0,0,0,0.25));
+      filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.25));
       margin: 5px;
     }
 
@@ -370,7 +402,7 @@
       height: 22px;
       background: var(--lipstick-color);
       border-radius: 9px 9px 2px 2px;
-      box-shadow: inset -5px 0 8px rgba(0,0,0,0.25), inset 3px 3px 5px rgba(255,255,255,0.2);
+      box-shadow: inset -5px 0 8px rgba(0, 0, 0, 0.25), inset 3px 3px 5px rgba(255, 255, 255, 0.2);
       z-index: 2;
     }
 
@@ -383,8 +415,8 @@
       height: 62px;
       background: linear-gradient(135deg, #1a1a1a 0%, #333 50%, #000 100%);
       border-radius: 4px;
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6);
       z-index: 3;
     }
 
@@ -396,7 +428,7 @@
       left: 0;
       right: 0;
       text-align: center;
-      color: rgba(255,255,255,0.18);
+      color: rgba(255, 255, 255, 0.18);
       font-family: 'Playfair Display', serif;
       font-size: 16px;
       font-weight: bold;
@@ -413,7 +445,37 @@
       background: linear-gradient(90deg, #9090a0, #fff, #9090a0);
       border-radius: 2px;
       z-index: 5;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Lens Items (Eye Color) */
+    .lens-item {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, transparent 15%, var(--lens-color) 45%, rgba(0, 0, 0, 0.8) 95%);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.6), 0 4px 6px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+
+    .lens-item:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7), 0 6px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .lens-item::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      width: 12px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      transform: rotate(-30deg);
     }
 
     /* Alt Gümüş Topuz (Dior İmzası) */
@@ -426,13 +488,13 @@
       background: radial-gradient(circle at 50% 20%, #fff, #b8b8c0 60%, #808090);
       border-radius: 50%;
       z-index: 4;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
 
     .shelf-mini-btn {
       padding: 8px 10px;
       border-radius: 12px;
-      border: 1px solid rgba(70,70,229,0.15);
+      border: 1px solid rgba(70, 70, 229, 0.15);
       background: white;
       color: #2a2a7a;
       font-size: 12px;
@@ -456,8 +518,9 @@
       background: white;
       border-radius: 16px;
       padding: 10px;
-      box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
-      display: none; /* Hidden by default */
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+      display: none;
+      /* Hidden by default */
     }
 
     .color-palette-container.active {
@@ -477,7 +540,7 @@
       height: 18px;
       border-radius: 3px;
       cursor: pointer;
-      border: 1px solid rgba(0,0,0,0.05);
+      border: 1px solid rgba(0, 0, 0, 0.05);
       transition: transform 0.1s;
     }
 
@@ -487,21 +550,21 @@
       height: 58px;
       background: white;
       border-radius: 12px;
-      border: 1px solid rgba(70,70,229,0.1);
+      border: 1px solid rgba(70, 70, 229, 0.1);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
       z-index: 10;
       overflow: hidden;
     }
 
     .shelf-item-card:hover {
       transform: translateY(-5px) scale(1.05);
-      box-shadow: 0 8px 15px rgba(70,70,229,0.12);
+      box-shadow: 0 8px 15px rgba(70, 70, 229, 0.12);
       border-color: #4646e5;
     }
 
@@ -509,19 +572,19 @@
       max-width: 85%;
       max-height: 85%;
       object-fit: contain;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
     }
 
     .color-swatch:hover {
       transform: scale(1.2);
       z-index: 5;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
 
     .palette-toggle-btn {
       width: 100%;
       background: #f0f0f8;
-      border: 1px solid rgba(70,70,229,0.1);
+      border: 1px solid rgba(70, 70, 229, 0.1);
       border-radius: 10px;
       padding: 8px;
       font-size: 13px;
@@ -536,8 +599,15 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   </style>
 </head>
@@ -564,7 +634,8 @@
       <div style="margin-top: 30px;">
         <button class="nav-btn" id="finishBtn">
           Finish & Analyze
-          <svg viewBox="0 0 24 24" stroke-width="2" style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
+          <svg viewBox="0 0 24 24" stroke-width="2"
+            style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
@@ -580,10 +651,12 @@
           <span class="control-title">Face Slim / Widen</span>
           <span class="val-txt" id="slim_face-val">0%</span>
         </div>
-      
+
         <div style="position: relative;">
-          <input type="range" class="refine-slider" data-type="slim_face" min="-100" max="100" value="0" style="margin: 5px 0;">
-          <div style="position: absolute; left: 50%; top: -4px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none;">
+          <input type="range" class="refine-slider" data-type="slim_face" min="-100" max="100" value="0"
+            style="margin: 5px 0;">
+          <div
+            style="position: absolute; left: 50%; top: -4px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none;">
             <div style="width: 2px; height: 10px; background: rgba(70,70,229,0.4); border-radius: 1px;"></div>
           </div>
         </div>
@@ -602,7 +675,8 @@
           <span class="control-title">De-Aging</span>
           <span class="val-txt" id="deaging-val">0%</span>
         </div>
-        <input type="range" class="refine-slider" data-type="deaging" min="0" max="100" value="0" style="margin: 5px 0;">
+        <input type="range" class="refine-slider" data-type="deaging" min="0" max="100" value="0"
+          style="margin: 5px 0;">
       </div>
 
       <div class="control-item">
@@ -624,7 +698,8 @@
           <span class="control-title">Eyebrow Thickening</span>
           <span class="val-txt" id="eyebrow-val">0%</span>
         </div>
-        <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0" style="margin: 5px 0;">
+        <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0"
+          style="margin: 5px 0;">
       </div>
 
       <div class="control-item">
@@ -632,7 +707,8 @@
           <span class="control-title">Lip Widening</span>
           <span class="val-txt" id="lip_widen-val">0%</span>
         </div>
-        <input type="range" class="refine-slider" data-type="lip_widen" min="0" max="100" value="0" style="margin: 5px 0;">
+        <input type="range" class="refine-slider" data-type="lip_widen" min="0" max="100" value="0"
+          style="margin: 5px 0;">
       </div>
 
       <div class="control-item" style="background: rgba(70,70,229,0.05);">
@@ -650,16 +726,12 @@
         </select>
 
         <label style="font-size: 12px; color:#6060aa;">Choose Color</label>
-        <input type="color" id="makeupColor" value="#d96b86" style="width: 42px; height: 30px; border: none; border-radius: 6px; cursor: pointer; padding: 0; margin: 8px 0 12px 0;">
+        <input type="color" id="makeupColor" value="#d96b86"
+          style="width: 42px; height: 30px; border: none; border-radius: 6px; cursor: pointer; padding: 0; margin: 8px 0 12px 0;">
         <br>
         <label style="font-size: 12px; color:#6060aa;">Intensity</label>
         <span class="val-txt" id="makeup_intensity-val">50%</span>
-       <input type="range"
-          data-type="makeup_intensity"
-          id="makeupIntensity"
-          min="0.1"
-          max="1.0"
-          step="0.01"
+        <input type="range" data-type="makeup_intensity" id="makeupIntensity" min="0.1" max="1.0" step="0.01"
           value="0.5">
       </div>
 
@@ -668,14 +740,15 @@
           <span class="control-title">Hair Color</span>
           <span class="val-txt" id="hair_color-val">0%</span>
         </div>
-      
+
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
           <label style="font-size: 11px; color: #8888bb; font-weight: 600;">Color:</label>
           <input type="color" id="hairColorPicker" value="#3b1f0a"
             style="width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0;">
         </div>
 
-        <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0" style="margin: 5px 0;">
+        <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0"
+          style="margin: 5px 0;">
       </div>
 
       <div class="control-item">
@@ -689,20 +762,25 @@
           <span style="font-size:12px; color:#8888bb;">Length</span>
           <span class="val-txt" id="hair_length-val">100%</span>
         </div>
-        <input type="range" class="refine-slider" id="hairLengthSlider" data-type="hair_length" min="75" max="125" value="100" style="margin: 8px 0 12px 0;">
+        <input type="range" class="refine-slider" id="hairLengthSlider" data-type="hair_length" min="75" max="125"
+          value="100" style="margin: 8px 0 12px 0;">
         <button onclick="clearHairstyle()" class="remove-btn">Remove</button>
       </div>
-      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
-  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-    <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Eyebrow Color</span>
-    <span class="val-txt" id="eyebrow_color-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
-  </div>
-  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-    <label style="font-size: 11px; color: #8888bb; font-weight: 600;">Color:</label>
-    <input type="color" id="eyebrowColorPicker" value="#3b1f0a" style="width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0;">
-  </div>
-  <input type="range" class="refine-slider" data-type="eyebrow_color" min="0" max="100" value="0" style="margin: 5px 0;">
-</div>
+      <div class="control-item"
+        style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Eyebrow Color</span>
+          <span class="val-txt" id="eyebrow_color-val"
+            style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+          <label style="font-size: 11px; color: #8888bb; font-weight: 600;">Color:</label>
+          <input type="color" id="eyebrowColorPicker" value="#3b1f0a"
+            style="width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0;">
+        </div>
+        <input type="range" class="refine-slider" data-type="eyebrow_color" min="0" max="100" value="0"
+          style="margin: 5px 0;">
+      </div>
 
       <div class="control-item">
         <div style="margin-bottom: 10px;">
@@ -765,9 +843,9 @@
     <div class="shelf-title">Beauty Shelf</div>
 
     <div class="shelf-category-tabs">
-      <button class="shelf-tab active" onclick="openShelfCategory('makeupShelf', this)">Makyaj</button>
-      <button class="shelf-tab" onclick="openShelfCategory('hairShelf', this)">Saç</button>
-      <button class="shelf-tab" onclick="openShelfCategory('accessoryShelf', this)">Aksesuar</button>
+      <button class="shelf-tab active" onclick="openShelfCategory('makeupShelf', this)">Makeup</button>
+      <button class="shelf-tab" onclick="openShelfCategory('hairShelf', this)">Hair</button>
+      <button class="shelf-tab" onclick="openShelfCategory('accessoryShelf', this)">Accessories</button>
     </div>
 
     <div id="makeupShelf" class="shelf-section active">
@@ -822,8 +900,26 @@
 
         <button class="shelf-mini-btn" onclick="clearShelfMakeup()">Ruju kaldır</button>
 
-        <button class="palette-toggle-btn" onclick="toggleColorPalette()">Renkleri Göster...</button>
-        
+        <div class="field-label" style="margin-top: 25px;">Eye Lens Shelf</div>
+        <div class="shelf-row" style="margin-bottom: 10px;">
+          <!-- Blue Lens -->
+          <button class="lens-item" style="--lens-color:#4a90e2;" onclick="chooseShelfLens('#4a90e2')"
+            title="Mavi Lens"></button>
+          <!-- Green Lens -->
+          <button class="lens-item" style="--lens-color:#50C878;" onclick="chooseShelfLens('#50C878')"
+            title="Yeşil Lens"></button>
+          <!-- Hazel Lens -->
+          <button class="lens-item" style="--lens-color:#C9A86A;" onclick="chooseShelfLens('#C9A86A')"
+            title="Ela Lens"></button>
+          <!-- Violet/Purple Lens -->
+          <button class="lens-item" style="--lens-color:#9b59b6;" onclick="chooseShelfLens('#9b59b6')"
+            title="Menekşe Lens"></button>
+        </div>
+        <button class="shelf-mini-btn" onclick="clearShelfLens()">Lensi Çıkar</button>
+
+        <button class="palette-toggle-btn" style="margin-top: 20px;" onclick="toggleColorPalette()">Diğer Renkleri
+          Göster...</button>
+
         <div id="colorPalette" class="color-palette-container">
           <div class="color-grid" id="lipstickColorGrid">
             <!-- Colors will be injected here via JS -->
@@ -835,36 +931,45 @@
     <div id="hairShelf" class="shelf-section">
       <div class="shelf-board">
         <div class="field-label">Hair Shelf</div>
-        <div id="shelfHairstyleList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
-        
-        <div class="position-controls" style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(70,70,229,0.2);">
+        <div id="shelfHairstyleList"
+          style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
+
+        <div class="position-controls"
+          style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(70,70,229,0.2);">
           <div class="field-label" style="font-size: 13px; color: #4646e5; margin-bottom: 12px;">Hizalama Ayarları</div>
-          
+
           <div style="margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
+            <div
+              style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
               <span>Dikey Konum (Yukarı/Aşağı)</span>
               <span id="hair-y-val">0</span>
             </div>
-            <input type="range" id="hairYSlider" min="-150" max="150" value="0" class="mini-slider" style="width: 100%; height: 4px; margin: 8px 0;">
+            <input type="range" id="hairYSlider" min="-150" max="150" value="0" class="mini-slider"
+              style="width: 100%; height: 4px; margin: 8px 0;">
           </div>
 
           <div style="margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
+            <div
+              style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
               <span>Yatay Konum (Sağ/Sol)</span>
               <span id="hair-x-val">0</span>
             </div>
-            <input type="range" id="hairXSlider" min="-100" max="100" value="0" class="mini-slider" style="width: 100%; height: 4px; margin: 8px 0;">
+            <input type="range" id="hairXSlider" min="-100" max="100" value="0" class="mini-slider"
+              style="width: 100%; height: 4px; margin: 8px 0;">
           </div>
 
           <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
+            <div
+              style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
               <span>Boyut (Büyült/Küçült)</span>
               <span id="hair-scale-shelf-val">100%</span>
             </div>
-            <input type="range" id="hairScaleShelfSlider" min="50" max="300" value="100" class="mini-slider" style="width: 100%; height: 4px; margin: 8px 0;">
+            <input type="range" id="hairScaleShelfSlider" min="50" max="300" value="100" class="mini-slider"
+              style="width: 100%; height: 4px; margin: 8px 0;">
           </div>
-          
-          <p class="shelf-note" style="margin-top: 10px; font-style: italic;">Saçın tam oturması için yukarıdaki sürgüleri kullanabilirsiniz.</p>
+
+          <p class="shelf-note" style="margin-top: 10px; font-style: italic;">Saçın tam oturması için yukarıdaki
+            sürgüleri kullanabilirsiniz.</p>
         </div>
       </div>
     </div>
@@ -882,7 +987,8 @@
         </div>
 
         <div class="field-label" style="margin-top: 15px;">Jewelry Cabinet</div>
-        <div id="shelfAccessoryList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
+        <div id="shelfAccessoryList"
+          style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
         <p class="shelf-note">Küpe ve kolyeler dinamik olarak yüklenir.</p>
       </div>
     </div>
@@ -921,7 +1027,7 @@
       const val = parseInt(e.target.value, 10);
       selectedHairScale = val / 100;
       document.getElementById('hair-scale-shelf-val').textContent = val + '%';
-      
+
       // Sync main slider if it exists
       const mainSlider = document.getElementById('hairLengthSlider');
       if (mainSlider) mainSlider.value = val;
@@ -957,31 +1063,31 @@
 
         if (!files || files.length === 0) {
           const msg = '<span style="font-size:12px;color:#8888bb;">static/hairstyles/ klasörüne PNG ekle</span>';
-          if(container) container.innerHTML = msg;
-          if(shelfContainer) shelfContainer.innerHTML = msg;
+          if (container) container.innerHTML = msg;
+          if (shelfContainer) shelfContainer.innerHTML = msg;
           return;
         }
 
-        if(container) container.innerHTML = '';
-        if(shelfContainer) shelfContainer.innerHTML = '';
+        if (container) container.innerHTML = '';
+        if (shelfContainer) shelfContainer.innerHTML = '';
 
         files.forEach(file => {
           // Sol Panel Butonu
           const btn = document.createElement('button');
           btn.className = 'mini-btn';
           btn.dataset.overlay = file;
-          btn.innerHTML = `<img src="/static/hairstyles/${file}" style="width:100%; height:100%; object-fit:contain;" title="${file.replace('.png','')}">`;
+          btn.innerHTML = `<img src="/static/hairstyles/${file}" style="width:100%; height:100%; object-fit:contain;" title="${file.replace('.png', '')}">`;
           btn.onclick = () => selectOverlay(file, btn);
-          if(container) container.appendChild(btn);
-          
+          if (container) container.appendChild(btn);
+
           // Sağ Raf Kartı
-          if(shelfContainer) {
+          if (shelfContainer) {
             const shelfBtn = document.createElement('div');
             shelfBtn.className = 'shelf-item-card';
             shelfBtn.dataset.overlay = file;
-            shelfBtn.innerHTML = `<img src="/static/hairstyles/${file}" title="${file.replace('.png','')}">`;
+            shelfBtn.innerHTML = `<img src="/static/hairstyles/${file}" title="${file.replace('.png', '')}">`;
             shelfBtn.onclick = () => selectOverlay(file, shelfBtn);
-            if(shelfContainer) shelfContainer.appendChild(shelfBtn);
+            if (shelfContainer) shelfContainer.appendChild(shelfBtn);
           }
         });
       });
@@ -1049,28 +1155,28 @@
 
           if (!files || files.length === 0) {
             const msg = `<span style="font-size:12px;color:#8888bb;">static/accessories/${category}/ içine PNG ekle</span>`;
-            if(container) container.innerHTML = msg;
+            if (container) container.innerHTML = msg;
             return;
           }
 
-          if(container) container.innerHTML = '';
-          
+          if (container) container.innerHTML = '';
+
           files.forEach(file => {
             // Main Panel Button
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'mini-btn';
             btn.dataset.item = file;
-            btn.innerHTML = `<img src="/static/accessories/${category}/${file}" style="width:100%; height:100%; object-fit:contain;" title="${file.replace('.png','')}">`;
+            btn.innerHTML = `<img src="/static/accessories/${category}/${file}" style="width:100%; height:100%; object-fit:contain;" title="${file.replace('.png', '')}">`;
             btn.onclick = () => selectAccessory(typeName, file, btn, listId);
-            if(container) container.appendChild(btn);
+            if (container) container.appendChild(btn);
 
             // Shelf Panel Card
-            if(shelfContainer) {
+            if (shelfContainer) {
               const shelfBtn = document.createElement('div');
               shelfBtn.className = 'shelf-item-card';
               shelfBtn.dataset.item = file;
-              shelfBtn.innerHTML = `<img src="/static/accessories/${category}/${file}" title="${file.replace('.png','')}">`;
+              shelfBtn.innerHTML = `<img src="/static/accessories/${category}/${file}" title="${file.replace('.png', '')}">`;
               shelfBtn.onclick = () => selectAccessory(typeName, file, shelfBtn, listId);
               shelfContainer.appendChild(shelfBtn);
             }
@@ -1078,7 +1184,7 @@
         })
         .catch(err => {
           console.error('Accessory load error:', err);
-          if(document.getElementById(listId)) {
+          if (document.getElementById(listId)) {
             document.getElementById(listId).innerHTML =
               '<span style="font-size:12px;color:#cc4444;">Could not load accessories</span>';
           }
@@ -1161,11 +1267,32 @@
       debounceTimer = setTimeout(applyAllTransforms, 100);
     }
 
+    let shelfLens = {
+      color: null,
+      intensity: 0.7
+    };
+
+    function chooseShelfLens(color) {
+      shelfLens.color = color;
+      shelfLens.intensity = 0.7;
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearShelfLens() {
+      shelfLens.color = null;
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+
     function toggleColorPalette() {
       const palette = document.getElementById('colorPalette');
       const btn = document.querySelector('.palette-toggle-btn');
       palette.classList.toggle('active');
-      
+
       if (palette.classList.contains('active')) {
         btn.textContent = "Paleti Gizle";
       } else {
@@ -1288,6 +1415,14 @@
       const selectedGlasses = document.getElementById("glassesSelect")?.value;
       const selectedHat = document.getElementById("hatSelect")?.value;
 
+      if (shelfLens.color) {
+        transforms.push({
+          type: 'eye_color',
+          color: shelfLens.color,
+          intensity: shelfLens.intensity
+        });
+      }
+
       if (selectedGlasses || selectedHat) {
         transforms.push({
           type: "accessories",
@@ -1299,37 +1434,37 @@
         });
       }
 
-     sliders.forEach(slider => {
-  if (slider.dataset.type === 'hair_length') {
-    return; // uzunluk kontrolleri sadece scale faktörü için, transform tipi değil
-  }
+      sliders.forEach(slider => {
+        if (slider.dataset.type === 'hair_length') {
+          return; // uzunluk kontrolleri sadece scale faktörü için, transform tipi değil
+        }
 
-  const val = parseInt(slider.value, 10);
+        const val = parseInt(slider.value, 10);
 
-  if (val !== 0) {
-    const t = {
-      type: slider.dataset.type,
-      intensity: val / 100
-    };
+        if (val !== 0) {
+          const t = {
+            type: slider.dataset.type,
+            intensity: val / 100
+          };
 
-    if (slider.dataset.type === 'hair_color') {
-      t.params = { color: document.getElementById('hairColorPicker').value };
-    }
+          if (slider.dataset.type === 'hair_color') {
+            t.params = { color: document.getElementById('hairColorPicker').value };
+          }
 
-    if (slider.dataset.type === 'eyebrow_color') {
-      t.params = { color: document.getElementById('eyebrowColorPicker').value };
-    }
+          if (slider.dataset.type === 'eyebrow_color') {
+            t.params = { color: document.getElementById('eyebrowColorPicker').value };
+          }
 
-    transforms.push(t);
-  }
-});
+          transforms.push(t);
+        }
+      });
       if (selectedOverlay) {
         const hcSlider = Array.from(sliders).find(s => s.dataset.type === 'hair_color');
         let overlayColor = null;
         let overlayColorIntensity = 0;
         if (hcSlider && parseInt(hcSlider.value, 10) !== 0) {
-           overlayColor = document.getElementById('hairColorPicker').value;
-           overlayColorIntensity = parseInt(hcSlider.value, 10) / 100;
+          overlayColor = document.getElementById('hairColorPicker').value;
+          overlayColorIntensity = parseInt(hcSlider.value, 10) / 100;
         }
 
         transforms.push({
@@ -1444,12 +1579,12 @@
       }
     });
     document.getElementById('eyebrowColorPicker')?.addEventListener('input', () => {
-  const val = parseInt(document.querySelector('[data-type="eyebrow_color"]').value, 10);
-  if (val > 0) {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(applyAllTransforms, 400);
-  }
-});
+      const val = parseInt(document.querySelector('[data-type="eyebrow_color"]').value, 10);
+      if (val > 0) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
+      }
+    });
 
     function syncMakeupFromPanel() {
       shelfMakeup.type = null;
@@ -1512,4 +1647,5 @@
     });
   </script>
 </body>
+
 </html>
