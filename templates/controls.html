@@ -1151,7 +1151,11 @@
           btn.onclick = () => {
             const sel = document.getElementById('glassesSelect');
             if (sel) {
-              sel.value = item.file;
+              if (sel.value === item.file) {
+                sel.value = ""; // Toggle off if same
+              } else {
+                sel.value = item.file; // Set new
+              }
               applyAllTransforms();
             }
           };
@@ -1167,7 +1171,11 @@
           btn.onclick = () => {
             const sel = document.getElementById('hatSelect');
             if (sel) {
-              sel.value = item.file;
+              if (sel.value === item.file) {
+                sel.value = ""; // Toggle off if same
+              } else {
+                sel.value = item.file; // Set new
+              }
               applyAllTransforms();
             }
           };
