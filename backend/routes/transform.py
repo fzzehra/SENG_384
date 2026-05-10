@@ -80,6 +80,54 @@ def trim_transparent(pil_img):
 
     return pil_img.crop((x0, y0, x1, y1))
 
+def apply_png_overlay(base_img, overlay_img, x, y, scale=1.0):
+    if overlay_img is None:
+        return base_img
+
+    if scale != 1.0:
+        overlay_img = cv2.resize(
+            overlay_img,
+            None,
+            fx=scale,
+            fy=scale,
+            interpolation=cv2.INTER_AREA
+        )
+
+    h, w = overlay_img.shape[:2]
+    base_h, base_w = base_img.shape[:2]
+
+    x1 = max(0, x)
+    y1 = max(0, y)
+    x2 = min(base_w, x + w)
+    y2 = min(base_h, y + h)
+
+    if x1 >= x2 or y1 >= y2:
+        return base_img
+
+    overlay_x1 = x1 - x
+    overlay_y1 = y1 - y
+    overlay_x2 = overlay_x1 + (x2 - x1)
+    overlay_y2 = overlay_y1 + (y2 - y1)
+
+    overlay_crop = overlay_img[overlay_y1:overlay_y2, overlay_x1:overlay_x2]
+    roi = base_img[y1:y2, x1:x2]
+
+    if overlay_crop.shape[2] == 4:
+        overlay_rgb = overlay_crop[:, :, :3]
+        alpha = overlay_crop[:, :, 3] / 255.0
+        alpha = alpha[:, :, np.newaxis]   # EN ÖNEMLİ SATIR
+    else:
+        overlay_rgb = overlay_crop[:, :, :3]
+        alpha = np.ones((overlay_rgb.shape[0], overlay_rgb.shape[1], 1), dtype=np.float32)
+
+    # Note: If base_img is BGR and overlay is RGB, might need a swap here.
+    # But usually OpenCV imread(..., IMREAD_UNCHANGED) returns BGRA.
+    # Let's keep it as the user provided.
+    blended = (roi * (1 - alpha) + overlay_rgb * alpha).astype(np.uint8)
+    base_img[y1:y2, x1:x2] = blended
+
+    return base_img
+
 
 def overlay_rgba(background_bgr, overlay_path, center_xy, target_width, angle_deg=0.0, opacity=1.0):
     if not os.path.exists(overlay_path):
@@ -202,23 +250,44 @@ def apply_jewelry_with_yolo(image, t_type, item_path, intensity=1.0):
         return output
 
     if t_type == "earring":
+        overlay = cv2.imread(item_path, cv2.IMREAD_UNCHANGED)
+        if overlay is None:
+            print("Earring overlay could not be read:", item_path)
+            return output
+
+        oh, ow = overlay.shape[:2]
         earring_width = 0.070 * face_width
+        scale = earring_width / ow
 
+        # Left Earlobe
         left_earlobe = (left_ear[0], left_ear[1] + 0.15 * face_width)
+        lx = int(left_earlobe[0] - (ow * scale) / 2)
+        ly = int(left_earlobe[1] - (oh * scale) / 2)
+        output = apply_png_overlay(output, overlay, lx, ly, scale=scale)
+
+        # Right Earlobe
         right_earlobe = (right_ear[0], right_ear[1] + 0.15 * face_width)
+        rx = int(right_earlobe[0] - (ow * scale) / 2)
+        ry = int(right_earlobe[1] - (oh * scale) / 2)
+        output = apply_png_overlay(output, overlay, rx, ry, scale=scale)
 
-        output = overlay_rgba(output, item_path, left_earlobe, earring_width, opacity=intensity)
-        output = overlay_rgba(output, item_path, right_earlobe, earring_width, opacity=intensity)
-
-    
     elif t_type == "necklace":
+        overlay = cv2.imread(item_path, cv2.IMREAD_UNCHANGED)
+        if overlay is None:
+            print("Necklace overlay could not be read:", item_path)
+            return output
+
+        oh, ow = overlay.shape[:2]
+        necklace_width = 1.25 * face_width
+        scale = necklace_width / ow
+
         neck_x = (left_shoulder[0] + right_shoulder[0]) / 2.0
         neck_y = (left_shoulder[1] + right_shoulder[1]) / 2.0
-
         necklace_center = (neck_x, neck_y + 0.10 * face_width)
-        necklace_width = 1.25 * face_width
 
-        output = overlay_rgba(output, item_path, necklace_center, necklace_width, opacity=intensity)
+        nx = int(necklace_center[0] - (ow * scale) / 2)
+        ny = int(necklace_center[1] - (oh * scale) / 2)
+        output = apply_png_overlay(output, overlay, nx, ny, scale=scale)
 
     return output
 

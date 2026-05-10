@@ -236,6 +236,232 @@
       from { opacity: 0; transform: translateY(24px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* RIGHT BEAUTY SHELF PANEL */
+    .beauty-shelf {
+      position: fixed;
+      right: 18px;
+      top: 110px;
+      width: 260px;
+      max-height: calc(100vh - 135px);
+      background: rgba(255,255,255,0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.9);
+      border-radius: 24px;
+      box-shadow: 0 18px 45px rgba(70,70,229,0.18);
+      padding: 16px;
+      z-index: 50;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .shelf-title {
+      font-family: 'Playfair Display', serif;
+      color: #2a2a7a;
+      font-size: 22px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .shelf-category-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .shelf-tab {
+      border: none;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(70,70,229,0.08);
+      color: #2a2a7a;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .shelf-tab:hover {
+      background: rgba(70,70,229,0.15);
+    }
+
+    .shelf-tab.active {
+      background: linear-gradient(135deg, #f08ac0, #c86cff);
+      color: white;
+    }
+
+    .shelf-section {
+      display: none;
+    }
+
+    .shelf-section.active {
+      display: block;
+    }
+
+    .shelf-board {
+      background: linear-gradient(180deg, #fff7fb, #f6efff);
+      border-radius: 18px;
+      padding: 14px;
+      border: 1px solid rgba(70,70,229,0.08);
+    }
+
+    .shelf-row {
+      position: relative;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 16px 4px 22px;
+      margin-bottom: 10px;
+      justify-content: center;
+    }
+
+    .shelf-row::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 4px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #3d3d5c, #74749a, #3d3d5c);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.18);
+    }
+
+    .lipstick-item {
+      width: 42px;
+      height: 92px;
+      border: none;
+      background: transparent !important;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s ease;
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,0.22));
+    }
+
+    .lipstick-item:hover {
+      transform: translateY(-6px) scale(1.05);
+    }
+
+    /* siyah ruj gövdesi */
+    .lipstick-item::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      bottom: 0;
+      width: 26px;
+      height: 58px;
+      border-radius: 4px 4px 8px 8px;
+      background: linear-gradient(90deg, #161622, #3a3a4d, #0c0c14);
+    }
+
+    /* renkli ruj ucu */
+    .lipstick-item::before {
+      content: "";
+      position: absolute;
+      left: 12px;
+      bottom: 52px;
+      width: 18px;
+      height: 34px;
+      border-radius: 12px 12px 4px 4px;
+      background: var(--lipstick-color);
+      box-shadow: inset -4px 0 6px rgba(0,0,0,0.18);
+    }
+
+    /* metal halka */
+    .lipstick-cap {
+      position: absolute;
+      left: 7px;
+      bottom: 47px;
+      width: 28px;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #d7d7df, #ffffff, #9a9aaa);
+      z-index: 2;
+    }
+
+    .shelf-mini-btn {
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(70,70,229,0.15);
+      background: white;
+      color: #2a2a7a;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .shelf-note {
+      font-size: 12px;
+      color: #7777aa;
+      line-height: 1.4;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* COLOR PALETTE GRID */
+    .color-palette-container {
+      margin-top: 15px;
+      background: white;
+      border-radius: 16px;
+      padding: 10px;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
+      display: none; /* Hidden by default */
+    }
+
+    .color-palette-container.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .color-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid rgba(0,0,0,0.05);
+      transition: transform 0.1s;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.2);
+      z-index: 5;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .palette-toggle-btn {
+      width: 100%;
+      background: #f0f0f8;
+      border: 1px solid rgba(70,70,229,0.1);
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 13px;
+      color: #2a2a7a;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.2s;
+    }
+
+    .palette-toggle-btn:hover {
+      background: #e6e6f5;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 
@@ -352,11 +578,11 @@
         <label style="font-size: 12px; color:#6060aa;">Intensity</label>
         <span class="val-txt" id="makeup_intensity-val">50%</span>
        <input type="range"
-          class="refine-slider"
           data-type="makeup_intensity"
           id="makeupIntensity"
           min="0.1"
           max="1.0"
+          step="0.01"
           value="0.5">
       </div>
 
@@ -457,7 +683,82 @@
     </div>
   </div>
 
+  <!-- RIGHT BEAUTY SHELF -->
+  <div class="beauty-shelf">
+    <div class="shelf-title">Beauty Shelf</div>
+
+    <div class="shelf-category-tabs">
+      <button class="shelf-tab active" onclick="openShelfCategory('makeupShelf', this)">Makyaj</button>
+      <button class="shelf-tab" onclick="openShelfCategory('hairShelf', this)">Saç</button>
+      <button class="shelf-tab" onclick="openShelfCategory('accessoryShelf', this)">Aksesuar</button>
+    </div>
+
+    <div id="makeupShelf" class="shelf-section active">
+      <div class="shelf-board">
+        <div class="field-label">Lipstick Shelf</div>
+
+        <div class="shelf-row">
+          <button class="lipstick-item" style="--lipstick-color:#c9184a;" onclick="chooseShelfLipstick('#c9184a')">
+            <span class="lipstick-cap"></span>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#ff4d6d;" onclick="chooseShelfLipstick('#ff4d6d')">
+            <span class="lipstick-cap"></span>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#9d0208;" onclick="chooseShelfLipstick('#9d0208')">
+            <span class="lipstick-cap"></span>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#e5989b;" onclick="chooseShelfLipstick('#e5989b')">
+            <span class="lipstick-cap"></span>
+          </button>
+        </div>
+
+        <div class="shelf-row">
+          <button class="lipstick-item" style="--lipstick-color:#b5179e;" onclick="chooseShelfLipstick('#b5179e')">
+            <span class="lipstick-cap"></span>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#7b2cbf;" onclick="chooseShelfLipstick('#7b2cbf')">
+            <span class="lipstick-cap"></span>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#a44a3f;" onclick="chooseShelfLipstick('#a44a3f')">
+            <span class="lipstick-cap"></span>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#6a040f;" onclick="chooseShelfLipstick('#6a040f')">
+            <span class="lipstick-cap"></span>
+          </button>
+        </div>
+
+        <button class="shelf-mini-btn" onclick="clearShelfMakeup()">Ruju kaldır</button>
+
+        <button class="palette-toggle-btn" onclick="toggleColorPalette()">Renkleri Göster...</button>
+        
+        <div id="colorPalette" class="color-palette-container">
+          <div class="color-grid" id="lipstickColorGrid">
+            <!-- Colors will be injected here via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="hairShelf" class="shelf-section">
+      <div class="shelf-board">
+        <div class="field-label">Hair Shelf</div>
+        <p class="shelf-note">Saç seçenekleri şimdilik soldaki Hairstyle bölümünden geliyor.</p>
+        <div id="shelfHairstyleList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
+      </div>
+    </div>
+
+    <div id="accessoryShelf" class="shelf-section">
+      <div class="shelf-board">
+        <div class="field-label">Accessory Shelf</div>
+        <p class="shelf-note">Gözlük, şapka, küpe ve kolye seçenekleri soldaki Accessories kısmından geliyor.</p>
+        <div id="shelfAccessoryList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
+      </div>
+    </div>
+  </div> <!-- RIGHT BEAUTY SHELF -->
+
   <script>
+
+
     const sliders = document.querySelectorAll('.refine-slider');
     const livePreview = document.getElementById('livePreview');
     const finishBtn = document.getElementById('finishBtn');
@@ -488,13 +789,17 @@
       .then(r => r.json())
       .then(files => {
         const container = document.getElementById('hairstyleList');
+        const shelfContainer = document.getElementById('shelfHairstyleList');
 
         if (!files || files.length === 0) {
-          container.innerHTML = '<span style="font-size:12px;color:#8888bb;">static/hairstyles/ klasörüne PNG ekle</span>';
+          const msg = '<span style="font-size:12px;color:#8888bb;">static/hairstyles/ klasörüne PNG ekle</span>';
+          if(container) container.innerHTML = msg;
+          if(shelfContainer) shelfContainer.innerHTML = msg;
           return;
         }
 
-        container.innerHTML = '';
+        if(container) container.innerHTML = '';
+        if(shelfContainer) shelfContainer.innerHTML = '';
 
         files.forEach(file => {
           const btn = document.createElement('button');
@@ -502,7 +807,13 @@
           btn.dataset.overlay = file;
           btn.className = 'mini-btn';
           btn.onclick = () => selectOverlay(file, btn);
-          container.appendChild(btn);
+          
+          if(container) container.appendChild(btn.cloneNode(true));
+          
+          // For shelf, maybe use a slightly different style or just the same
+          const shelfBtn = btn.cloneNode(true);
+          shelfBtn.onclick = () => selectOverlay(file, shelfBtn);
+          if(shelfContainer) shelfContainer.appendChild(shelfBtn);
         });
       });
 
@@ -562,14 +873,18 @@
         .then(r => r.json())
         .then(files => {
           const container = document.getElementById(listId);
+          const shelfContainer = document.getElementById('shelfAccessoryList');
 
           if (!files || files.length === 0) {
-            container.innerHTML = `<span style="font-size:12px;color:#8888bb;">static/accessories/${category}/ içine PNG ekle</span>`;
+            const msg = `<span style="font-size:12px;color:#8888bb;">static/accessories/${category}/ içine PNG ekle</span>`;
+            if(container) container.innerHTML = msg;
             return;
           }
 
-          container.innerHTML = '';
-
+          if(container) container.innerHTML = '';
+          // We only append to shelfContainer once, or clear it if it's the first time
+          // But since loadAccessories is called twice, we should be careful
+          
           files.forEach(file => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -577,7 +892,14 @@
             btn.dataset.item = file;
             btn.className = 'mini-btn';
             btn.onclick = () => selectAccessory(typeName, file, btn, listId);
-            container.appendChild(btn);
+            
+            if(container) container.appendChild(btn.cloneNode(true));
+
+            if(shelfContainer) {
+              const shelfBtn = btn.cloneNode(true);
+              shelfBtn.onclick = () => selectAccessory(typeName, file, shelfBtn, listId);
+              shelfContainer.appendChild(shelfBtn);
+            }
           });
         })
         .catch(err => {
@@ -616,18 +938,111 @@
     loadAccessories('earrings', 'earringList', 'earring');
     loadAccessories('necklaces', 'necklaceList', 'necklace');
 
+    let shelfMakeup = {
+      type: null,
+      color: null,
+      intensity: 0.65
+    };
+
+    function openShelfCategory(sectionId, clickedBtn) {
+      document.querySelectorAll('.shelf-section').forEach(section => {
+        section.classList.remove('active');
+      });
+
+      document.getElementById(sectionId).classList.add('active');
+
+      document.querySelectorAll('.shelf-tab').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      clickedBtn.classList.add('active');
+    }
+
+    function chooseShelfLipstick(color) {
+      shelfMakeup.type = "lip_color";
+      shelfMakeup.color = color;
+      shelfMakeup.intensity = 0.65;
+
+      if (makeupType) makeupType.value = "lip_color";
+      if (makeupColor) makeupColor.value = color;
+      if (makeupIntensity) makeupIntensity.value = 0.65;
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearShelfMakeup() {
+      shelfMakeup.type = null;
+      shelfMakeup.color = null;
+
+      if (makeupType) makeupType.value = "";
+      if (makeupIntensity) makeupIntensity.value = 0.5;
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function toggleColorPalette() {
+      const palette = document.getElementById('colorPalette');
+      const btn = document.querySelector('.palette-toggle-btn');
+      palette.classList.toggle('active');
+      
+      if (palette.classList.contains('active')) {
+        btn.textContent = "Paleti Gizle";
+      } else {
+        btn.textContent = "Renkleri Göster...";
+      }
+    }
+
+    function initColorPalette() {
+      const grid = document.getElementById('lipstickColorGrid');
+      if (!grid) return;
+
+      const colors = [
+        // Reds & Pinks
+        "#ff0000", "#e61919", "#cc0000", "#b30000", "#990000", "#ff4d4d", "#ff8080", "#ffb3b3", "#ff6666", "#e6004d",
+        "#ff3399", "#ff66b2", "#ff99cc", "#ff007f", "#cc0066", "#99004d", "#ff1a8c", "#ff4da6", "#ff80bf", "#ffb3d9",
+        // Purples & Berries
+        "#800080", "#990099", "#b300b3", "#cc00cc", "#e600e6", "#660066", "#4d004d", "#8a2be2", "#9400d3", "#9932cc",
+        "#8b008b", "#800020", "#4b0082", "#ba55d3", "#da70d6", "#ee82ee", "#dda0dd", "#c71585", "#db7093", "#ff00ff",
+        // Nudes & Oranges
+        "#bc8f8f", "#cd853f", "#d2b48c", "#deb887", "#f4a460", "#e9967a", "#fa8072", "#ffa07a", "#ff7f50", "#ff6347",
+        "#ff4500", "#ff8c00", "#ffa500", "#ffd700", "#f0e68c", "#bdb76b", "#a0522d", "#8b4513", "#5d3a1a", "#3d2b1f",
+        // Others/Fantasy
+        "#000000", "#1a1a1a", "#333333", "#4d4d4d", "#666666", "#808080", "#999999", "#b3b3b3", "#cccccc", "#e6e6e6"
+      ];
+
+      colors.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.background = color;
+        swatch.title = color;
+        swatch.onclick = () => chooseShelfLipstick(color);
+        grid.appendChild(swatch);
+      });
+    }
+
+    // Initialize palette on load
+    document.addEventListener('DOMContentLoaded', initColorPalette);
+
     function buildTransforms() {
       const transforms = [];
 
-     if (makeupType && makeupType.value) {
-  const intensityVal = parseInt(document.getElementById("makeupIntensity").value, 10) / 100;
+      if (shelfMakeup.type) {
+        transforms.push({
+          type: shelfMakeup.type,
+          color: shelfMakeup.color,
+          intensity: shelfMakeup.intensity
+        });
+      } else if (makeupType && makeupType.value) {
+        const intensityVal = parseFloat(makeupIntensity.value);
 
-  transforms.push({
-    type: makeupType.value,
-    color: makeupColor ? makeupColor.value : "#d96b86",
-    intensity: intensityVal
-  });
-}
+        transforms.push({
+          type: makeupType.value,
+          color: makeupColor ? makeupColor.value : "#d96b86",
+          intensity: intensityVal
+        });
+      }
 
       const selectedGlasses = document.getElementById("glassesSelect")?.value;
       const selectedHat = document.getElementById("hatSelect")?.value;
@@ -783,18 +1198,32 @@
   }
 });
 
+    function syncMakeupFromPanel() {
+      shelfMakeup.type = null;
+      shelfMakeup.color = null;
+
+      const label = document.getElementById("makeup_intensity-val");
+      if (label && makeupIntensity) {
+        const percent = Math.round(parseFloat(makeupIntensity.value) * 100);
+        label.textContent = percent + "%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 150);
+    }
+
     if (makeupType) {
-      makeupType.addEventListener("change", applyAllTransforms);
+      makeupType.addEventListener("change", syncMakeupFromPanel);
     }
 
     if (makeupColor) {
-      makeupColor.addEventListener("input", applyAllTransforms);
-      makeupColor.addEventListener("change", applyAllTransforms);
+      makeupColor.addEventListener("input", syncMakeupFromPanel);
+      makeupColor.addEventListener("change", syncMakeupFromPanel);
     }
 
     if (makeupIntensity) {
-      makeupIntensity.addEventListener("input", applyAllTransforms);
-      makeupIntensity.addEventListener("change", applyAllTransforms);
+      makeupIntensity.addEventListener("input", syncMakeupFromPanel);
+      makeupIntensity.addEventListener("change", syncMakeupFromPanel);
     }
 
     finishBtn.addEventListener('click', async () => {
