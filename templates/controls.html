@@ -332,55 +332,101 @@
     }
 
     .lipstick-item {
-      width: 42px;
-      height: 92px;
+      width: 46px;
+      height: 105px;
       border: none;
       background: transparent !important;
       cursor: pointer;
       position: relative;
-      transition: transform 0.2s ease;
-      filter: drop-shadow(0 8px 10px rgba(0,0,0,0.22));
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      filter: drop-shadow(0 12px 18px rgba(0,0,0,0.25));
+      margin: 5px;
     }
 
     .lipstick-item:hover {
-      transform: translateY(-6px) scale(1.05);
+      transform: translateY(-8px) scale(1.08);
     }
 
-    /* siyah ruj gövdesi */
-    .lipstick-item::after {
-      content: "";
-      position: absolute;
-      left: 8px;
-      bottom: 0;
-      width: 26px;
-      height: 58px;
-      border-radius: 4px 4px 8px 8px;
-      background: linear-gradient(90deg, #161622, #3a3a4d, #0c0c14);
-    }
-
-    /* renkli ruj ucu */
+    /* Gümüş Metal Tüp (İç Kısım) */
     .lipstick-item::before {
       content: "";
       position: absolute;
-      left: 12px;
-      bottom: 52px;
+      left: 14px;
+      bottom: 45px;
       width: 18px;
-      height: 34px;
-      border-radius: 12px 12px 4px 4px;
-      background: var(--lipstick-color);
-      box-shadow: inset -4px 0 6px rgba(0,0,0,0.18);
+      height: 48px;
+      background: linear-gradient(90deg, #b8b8c0, #ffffff 40%, #9090a0);
+      border-radius: 2px;
+      z-index: 1;
     }
 
-    /* metal halka */
-    .lipstick-cap {
+    /* Renkli Ruj Ucu */
+    .lipstick-item::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      bottom: 82px;
+      width: 18px;
+      height: 22px;
+      background: var(--lipstick-color);
+      border-radius: 9px 9px 2px 2px;
+      box-shadow: inset -5px 0 8px rgba(0,0,0,0.25), inset 3px 3px 5px rgba(255,255,255,0.2);
+      z-index: 2;
+    }
+
+    /* Dior Stili Siyah Gövde */
+    .lipstick-base {
       position: absolute;
       left: 7px;
-      bottom: 47px;
-      width: 28px;
-      height: 8px;
+      bottom: 0;
+      width: 32px;
+      height: 62px;
+      background: linear-gradient(135deg, #1a1a1a 0%, #333 50%, #000 100%);
       border-radius: 4px;
-      background: linear-gradient(90deg, #d7d7df, #ffffff, #9a9aaa);
-      z-index: 2;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
+      z-index: 3;
+    }
+
+    /* Gövde üzerindeki logo detayı */
+    .lipstick-base::after {
+      content: "D";
+      position: absolute;
+      bottom: 8px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: rgba(255,255,255,0.18);
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    /* Gümüş Yüzük Detayı */
+    .lipstick-ring {
+      position: absolute;
+      left: 5px;
+      bottom: 58px;
+      width: 36px;
+      height: 7px;
+      background: linear-gradient(90deg, #9090a0, #fff, #9090a0);
+      border-radius: 2px;
+      z-index: 5;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Alt Gümüş Topuz (Dior İmzası) */
+    .lipstick-knob {
+      position: absolute;
+      left: 10px;
+      bottom: -6px;
+      width: 26px;
+      height: 12px;
+      background: radial-gradient(circle at 50% 20%, #fff, #b8b8c0 60%, #808090);
+      border-radius: 50%;
+      z-index: 4;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     }
 
     .shelf-mini-btn {
@@ -699,31 +745,47 @@
 
         <div class="shelf-row">
           <button class="lipstick-item" style="--lipstick-color:#c9184a;" onclick="chooseShelfLipstick('#c9184a')">
-            <span class="lipstick-cap"></span>
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
           </button>
           <button class="lipstick-item" style="--lipstick-color:#ff4d6d;" onclick="chooseShelfLipstick('#ff4d6d')">
-            <span class="lipstick-cap"></span>
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
           </button>
           <button class="lipstick-item" style="--lipstick-color:#9d0208;" onclick="chooseShelfLipstick('#9d0208')">
-            <span class="lipstick-cap"></span>
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
           </button>
           <button class="lipstick-item" style="--lipstick-color:#e5989b;" onclick="chooseShelfLipstick('#e5989b')">
-            <span class="lipstick-cap"></span>
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
           </button>
         </div>
 
         <div class="shelf-row">
           <button class="lipstick-item" style="--lipstick-color:#b5179e;" onclick="chooseShelfLipstick('#b5179e')">
-            <span class="lipstick-cap"></span>
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
           </button>
           <button class="lipstick-item" style="--lipstick-color:#7b2cbf;" onclick="chooseShelfLipstick('#7b2cbf')">
-            <span class="lipstick-cap"></span>
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
           </button>
           <button class="lipstick-item" style="--lipstick-color:#a44a3f;" onclick="chooseShelfLipstick('#a44a3f')">
-            <span class="lipstick-cap"></span>
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
           </button>
           <button class="lipstick-item" style="--lipstick-color:#6a040f;" onclick="chooseShelfLipstick('#6a040f')">
-            <span class="lipstick-cap"></span>
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
           </button>
         </div>
 
