@@ -481,6 +481,37 @@
       transition: transform 0.1s;
     }
 
+    /* ACCESSORY SHELF ITEMS */
+    .shelf-item-card {
+      width: 58px;
+      height: 58px;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid rgba(70,70,229,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    .shelf-item-card:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 8px 15px rgba(70,70,229,0.12);
+      border-color: #4646e5;
+    }
+
+    .shelf-item-card img {
+      max-width: 85%;
+      max-height: 85%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+
     .color-swatch:hover {
       transform: scale(1.2);
       z-index: 5;
@@ -811,9 +842,19 @@
 
     <div id="accessoryShelf" class="shelf-section">
       <div class="shelf-board">
-        <div class="field-label">Accessory Shelf</div>
-        <p class="shelf-note">Gözlük, şapka, küpe ve kolye seçenekleri soldaki Accessories kısmından geliyor.</p>
+        <div class="field-label">Glasses Shelf</div>
+        <div class="shelf-row" id="shelfGlassesList">
+          <!-- Glasses items will be added here -->
+        </div>
+
+        <div class="field-label" style="margin-top: 15px;">Hats Shelf</div>
+        <div class="shelf-row" id="shelfHatsList">
+          <!-- Hats items will be added here -->
+        </div>
+
+        <div class="field-label" style="margin-top: 15px;">Jewelry Cabinet</div>
         <div id="shelfAccessoryList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
+        <p class="shelf-note">Küpe ve kolyeler dinamik olarak yüklenir.</p>
       </div>
     </div>
   </div> <!-- RIGHT BEAUTY SHELF -->
@@ -1084,8 +1125,62 @@
       });
     }
 
-    // Initialize palette on load
-    document.addEventListener('DOMContentLoaded', initColorPalette);
+    function initAccessoryShelves() {
+      const glassesData = [
+        { name: "Classic", file: "glasses1.png" },
+        { name: "Sunglasses", file: "glasses2.png" },
+        { name: "Harry Potter", file: "glasses3.png" },
+        { name: "Snow Goggles", file: "glasses4.png" }
+      ];
+
+      const hatsData = [
+        { name: "Baseball Cap", file: "hat1.png" },
+        { name: "Beret", file: "hat2.png" },
+        { name: "Sun Hat", file: "hat3.png" },
+        { name: "Sleep Hat", file: "hat4.png" }
+      ];
+
+      const glassesGrid = document.getElementById('shelfGlassesList');
+      const hatsGrid = document.getElementById('shelfHatsList');
+
+      if (glassesGrid) {
+        glassesData.forEach(item => {
+          const btn = document.createElement('div');
+          btn.className = 'shelf-item-card';
+          btn.innerHTML = `<img src="/static/accessories/glasses/${item.file}" title="${item.name}">`;
+          btn.onclick = () => {
+            const sel = document.getElementById('glassesSelect');
+            if (sel) {
+              sel.value = item.file;
+              applyAllTransforms();
+            }
+          };
+          glassesGrid.appendChild(btn);
+        });
+      }
+
+      if (hatsGrid) {
+        hatsData.forEach(item => {
+          const btn = document.createElement('div');
+          btn.className = 'shelf-item-card';
+          btn.innerHTML = `<img src="/static/accessories/hats/${item.file}" title="${item.name}">`;
+          btn.onclick = () => {
+            const sel = document.getElementById('hatSelect');
+            if (sel) {
+              sel.value = item.file;
+              applyAllTransforms();
+            }
+          };
+          hatsGrid.appendChild(btn);
+        });
+      }
+    }
+
+    // Initialize palette and shelves on load
+    document.addEventListener('DOMContentLoaded', () => {
+      initColorPalette();
+      initAccessoryShelves();
+    });
 
     function buildTransforms() {
       const transforms = [];
