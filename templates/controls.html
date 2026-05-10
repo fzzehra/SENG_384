@@ -530,8 +530,8 @@
 
     .color-grid {
       display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 4px;
+      grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+      gap: 5px;
       margin-bottom: 10px;
     }
 
@@ -899,31 +899,27 @@
         </div>
 
         <button class="shelf-mini-btn" onclick="clearShelfMakeup()">Ruju kaldır</button>
+        <button class="palette-toggle-btn" onclick="toggleColorPalette('lipstickColorPalette')">Diğer Ruj Renkleri...</button>
+        <div id="lipstickColorPalette" class="color-palette-container">
+          <div class="color-grid" id="lipstickColorGrid"></div>
+        </div>
 
         <div class="field-label" style="margin-top: 25px;">Eye Lens Shelf</div>
         <div class="shelf-row" style="margin-bottom: 10px;">
           <!-- Blue Lens -->
-          <button class="lens-item" style="--lens-color:#4a90e2;" onclick="chooseShelfLens('#4a90e2')"
-            title="Mavi Lens"></button>
+          <button class="lens-item" style="--lens-color:#4a90e2;" onclick="chooseShelfLens('#4a90e2')" title="Mavi Lens"></button>
           <!-- Green Lens -->
-          <button class="lens-item" style="--lens-color:#50C878;" onclick="chooseShelfLens('#50C878')"
-            title="Yeşil Lens"></button>
+          <button class="lens-item" style="--lens-color:#50C878;" onclick="chooseShelfLens('#50C878')" title="Yeşil Lens"></button>
           <!-- Hazel Lens -->
-          <button class="lens-item" style="--lens-color:#C9A86A;" onclick="chooseShelfLens('#C9A86A')"
-            title="Ela Lens"></button>
+          <button class="lens-item" style="--lens-color:#C9A86A;" onclick="chooseShelfLens('#C9A86A')" title="Ela Lens"></button>
           <!-- Violet/Purple Lens -->
-          <button class="lens-item" style="--lens-color:#9b59b6;" onclick="chooseShelfLens('#9b59b6')"
-            title="Menekşe Lens"></button>
+          <button class="lens-item" style="--lens-color:#9b59b6;" onclick="chooseShelfLens('#9b59b6')" title="Menekşe Lens"></button>
         </div>
         <button class="shelf-mini-btn" onclick="clearShelfLens()">Lensi Çıkar</button>
 
-        <button class="palette-toggle-btn" style="margin-top: 20px;" onclick="toggleColorPalette()">Diğer Renkleri
-          Göster...</button>
-
-        <div id="colorPalette" class="color-palette-container">
-          <div class="color-grid" id="lipstickColorGrid">
-            <!-- Colors will be injected here via JS -->
-          </div>
+        <button class="palette-toggle-btn" style="margin-top: 10px;" onclick="toggleColorPalette('lensColorPalette')">Diğer Lens Renkleri...</button>
+        <div id="lensColorPalette" class="color-palette-container">
+          <div class="color-grid" id="lensColorGrid"></div>
         </div>
       </div>
     </div>
@@ -1288,21 +1284,23 @@
     }
 
 
-    function toggleColorPalette() {
-      const palette = document.getElementById('colorPalette');
-      const btn = document.querySelector('.palette-toggle-btn');
+    function toggleColorPalette(paletteId) {
+      const palette = document.getElementById(paletteId);
+      // Find the button right before the palette
+      const btn = palette.previousElementSibling;
       palette.classList.toggle('active');
 
       if (palette.classList.contains('active')) {
         btn.textContent = "Paleti Gizle";
       } else {
-        btn.textContent = "Renkleri Göster...";
+        btn.textContent = paletteId.includes('lens') ? "Diğer Lens Renkleri..." : "Diğer Ruj Renkleri...";
       }
     }
 
     function initColorPalette() {
-      const grid = document.getElementById('lipstickColorGrid');
-      if (!grid) return;
+      const lipstickGrid = document.getElementById('lipstickColorGrid');
+      const lensGrid = document.getElementById('lensColorGrid');
+      if (!lipstickGrid && !lensGrid) return;
 
       const colors = [
         // Reds & Pinks
@@ -1314,17 +1312,29 @@
         // Nudes & Oranges
         "#bc8f8f", "#cd853f", "#d2b48c", "#deb887", "#f4a460", "#e9967a", "#fa8072", "#ffa07a", "#ff7f50", "#ff6347",
         "#ff4500", "#ff8c00", "#ffa500", "#ffd700", "#f0e68c", "#bdb76b", "#a0522d", "#8b4513", "#5d3a1a", "#3d2b1f",
-        // Others/Fantasy
-        "#000000", "#1a1a1a", "#333333", "#4d4d4d", "#666666", "#808080", "#999999", "#b3b3b3", "#cccccc", "#e6e6e6"
+        // Others/Fantasy (Blues, Greens, etc suitable for lenses too)
+        "#000000", "#1a1a1a", "#333333", "#4d4d4d", "#666666", "#808080", "#999999", "#b3b3b3", "#cccccc", "#e6e6e6",
+        "#0000ff", "#008000", "#00ffff", "#008080", "#4a90e2", "#50C878", "#C9A86A", "#9b59b6", "#27ae60", "#2980b9"
       ];
 
       colors.forEach(color => {
-        const swatch = document.createElement('div');
-        swatch.className = 'color-swatch';
-        swatch.style.background = color;
-        swatch.title = color;
-        swatch.onclick = () => chooseShelfLipstick(color);
-        grid.appendChild(swatch);
+        if (lipstickGrid) {
+          const swatch = document.createElement('div');
+          swatch.className = 'color-swatch';
+          swatch.style.background = color;
+          swatch.title = color;
+          swatch.onclick = () => chooseShelfLipstick(color);
+          lipstickGrid.appendChild(swatch);
+        }
+        
+        if (lensGrid) {
+          const lensSwatch = document.createElement('div');
+          lensSwatch.className = 'color-swatch';
+          lensSwatch.style.background = color;
+          lensSwatch.title = color;
+          lensSwatch.onclick = () => chooseShelfLens(color);
+          lensGrid.appendChild(lensSwatch);
+        }
       });
     }
 
