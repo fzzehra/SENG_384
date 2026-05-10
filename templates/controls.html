@@ -985,21 +985,23 @@
           }
 
           if(container) container.innerHTML = '';
-          // We only append to shelfContainer once, or clear it if it's the first time
-          // But since loadAccessories is called twice, we should be careful
           
           files.forEach(file => {
+            // Main Panel Button
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.textContent = file.replace('.png', '');
-            btn.dataset.item = file;
             btn.className = 'mini-btn';
+            btn.dataset.item = file;
+            btn.innerHTML = `<img src="/static/accessories/${category}/${file}" style="width:100%; height:100%; object-fit:contain;" title="${file.replace('.png','')}">`;
             btn.onclick = () => selectAccessory(typeName, file, btn, listId);
-            
-            if(container) container.appendChild(btn.cloneNode(true));
+            if(container) container.appendChild(btn);
 
+            // Shelf Panel Card
             if(shelfContainer) {
-              const shelfBtn = btn.cloneNode(true);
+              const shelfBtn = document.createElement('div');
+              shelfBtn.className = 'shelf-item-card';
+              shelfBtn.dataset.item = file;
+              shelfBtn.innerHTML = `<img src="/static/accessories/${category}/${file}" title="${file.replace('.png','')}">`;
               shelfBtn.onclick = () => selectAccessory(typeName, file, shelfBtn, listId);
               shelfContainer.appendChild(shelfBtn);
             }
@@ -1007,19 +1009,24 @@
         })
         .catch(err => {
           console.error('Accessory load error:', err);
-          document.getElementById(listId).innerHTML =
-            '<span style="font-size:12px;color:#cc4444;">Could not load accessories</span>';
+          if(document.getElementById(listId)) {
+            document.getElementById(listId).innerHTML =
+              '<span style="font-size:12px;color:#cc4444;">Could not load accessories</span>';
+          }
         });
     }
 
     function selectAccessory(typeName, file, btn, listId) {
-      selectedAccessories[typeName] = file;
-
-      document.querySelectorAll(`#${listId} button`).forEach(b => {
-        b.classList.remove('active');
-      });
-
-      btn.classList.add('active');
+      if (selectedAccessories[typeName] === file) {
+        selectedAccessories[typeName] = null;
+        btn.classList.remove('active');
+      } else {
+        selectedAccessories[typeName] = file;
+        document.querySelectorAll(`#${listId} button`).forEach(b => {
+          b.classList.remove('active');
+        });
+        btn.classList.add('active');
+      }
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyAllTransforms, 100);
