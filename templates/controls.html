@@ -478,6 +478,48 @@
       transform: rotate(-30deg);
     }
 
+    /* Blush Items */
+    .blush-item {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .blush-item:hover {
+      transform: translateY(-3px) scale(1.08);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .blush-color-fill {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--blush-color);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .blush-item::after {
+      content: '';
+      position: absolute;
+      top: 5px;
+      right: 8px;
+      width: 10px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      transform: rotate(35deg);
+    }
+
     /* Alt Gümüş Topuz (Dior İmzası) */
     .lipstick-knob {
       position: absolute;
@@ -899,25 +941,56 @@
         </div>
 
         <button class="shelf-mini-btn" onclick="clearShelfMakeup()">Ruju kaldır</button>
-        <button class="palette-toggle-btn" onclick="toggleColorPalette('lipstickColorPalette')">Diğer Ruj Renkleri...</button>
+        <button class="palette-toggle-btn" onclick="toggleColorPalette('lipstickColorPalette')">Diğer Ruj
+          Renkleri...</button>
         <div id="lipstickColorPalette" class="color-palette-container">
           <div class="color-grid" id="lipstickColorGrid"></div>
+        </div>
+
+        <div class="field-label" style="margin-top: 25px;">Blush Shelf</div>
+        <div class="shelf-row" style="margin-bottom: 10px;">
+          <!-- Pink Blush -->
+          <button class="blush-item" style="--blush-color:#ffb3b3;" onclick="chooseShelfBlush('#ffb3b3')" title="Pembe Allık">
+            <div class="blush-color-fill"></div>
+          </button>
+          <!-- Peach Blush -->
+          <button class="blush-item" style="--blush-color:#ffcc99;" onclick="chooseShelfBlush('#ffcc99')" title="Şeftali Allık">
+            <div class="blush-color-fill"></div>
+          </button>
+          <!-- Rose Blush -->
+          <button class="blush-item" style="--blush-color:#e6a8d7;" onclick="chooseShelfBlush('#e6a8d7')" title="Gül Kurusu">
+            <div class="blush-color-fill"></div>
+          </button>
+          <!-- Terracotta Blush -->
+          <button class="blush-item" style="--blush-color:#cd853f;" onclick="chooseShelfBlush('#cd853f')" title="Toprak Tonu">
+            <div class="blush-color-fill"></div>
+          </button>
+        </div>
+        <button class="shelf-mini-btn" onclick="clearShelfBlush()">Allığı Kaldır</button>
+        <button class="palette-toggle-btn" onclick="toggleColorPalette('blushColorPalette')">Diğer Allık Renkleri...</button>
+        <div id="blushColorPalette" class="color-palette-container">
+          <div class="color-grid" id="blushColorGrid"></div>
         </div>
 
         <div class="field-label" style="margin-top: 25px;">Eye Lens Shelf</div>
         <div class="shelf-row" style="margin-bottom: 10px;">
           <!-- Blue Lens -->
-          <button class="lens-item" style="--lens-color:#4a90e2;" onclick="chooseShelfLens('#4a90e2')" title="Mavi Lens"></button>
+          <button class="lens-item" style="--lens-color:#4a90e2;" onclick="chooseShelfLens('#4a90e2')"
+            title="Mavi Lens"></button>
           <!-- Green Lens -->
-          <button class="lens-item" style="--lens-color:#50C878;" onclick="chooseShelfLens('#50C878')" title="Yeşil Lens"></button>
+          <button class="lens-item" style="--lens-color:#50C878;" onclick="chooseShelfLens('#50C878')"
+            title="Yeşil Lens"></button>
           <!-- Hazel Lens -->
-          <button class="lens-item" style="--lens-color:#C9A86A;" onclick="chooseShelfLens('#C9A86A')" title="Ela Lens"></button>
+          <button class="lens-item" style="--lens-color:#C9A86A;" onclick="chooseShelfLens('#C9A86A')"
+            title="Ela Lens"></button>
           <!-- Violet/Purple Lens -->
-          <button class="lens-item" style="--lens-color:#9b59b6;" onclick="chooseShelfLens('#9b59b6')" title="Menekşe Lens"></button>
+          <button class="lens-item" style="--lens-color:#9b59b6;" onclick="chooseShelfLens('#9b59b6')"
+            title="Menekşe Lens"></button>
         </div>
         <button class="shelf-mini-btn" onclick="clearShelfLens()">Lensi Çıkar</button>
 
-        <button class="palette-toggle-btn" style="margin-top: 10px;" onclick="toggleColorPalette('lensColorPalette')">Diğer Lens Renkleri...</button>
+        <button class="palette-toggle-btn" style="margin-top: 10px;"
+          onclick="toggleColorPalette('lensColorPalette')">Diğer Lens Renkleri...</button>
         <div id="lensColorPalette" class="color-palette-container">
           <div class="color-grid" id="lensColorGrid"></div>
         </div>
@@ -940,8 +1013,7 @@
               <span>Dikey Konum (Yukarı/Aşağı)</span>
               <span id="hair-y-val">0</span>
             </div>
-            <input type="range" id="hairYSlider" min="-150" max="150" value="0" class="mini-slider"
-              style="width: 100%; height: 4px; margin: 8px 0;">
+            <input type="range" id="hairYSlider" min="-200" max="150" value="0" class="mini-slider" style="width: 100%; height: 4px; margin: 8px 0;">
           </div>
 
           <div style="margin-bottom: 15px;">
@@ -1293,14 +1365,35 @@
       if (palette.classList.contains('active')) {
         btn.textContent = "Paleti Gizle";
       } else {
-        btn.textContent = paletteId.includes('lens') ? "Diğer Lens Renkleri..." : "Diğer Ruj Renkleri...";
+        if (paletteId.includes('lens')) btn.textContent = "Diğer Lens Renkleri...";
+        else if (paletteId.includes('blush')) btn.textContent = "Diğer Allık Renkleri...";
+        else btn.textContent = "Diğer Ruj Renkleri...";
       }
+    }
+
+    let shelfBlush = {
+      color: null,
+      intensity: 0.5
+    };
+
+    function chooseShelfBlush(color) {
+      shelfBlush.color = color;
+      shelfBlush.intensity = 0.5;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearShelfBlush() {
+      shelfBlush.color = null;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
     }
 
     function initColorPalette() {
       const lipstickGrid = document.getElementById('lipstickColorGrid');
       const lensGrid = document.getElementById('lensColorGrid');
-      if (!lipstickGrid && !lensGrid) return;
+      const blushGrid = document.getElementById('blushColorGrid');
+      if (!lipstickGrid && !lensGrid && !blushGrid) return;
 
       const colors = [
         // Reds & Pinks
@@ -1326,7 +1419,7 @@
           swatch.onclick = () => chooseShelfLipstick(color);
           lipstickGrid.appendChild(swatch);
         }
-        
+
         if (lensGrid) {
           const lensSwatch = document.createElement('div');
           lensSwatch.className = 'color-swatch';
@@ -1334,6 +1427,15 @@
           lensSwatch.title = color;
           lensSwatch.onclick = () => chooseShelfLens(color);
           lensGrid.appendChild(lensSwatch);
+        }
+
+        if (blushGrid) {
+          const blushSwatch = document.createElement('div');
+          blushSwatch.className = 'color-swatch';
+          blushSwatch.style.background = color;
+          blushSwatch.title = color;
+          blushSwatch.onclick = () => chooseShelfBlush(color);
+          blushGrid.appendChild(blushSwatch);
         }
       });
     }
@@ -1430,6 +1532,14 @@
           type: 'eye_color',
           color: shelfLens.color,
           intensity: shelfLens.intensity
+        });
+      }
+
+      if (shelfBlush.color) {
+        transforms.push({
+          type: 'blush',
+          color: shelfBlush.color,
+          intensity: shelfBlush.intensity
         });
       }
 
