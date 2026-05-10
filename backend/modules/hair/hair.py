@@ -82,8 +82,20 @@ def _rotate_image(image: np.ndarray, angle: float) -> np.ndarray:
 
 def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_factor=1.0, x_offset=0, y_offset=0):
     overlay = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
-    if overlay is None or overlay.shape[2] != 4:
+    if overlay is None:
         return image
+    
+    # Remove baked-in background (white or checkerboard) if needed
+    b, g, r = cv2.split(overlay[:, :, :3])
+    # Assume pixels where all BGR channels are > 200 are background (covers white and typical gray checkerboard)
+    bg_mask = np.where((b > 200) & (g > 200) & (r > 200), 0, 255).astype(np.uint8)
+    
+    if overlay.shape[2] == 4:
+        # Combine existing alpha with our new background mask
+        overlay[:, :, 3] = cv2.bitwise_and(overlay[:, :, 3], bg_mask)
+    else:
+        # Create new alpha from mask
+        overlay = cv2.merge([b, g, r, bg_mask])
 
     h, w = image.shape[:2]
 
