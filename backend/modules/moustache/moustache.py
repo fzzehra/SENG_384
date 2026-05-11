@@ -3,14 +3,13 @@ import numpy as np
 import random
 import math
 
-def apply_moustache(image, landmarks, intensity=0.7, hair_len=7, color=(15, 15, 15)):
-    if landmarks is None:
+def apply_moustache(image, landmarks, intensity=0.7, hair_len=12, color=(8, 8, 8)):
+    if landmarks is None or len(landmarks) < 468:
         return image
 
     h, w = image.shape[:2]
     output = image.copy().astype(np.float32)
 
-    # Landmark koordinatlarını hazırla
     coords = []
     for lm in landmarks:
         lx, ly = lm[0], lm[1]
@@ -19,38 +18,71 @@ def apply_moustache(image, landmarks, intensity=0.7, hair_len=7, color=(15, 15, 
         else:
             coords.append((int(lx), int(ly)))
 
+    def pt(i):
+        return coords[i]
+
     def get_pts(idxs):
         return np.array([coords[i] for i in idxs], np.int32)
 
-    # --- 1. BIYIK BÖLGESİ TANIMLAMA ---
-    # MediaPipe Face Mesh indekslerine göre üst dudak ve burun altı bölgesi
-    MUSTACHE_ZONE = [
-        61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, # Üst sınır (dudak üstü)
-        306, 291, 427, 434, 430, 431, 262, 428, 199, 194, 208, 171, 32, 211, 214, 61 # Alt/Yan sınırlar
-    ]
-    
-    # Dudakların tam üzerine kıl gelmemesi için koruma bölgesi
-    LIPS_INNER = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78]
+    left_mouth = pt(61)
+    right_mouth = pt(291)
+    nose_base = pt(164)
+    cupid = pt(0)
+
+    mouth_w = abs(right_mouth[0] - left_mouth[0])
+
+    y_top = int(nose_base[1] + h * 0.005)
+    y_bottom = int(cupid[1] - h * 0.005)
+
+    if y_bottom <= y_top:
+        y_bottom = y_top + int(h * 0.035)
+
+    x_left = int(left_mouth[0] - mouth_w * 0.08)
+    x_right = int(right_mouth[0] + mouth_w * 0.08)
+    center_x = int((left_mouth[0] + right_mouth[0]) / 2)
 
     mask = np.zeros((h, w), dtype=np.uint8)
-    cv2.fillPoly(mask, [get_pts(MUSTACHE_ZONE)], 255)
-    
+
+    left_poly = np.array([
+        [x_left, int(y_bottom)],
+        [int(center_x - mouth_w * 0.04), int(y_bottom)],
+        [int(center_x - mouth_w * 0.03), int(y_top)],
+        [int(left_mouth[0] + mouth_w * 0.08), int(y_top)],
+    ], dtype=np.int32)
+
+    right_poly = np.array([
+        [int(center_x + mouth_w * 0.04), int(y_bottom)],
+        [x_right, int(y_bottom)],
+        [int(right_mouth[0] - mouth_w * 0.08), int(y_top)],
+        [int(center_x + mouth_w * 0.03), int(y_top)],
+    ], dtype=np.int32)
+
+    cv2.fillPoly(mask, [left_poly], 255)
+    cv2.fillPoly(mask, [right_poly], 255)
+
+    lips = [
+        61, 185, 40, 39, 37, 0,
+        267, 269, 270, 409, 291,
+        375, 321, 405, 314, 17,
+        84, 181, 91, 146
+    ]
+
     lip_mask = np.zeros((h, w), dtype=np.uint8)
-    cv2.fillPoly(lip_mask, [get_pts(LIPS_INNER)], 255)
-    
-    # Dudak bölgesini temizle ve biraz daralt
+    cv2.fillPoly(lip_mask, [get_pts(lips)], 255)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+    lip_mask = cv2.dilate(lip_mask, kernel, iterations=1)
     mask = cv2.subtract(mask, lip_mask)
 
-    # Yumuşatma ve kenar geçişleri
-    mask_f = cv2.GaussianBlur(mask, (15, 15), 0).astype(np.float32) / 255.0
+    # ✅ Noise maskı kaldırıldı — kılları siliyordu
+    # Sadece Gaussian blur ile yumuşat
+    mask_f = cv2.GaussianBlur(mask, (13, 13), 0).astype(np.float32) / 255.0
 
-    # --- 2. ÇİZİM KATMANI ---
     hair_layer = np.zeros_like(image, dtype=np.float32)
-    ys, xs = np.where(mask > 50)
+    ys, xs = np.where(mask > 15)
 
-    # Yoğunluk ayarı
-    density = 0.4 + intensity * 0.45
-    nose_tip_x = coords[1][0] # Burun ucu referansı
+    density = 0.85
+    # ✅ Kıl uzunluğu kısaltıldı
+    dynamic_len = hair_len * (0.8 + intensity * 0.6)
 
     for i in range(len(xs)):
         if random.random() > density:
@@ -62,38 +94,33 @@ def apply_moustache(image, landmarks, intensity=0.7, hair_len=7, color=(15, 15, 
         if random.random() > local_strength:
             continue
 
-        # --- 3. DOĞAL YÖNLENDİRME ---
-        # Bıyık telleri merkezden dışa ve hafif aşağı doğru uzar
-        center_x = coords[1][0] # Burun merkezi
         if x < center_x:
-            # Sol taraf: Sola ve aşağı (110-160 derece arası)
-            angle = math.radians(random.uniform(100, 150))
+            # ✅ Açı aralığı genişletildi → dağınık görünüm
+            angle = math.radians(random.uniform(120, 200))
         else:
-            # Sağ taraf: Sağa ve aşağı (30-80 derece arası)
-            angle = math.radians(random.uniform(30, 80))
+            angle = math.radians(random.uniform(-20, 60))
 
-        # Dinamik uzunluk
-        length = hair_len * (0.6 + intensity) * random.uniform(0.5, 1.1) * local_strength
+        # ✅ Uzunluk varyasyonu artırıldı
+        length = dynamic_len * random.uniform(0.3, 1.0) * local_strength
 
         x2 = int(x + length * math.cos(angle))
         y2 = int(y + length * math.sin(angle))
 
-        # Renk çeşitliliği (doğal görünüm için hafif ton farkları)
-        v = random.randint(-15, 15)
+        v = random.randint(-20, 15)
         c = (
             int(np.clip(color[0] + v, 0, 255)),
             int(np.clip(color[1] + v, 0, 255)),
             int(np.clip(color[2] + v, 0, 255))
         )
 
-        cv2.line(hair_layer, (x, y), (x2, y2), c, 1, cv2.LINE_AA)
+        # ✅ Bazı kıllar 2px kalınlık → derinlik hissi
+        thickness = 1 if random.random() > 0.25 else 2
+        cv2.line(hair_layer, (x, y), (x2, y2), c, thickness, cv2.LINE_AA)
 
-    # --- 4. BİRLEŞTİRME ---
-    # Hafif bir gölge efekti (deriyle bütünleşmesi için)
-    shadow_alpha = (mask_f * intensity * 0.25)[:, :, None]
+    # Shadow biraz azaltıldı (daha hafif altyapı)
+    shadow_alpha = (mask_f * intensity * 0.40)[:, :, None]
     output = output * (1.0 - shadow_alpha)
 
-    # Kılları ekle (biraz keskinlik için 1.3 ile çarptık)
-    final = output + (hair_layer * 1.3)
+    final = output + (hair_layer * 4.0)
 
     return np.clip(final, 0, 255).astype(np.uint8)
