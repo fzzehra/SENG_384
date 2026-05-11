@@ -17,6 +17,7 @@ from backend.modules.hat_glasses.glasses import place_glasses
 from backend.modules.hair.hat import place_hat
 from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay, apply_eyebrow_color
 from backend.modules.beard.beard import apply_beard_effect
+from backend.modules.moustache.moustache import apply_moustache
 
 pose_model = YOLO("yolov8n-pose.pt")
 transform_bp = Blueprint("transform", __name__)
@@ -538,6 +539,24 @@ def transform_image():
                     print(f"APPLIED: beard intensity={t_intensity}, hair_len={beard_len}")
                 else:
                     print("Landmark detection failed for beard.")
+            elif t_type == "moustache":
+                landmark_result = process_landmark_pipeline(output_image)
+
+                if landmark_result.get("success"):
+                    moustache_len = int(3 + (t_intensity * 12))
+
+                    output_image = apply_moustache(
+                        output_image,
+                        landmark_result["landmarks"],
+                        intensity=t_intensity,
+                        hair_len=moustache_len,
+                        color=(5, 5, 5)
+                    )
+
+                    results_meta.append("moustache")
+                    print(f"APPLIED: moustache intensity={t_intensity}, hair_len={moustache_len}")
+                else:
+                    print("Landmark detection failed for moustache.")
             elif t_type == "lip_color":
                 landmark_result = process_landmark_pipeline(output_image)
 
