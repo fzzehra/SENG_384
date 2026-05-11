@@ -524,13 +524,18 @@ def transform_image():
                 landmark_result = process_landmark_pipeline(output_image)
 
                 if landmark_result.get("success"):
+                    beard_len = int(3 + (t_intensity * 14))  # intensity arttıkça kıl uzasın
+
                     output_image = apply_beard_effect(
                         output_image,
                         landmark_result["landmarks"],
-                        intensity=t_intensity
+                        intensity=t_intensity,
+                        hair_len=beard_len,
+                        color=(3, 3, 3)
                     )
+
                     results_meta.append("beard")
-                    print("APPLIED: beard")
+                    print(f"APPLIED: beard intensity={t_intensity}, hair_len={beard_len}")
                 else:
                     print("Landmark detection failed for beard.")
             elif t_type == "lip_color":
@@ -612,6 +617,9 @@ def transform_image():
 
                 results_meta.append(f"{t_type}:{item_name}")
                 print("APPLIED:", t_type)
+           
+            elif t_type == "makeup_intensity":
+                continue
             else:
                 print("UNKNOWN TRANSFORM TYPE:", t_type)
 
