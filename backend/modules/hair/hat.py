@@ -11,10 +11,10 @@ import cv2
 import numpy as np
 
 HAT_CONFIG = {
-    "hat1.png": {"width_scale": 1.35, "vertical_offset": 0.85},
-    "hat2.png": {"width_scale": 1.55, "vertical_offset": 0.75},
-    "hat3.png": {"width_scale": 2.85, "vertical_offset": 0.55},
-    "hat4.png": {"width_scale": 1.35, "vertical_offset": 0.40},
+    "hat1.png": {"width_scale": 1.35, "vertical_offset": 0.85, "x_offset": 0, "y_offset": 0},
+    "hat2.png": {"width_scale": 1.55, "vertical_offset": 0.75, "x_offset": 0, "y_offset": 0},
+    "hat3.png": {"width_scale": 2.85, "vertical_offset": 0.55, "x_offset": 0, "y_offset": 0},
+    "hat4.png": {"width_scale": 1.45, "vertical_offset": 0.40, "x_offset": 0, "y_offset": 0},
 }
 
 LandmarkList = List[Tuple[int, int]]
@@ -188,13 +188,20 @@ def place_hat(image: np.ndarray, landmarks: LandmarkList, hat_image: np.ndarray,
 
     # 7. Yerleşim koordinatları
     # Yatay: şakak merkezine hizala
+    # 7. Yerleşim koordinatları
+    x_offset = HAT_CONFIG.get(hat_name, {}).get("x_offset", 0)
+    y_offset = HAT_CONFIG.get(hat_name, {}).get("y_offset", 0)
+
     center_x = int((left_temple[0] + right_temple[0]) / 2)
-    hat_place_x = center_x - hat_rotated.shape[1] // 2
+    hat_place_x = center_x - hat_rotated.shape[1] // 2 + x_offset
+
+    forehead_y = pts["forehead_center"][1]
+    hat_place_y = int(forehead_y - hat_rotated.shape[0] * vertical_offset) + y_offset
 
     # Dikey: alın noktasından (landmark 10) yukarı çık
     forehead_y = pts["forehead_center"][1]
     # Not: rotated image boyutu değiştiği için yüksekliği yeniden alıyoruz
-    hat_place_y = int(forehead_y - hat_rotated.shape[0] * vertical_offset)
+    hat_place_y = int(forehead_y - hat_rotated.shape[0] * vertical_offset) + y_offset
 
     # 8. Bindirme (Overlay)
     result = _overlay_png(image, hat_rotated, hat_place_x, hat_place_y)

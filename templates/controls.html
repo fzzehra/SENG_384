@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,11 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       min-height: 100vh;
@@ -30,8 +35,21 @@
       pointer-events: none;
     }
 
-    .blob-1 { width: 320px; height: 320px; background: #b0b0ff; top: -80px; left: -80px; }
-    .blob-2 { width: 260px; height: 260px; background: #a8f0c0; bottom: -60px; right: -60px; }
+    .blob-1 {
+      width: 320px;
+      height: 320px;
+      background: #b0b0ff;
+      top: -80px;
+      left: -80px;
+    }
+
+    .blob-2 {
+      width: 260px;
+      height: 260px;
+      background: #a8f0c0;
+      bottom: -60px;
+      right: -60px;
+    }
 
     .page-header {
       text-align: center;
@@ -64,7 +82,7 @@
       background: rgba(255, 255, 255, 0.72);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.85);
+      border: 1px solid rgba(255, 255, 255, 0.85);
       border-radius: 28px;
       padding: 44px 48px;
       width: 100%;
@@ -90,7 +108,7 @@
       overflow: hidden;
       border: 1.5px solid rgba(70, 70, 229, 0.1);
       background: #fff;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
       align-self: start;
     }
 
@@ -110,10 +128,10 @@
     }
 
     .control-item {
-      background: rgba(255,255,255,0.4);
+      background: rgba(255, 255, 255, 0.4);
       padding: 15px;
       border-radius: 16px;
-      border: 1px solid rgba(70,70,229,0.05);
+      border: 1px solid rgba(70, 70, 229, 0.05);
     }
 
     .control-title {
@@ -209,7 +227,7 @@
       font-size: 11px;
       color: #4646e5;
       background: none;
-      border: 1px solid rgba(70,70,229,0.3);
+      border: 1px solid rgba(70, 70, 229, 0.3);
       border-radius: 8px;
       padding: 4px 12px;
       cursor: pointer;
@@ -221,20 +239,523 @@
       margin: 8px 0 12px 0;
       padding: 8px;
       border-radius: 10px;
-      border: 1px solid rgba(70,70,229,0.2);
+      border: 1px solid rgba(70, 70, 229, 0.2);
       font-family: inherit;
       color: #2a2a7a;
-      background: rgba(255,255,255,0.7);
+      background: rgba(255, 255, 255, 0.7);
     }
 
     @keyframes fadeDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* RIGHT BEAUTY SHELF PANEL */
+    .beauty-shelf {
+      position: fixed;
+      right: 18px;
+      top: 110px;
+      width: 260px;
+      max-height: calc(100vh - 135px);
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 24px;
+      box-shadow: 0 18px 45px rgba(70, 70, 229, 0.18);
+      padding: 16px;
+      z-index: 50;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .shelf-title {
+      font-family: 'Playfair Display', serif;
+      color: #2a2a7a;
+      font-size: 22px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .shelf-category-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .shelf-tab {
+      border: none;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(70, 70, 229, 0.08);
+      color: #2a2a7a;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .shelf-tab:hover {
+      background: rgba(70, 70, 229, 0.15);
+    }
+
+    .shelf-tab.active {
+      background: linear-gradient(135deg, #f08ac0, #c86cff);
+      color: white;
+    }
+
+    .shelf-section {
+      display: none;
+    }
+
+    .shelf-section.active {
+      display: block;
+    }
+
+    .shelf-board {
+      background: linear-gradient(180deg, #fff7fb, #f6efff);
+      border-radius: 18px;
+      padding: 14px;
+      border: 1px solid rgba(70, 70, 229, 0.08);
+    }
+
+    .shelf-row {
+      position: relative;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 16px 4px 22px;
+      margin-bottom: 10px;
+      justify-content: center;
+    }
+
+    .shelf-row::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 4px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #3d3d5c, #74749a, #3d3d5c);
+      box-shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    .lipstick-item {
+      width: 46px;
+      height: 105px;
+      border: none;
+      background: transparent !important;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.25));
+      margin: 5px;
+    }
+
+    .lipstick-item:hover {
+      transform: translateY(-8px) scale(1.08);
+    }
+
+    /* Gümüş Metal Tüp (İç Kısım) */
+    .lipstick-item::before {
+      content: "";
+      position: absolute;
+      left: 14px;
+      bottom: 45px;
+      width: 18px;
+      height: 48px;
+      background: linear-gradient(90deg, #b8b8c0, #ffffff 40%, #9090a0);
+      border-radius: 2px;
+      z-index: 1;
+    }
+
+    /* Renkli Ruj Ucu */
+    .lipstick-item::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      bottom: 82px;
+      width: 18px;
+      height: 22px;
+      background: var(--lipstick-color);
+      border-radius: 9px 9px 2px 2px;
+      box-shadow: inset -5px 0 8px rgba(0, 0, 0, 0.25), inset 3px 3px 5px rgba(255, 255, 255, 0.2);
+      z-index: 2;
+    }
+
+    /* Dior Stili Siyah Gövde */
+    .lipstick-base {
+      position: absolute;
+      left: 7px;
+      bottom: 0;
+      width: 32px;
+      height: 62px;
+      background: linear-gradient(135deg, #1a1a1a 0%, #333 50%, #000 100%);
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6);
+      z-index: 3;
+    }
+
+    /* Gövde üzerindeki logo detayı */
+    .lipstick-base::after {
+      content: "D";
+      position: absolute;
+      bottom: 8px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.18);
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    /* Gümüş Yüzük Detayı */
+    .lipstick-ring {
+      position: absolute;
+      left: 5px;
+      bottom: 58px;
+      width: 36px;
+      height: 7px;
+      background: linear-gradient(90deg, #9090a0, #fff, #9090a0);
+      border-radius: 2px;
+      z-index: 5;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Lens Items (Eye Color) */
+    .lens-item {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, transparent 15%, var(--lens-color) 45%, rgba(0, 0, 0, 0.8) 95%);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.6), 0 4px 6px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+
+    .lens-item:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7), 0 6px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .lens-item::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      width: 12px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      transform: rotate(-30deg);
+    }
+
+    /* Blush Items */
+    .blush-item {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .blush-item:hover {
+      transform: translateY(-3px) scale(1.08);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .blush-color-fill {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--blush-color);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .blush-item::after {
+      content: '';
+      position: absolute;
+      top: 5px;
+      right: 8px;
+      width: 10px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      transform: rotate(35deg);
+    }
+
+    /* Eyeshadow Items */
+    .eyeshadow-item {
+      width: 55px;
+      height: 42px;
+      background: #111;
+      border-radius: 6px;
+      border: 1px solid #333;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 5px;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .eyeshadow-item:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .eyeshadow-pan {
+      flex: 1;
+      width: 100%;
+      background: var(--eyeshadow-color);
+      border-radius: 3px;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .eyeshadow-brush {
+      height: 4px;
+      width: 85%;
+      background: linear-gradient(90deg, #333, #555, #333);
+      border-radius: 2px;
+      align-self: center;
+      position: relative;
+    }
+
+    .eyeshadow-brush::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: #ccc;
+      border-radius: 2px 2px 0 0;
+    }
+
+    /* Eyebrow Items */
+    .eyebrow-item {
+      width: 55px;
+      height: 42px;
+      background: #1a1a1a;
+      border-radius: 6px;
+      border: 1px solid #333;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .eyebrow-item:hover {
+      transform: translateY(-3px);
+      border-color: #4646e5;
+      box-shadow: 0 6px 15px rgba(70, 70, 229, 0.2);
+    }
+
+    .eyebrow-tube {
+      width: 32px;
+      height: 10px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 2px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .eyebrow-wand {
+      width: 25px;
+      height: 2px;
+      background: #444;
+      position: absolute;
+      top: 15px;
+      left: 12px;
+      transform: rotate(-15deg);
+    }
+
+    .eyebrow-brush-tip {
+      width: 8px;
+      height: 4px;
+      background: var(--eyebrow-color, #333);
+      position: absolute;
+      right: -2px;
+      top: -1px;
+      border-radius: 1px;
+      box-shadow: 0 0 4px var(--eyebrow-color, transparent);
+    }
+
+    /* Alt Gümüş Topuz (Dior İmzası) */
+    .lipstick-knob {
+      position: absolute;
+      left: 10px;
+      bottom: -6px;
+      width: 26px;
+      height: 12px;
+      background: radial-gradient(circle at 50% 20%, #fff, #b8b8c0 60%, #808090);
+      border-radius: 50%;
+      z-index: 4;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .shelf-mini-btn {
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(70, 70, 229, 0.15);
+      background: white;
+      color: #2a2a7a;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .shelf-note {
+      font-size: 12px;
+      color: #7777aa;
+      line-height: 1.4;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* COLOR PALETTE GRID */
+    .color-palette-container {
+      margin-top: 15px;
+      background: white;
+      border-radius: 16px;
+      padding: 10px;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+      display: none;
+      /* Hidden by default */
+    }
+
+    .color-palette-container.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .color-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      transition: transform 0.1s;
+    }
+
+    /* ACCESSORY SHELF ITEMS */
+    .shelf-item-card {
+      width: 58px;
+      height: 58px;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid rgba(70, 70, 229, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    .shelf-item-card:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 8px 15px rgba(70, 70, 229, 0.12);
+      border-color: #4646e5;
+    }
+
+    .shelf-item-card img {
+      max-width: 85%;
+      max-height: 85%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.2);
+      z-index: 5;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .palette-toggle-btn {
+      width: 100%;
+      background: #f0f0f8;
+      border: 1px solid rgba(70, 70, 229, 0.1);
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 13px;
+      color: #2a2a7a;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.2s;
+    }
+
+    .palette-toggle-btn:hover {
+      background: #e6e6f5;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   </style>
 </head>
@@ -261,7 +782,8 @@
       <div style="margin-top: 30px;">
         <button class="nav-btn" id="finishBtn">
           Finish & Analyze
-          <svg viewBox="0 0 24 24" stroke-width="2" style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
+          <svg viewBox="0 0 24 24" stroke-width="2"
+            style="width: 18px; height: 18px; fill: none; stroke: currentColor;">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
@@ -277,10 +799,12 @@
           <span class="control-title">Face Slim / Widen</span>
           <span class="val-txt" id="slim_face-val">0%</span>
         </div>
-      
+
         <div style="position: relative;">
-          <input type="range" class="refine-slider" data-type="slim_face" min="-100" max="100" value="0" style="margin: 5px 0;">
-          <div style="position: absolute; left: 50%; top: -4px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none;">
+          <input type="range" class="refine-slider" data-type="slim_face" min="-100" max="100" value="0"
+            style="margin: 5px 0;">
+          <div
+            style="position: absolute; left: 50%; top: -4px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none;">
             <div style="width: 2px; height: 10px; background: rgba(70,70,229,0.4); border-radius: 1px;"></div>
           </div>
         </div>
@@ -299,7 +823,8 @@
           <span class="control-title">De-Aging</span>
           <span class="val-txt" id="deaging-val">0%</span>
         </div>
-        <input type="range" class="refine-slider" data-type="deaging" min="0" max="100" value="0" style="margin: 5px 0;">
+        <input type="range" class="refine-slider" data-type="deaging" min="0" max="100" value="0"
+          style="margin: 5px 0;">
       </div>
 
       <div class="control-item">
@@ -321,7 +846,8 @@
           <span class="control-title">Eyebrow Thickening</span>
           <span class="val-txt" id="eyebrow-val">0%</span>
         </div>
-        <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0" style="margin: 5px 0;">
+        <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0"
+          style="margin: 5px 0;">
       </div>
 
       <div class="control-item">
@@ -329,7 +855,8 @@
           <span class="control-title">Lip Widening</span>
           <span class="val-txt" id="lip_widen-val">0%</span>
         </div>
-        <input type="range" class="refine-slider" data-type="lip_widen" min="0" max="100" value="0" style="margin: 5px 0;">
+        <input type="range" class="refine-slider" data-type="lip_widen" min="0" max="100" value="0"
+          style="margin: 5px 0;">
       </div>
 
       <div class="control-item" style="background: rgba(70,70,229,0.05);">
@@ -347,16 +874,12 @@
         </select>
 
         <label style="font-size: 12px; color:#6060aa;">Choose Color</label>
-        <input type="color" id="makeupColor" value="#d96b86" style="width: 42px; height: 30px; border: none; border-radius: 6px; cursor: pointer; padding: 0; margin: 8px 0 12px 0;">
+        <input type="color" id="makeupColor" value="#d96b86"
+          style="width: 42px; height: 30px; border: none; border-radius: 6px; cursor: pointer; padding: 0; margin: 8px 0 12px 0;">
         <br>
         <label style="font-size: 12px; color:#6060aa;">Intensity</label>
         <span class="val-txt" id="makeup_intensity-val">50%</span>
-       <input type="range"
-          class="refine-slider"
-          data-type="makeup_intensity"
-          id="makeupIntensity"
-          min="0.1"
-          max="1.0"
+        <input type="range" data-type="makeup_intensity" id="makeupIntensity" min="0.1" max="1.0" step="0.01"
           value="0.5">
       </div>
 
@@ -365,14 +888,15 @@
           <span class="control-title">Hair Color</span>
           <span class="val-txt" id="hair_color-val">0%</span>
         </div>
-      
+
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
           <label style="font-size: 11px; color: #8888bb; font-weight: 600;">Color:</label>
           <input type="color" id="hairColorPicker" value="#3b1f0a"
             style="width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0;">
         </div>
 
-        <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0" style="margin: 5px 0;">
+        <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0"
+          style="margin: 5px 0;">
       </div>
 
       <div class="control-item">
@@ -382,19 +906,29 @@
         <div id="hairstyleList" style="display: flex; flex-wrap: wrap; gap: 8px;">
           <span style="font-size: 12px; color: #8888bb;">Loading...</span>
         </div>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+          <span style="font-size:12px; color:#8888bb;">Length</span>
+          <span class="val-txt" id="hair_length-val">100%</span>
+        </div>
+        <input type="range" class="refine-slider" id="hairLengthSlider" data-type="hair_length" min="75" max="125"
+          value="100" style="margin: 8px 0 12px 0;">
         <button onclick="clearHairstyle()" class="remove-btn">Remove</button>
       </div>
-      <div class="control-item" style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
-  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-    <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Eyebrow Color</span>
-    <span class="val-txt" id="eyebrow_color-val" style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
-  </div>
-  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-    <label style="font-size: 11px; color: #8888bb; font-weight: 600;">Color:</label>
-    <input type="color" id="eyebrowColorPicker" value="#3b1f0a" style="width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0;">
-  </div>
-  <input type="range" class="refine-slider" data-type="eyebrow_color" min="0" max="100" value="0" style="margin: 5px 0;">
-</div>
+      <div class="control-item"
+        style="background: rgba(255,255,255,0.4); padding: 15px; border-radius: 16px; border: 1px solid rgba(70,70,229,0.05);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: #2a2a7a;">Eyebrow Color</span>
+          <span class="val-txt" id="eyebrow_color-val"
+            style="font-size: 13px; color: #4646e5; font-weight: 600;">0%</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+          <label style="font-size: 11px; color: #8888bb; font-weight: 600;">Color:</label>
+          <input type="color" id="eyebrowColorPicker" value="#3b1f0a"
+            style="width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0;">
+        </div>
+        <input type="range" class="refine-slider" data-type="eyebrow_color" min="0" max="100" value="0"
+          style="margin: 5px 0;">
+      </div>
 
       <div class="control-item">
         <div style="margin-bottom: 10px;">
@@ -452,14 +986,296 @@
     </div>
   </div>
 
+  <!-- RIGHT BEAUTY SHELF -->
+  <div class="beauty-shelf">
+    <div class="shelf-title">Beauty Shelf</div>
+
+    <div class="shelf-category-tabs">
+      <button class="shelf-tab active" onclick="openShelfCategory('makeupShelf', this)">Makeup</button>
+      <button class="shelf-tab" onclick="openShelfCategory('hairShelf', this)">Hair</button>
+      <button class="shelf-tab" onclick="openShelfCategory('accessoryShelf', this)">Accessories</button>
+    </div>
+
+    <div id="makeupShelf" class="shelf-section active">
+      <div class="shelf-board">
+        <div class="field-label">Lipstick Shelf</div>
+
+        <div class="shelf-row">
+          <button class="lipstick-item" style="--lipstick-color:#c9184a;" onclick="chooseShelfLipstick('#c9184a')">
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#ff4d6d;" onclick="chooseShelfLipstick('#ff4d6d')">
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#9d0208;" onclick="chooseShelfLipstick('#9d0208')">
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#e5989b;" onclick="chooseShelfLipstick('#e5989b')">
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
+          </button>
+        </div>
+
+        <div class="shelf-row">
+          <button class="lipstick-item" style="--lipstick-color:#b5179e;" onclick="chooseShelfLipstick('#b5179e')">
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#7b2cbf;" onclick="chooseShelfLipstick('#7b2cbf')">
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#a44a3f;" onclick="chooseShelfLipstick('#a44a3f')">
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
+          </button>
+          <button class="lipstick-item" style="--lipstick-color:#6a040f;" onclick="chooseShelfLipstick('#6a040f')">
+            <div class="lipstick-base"></div>
+            <div class="lipstick-ring"></div>
+            <div class="lipstick-knob"></div>
+          </button>
+        </div>
+
+        <button class="shelf-mini-btn" onclick="clearShelfMakeup()">Ruju kaldır</button>
+        <button class="palette-toggle-btn" onclick="toggleColorPalette('lipstickColorPalette')">Diğer Ruj
+          Renkleri...</button>
+        <div id="lipstickColorPalette" class="color-palette-container">
+          <div class="color-grid" id="lipstickColorGrid"></div>
+        </div>
+
+        <div class="field-label" style="margin-top: 25px;">Blush Shelf</div>
+        <div class="shelf-row" style="margin-bottom: 10px;">
+          <!-- Pink Blush -->
+          <button class="blush-item" style="--blush-color:#ffb3b3;" onclick="chooseShelfBlush('#ffb3b3')" title="Pembe Allık">
+            <div class="blush-color-fill"></div>
+          </button>
+          <!-- Peach Blush -->
+          <button class="blush-item" style="--blush-color:#ffcc99;" onclick="chooseShelfBlush('#ffcc99')" title="Şeftali Allık">
+            <div class="blush-color-fill"></div>
+          </button>
+          <!-- Rose Blush -->
+          <button class="blush-item" style="--blush-color:#e6a8d7;" onclick="chooseShelfBlush('#e6a8d7')" title="Gül Kurusu">
+            <div class="blush-color-fill"></div>
+          </button>
+          <!-- Terracotta Blush -->
+          <button class="blush-item" style="--blush-color:#cd853f;" onclick="chooseShelfBlush('#cd853f')" title="Toprak Tonu">
+            <div class="blush-color-fill"></div>
+          </button>
+        </div>
+        <button class="shelf-mini-btn" onclick="clearShelfBlush()">Allığı Kaldır</button>
+        <button class="palette-toggle-btn" onclick="toggleColorPalette('blushColorPalette')">Diğer Allık Renkleri...</button>
+        <div id="blushColorPalette" class="color-palette-container">
+          <div class="color-grid" id="blushColorGrid"></div>
+        </div>
+
+        <div class="field-label" style="margin-top: 25px;">Eyeshadow Shelf</div>
+        <div class="shelf-row" style="margin-bottom: 10px;">
+          <!-- Brown Eyeshadow -->
+          <button class="eyeshadow-item" style="--eyeshadow-color:#8b4513;" onclick="chooseShelfEyeshadow('#8b4513')" title="Kahve Far">
+            <div class="eyeshadow-pan"></div>
+            <div class="eyeshadow-brush"></div>
+          </button>
+          <!-- Purple Eyeshadow -->
+          <button class="eyeshadow-item" style="--eyeshadow-color:#6a0dad;" onclick="chooseShelfEyeshadow('#6a0dad')" title="Mor Far">
+            <div class="eyeshadow-pan"></div>
+            <div class="eyeshadow-brush"></div>
+          </button>
+          <!-- Gold Eyeshadow -->
+          <button class="eyeshadow-item" style="--eyeshadow-color:#ffd700;" onclick="chooseShelfEyeshadow('#ffd700')" title="Altın Far">
+            <div class="eyeshadow-pan"></div>
+            <div class="eyeshadow-brush"></div>
+          </button>
+          <!-- Smoky Eyeshadow -->
+          <button class="eyeshadow-item" style="--eyeshadow-color:#333333;" onclick="chooseShelfEyeshadow('#333333')" title="Dumanlı Far">
+            <div class="eyeshadow-pan"></div>
+            <div class="eyeshadow-brush"></div>
+          </button>
+        </div>
+        <button class="shelf-mini-btn" onclick="clearShelfEyeshadow()">Farı Kaldır</button>
+        <button class="palette-toggle-btn" onclick="toggleColorPalette('eyeshadowColorPalette')">Diğer Far Renkleri...</button>
+        <div id="eyeshadowColorPalette" class="color-palette-container">
+          <div class="color-grid" id="eyeshadowColorGrid"></div>
+        </div>
+
+        <div class="field-label" style="margin-top: 25px;">Eye Lens Shelf</div>
+        <div class="shelf-row" style="margin-bottom: 10px;">
+          <!-- Blue Lens -->
+          <button class="lens-item" style="--lens-color:#4a90e2;" onclick="chooseShelfLens('#4a90e2')"
+            title="Mavi Lens"></button>
+          <!-- Green Lens -->
+          <button class="lens-item" style="--lens-color:#50C878;" onclick="chooseShelfLens('#50C878')"
+            title="Yeşil Lens"></button>
+          <!-- Hazel Lens -->
+          <button class="lens-item" style="--lens-color:#C9A86A;" onclick="chooseShelfLens('#C9A86A')"
+            title="Ela Lens"></button>
+          <!-- Violet/Purple Lens -->
+          <button class="lens-item" style="--lens-color:#9b59b6;" onclick="chooseShelfLens('#9b59b6')"
+            title="Menekşe Lens"></button>
+        </div>
+        <button class="shelf-mini-btn" onclick="clearShelfLens()">Lensi Çıkar</button>
+
+        <button class="palette-toggle-btn" style="margin-top: 10px;"
+          onclick="toggleColorPalette('lensColorPalette')">Diğer Lens Renkleri...</button>
+        <div id="lensColorPalette" class="color-palette-container">
+          <div class="color-grid" id="lensColorGrid"></div>
+        </div>
+
+        <div class="field-label" style="margin-top: 25px;">Eyebrow Color Shelf</div>
+        <div class="shelf-row" style="margin-bottom: 10px;">
+          <!-- Brown Brow -->
+          <button class="eyebrow-item" style="--eyebrow-color:#4a2c1a;" onclick="chooseShelfEyebrow('#4a2c1a')" title="Kahve Kaş">
+            <div class="eyebrow-tube"></div>
+            <div class="eyebrow-wand"><div class="eyebrow-brush-tip"></div></div>
+          </button>
+          <!-- Charcoal Brow -->
+          <button class="eyebrow-item" style="--eyebrow-color:#1a1a1a;" onclick="chooseShelfEyebrow('#1a1a1a')" title="Kömür Kaş">
+            <div class="eyebrow-tube"></div>
+            <div class="eyebrow-wand"><div class="eyebrow-brush-tip"></div></div>
+          </button>
+          <!-- Auburn Brow -->
+          <button class="eyebrow-item" style="--eyebrow-color:#8b4513;" onclick="chooseShelfEyebrow('#8b4513')" title="Kızıl Kaş">
+            <div class="eyebrow-tube"></div>
+            <div class="eyebrow-wand"><div class="eyebrow-brush-tip"></div></div>
+          </button>
+          <!-- Blonde Brow -->
+          <button class="eyebrow-item" style="--eyebrow-color:#c4a484;" onclick="chooseShelfEyebrow('#c4a484')" title="Sarı Kaş">
+            <div class="eyebrow-tube"></div>
+            <div class="eyebrow-wand"><div class="eyebrow-brush-tip"></div></div>
+          </button>
+        </div>
+        <button class="shelf-mini-btn" onclick="clearShelfEyebrow()">Kaş Boyasını Kaldır</button>
+        <button class="palette-toggle-btn" style="margin-top: 10px;" onclick="toggleColorPalette('eyebrowColorPalette')">Diğer Kaş Renkleri...</button>
+        <div id="eyebrowColorPalette" class="color-palette-container">
+          <div class="color-grid" id="eyebrowColorGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="hairShelf" class="shelf-section">
+      <div class="shelf-board">
+        <div class="field-label">Hair Shelf</div>
+        <div id="shelfHairstyleList"
+          style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
+
+        <div class="field-label" style="margin-top: 15px;">Saç Rengi</div>
+        <button class="palette-toggle-btn" style="margin-top: 5px;"
+          onclick="toggleColorPalette('hairColorPalette')">Diğer Saç Renkleri...</button>
+        <div id="hairColorPalette" class="color-palette-container">
+          <div class="color-grid" id="hairColorGrid"></div>
+        </div>
+
+        <div class="position-controls"
+          style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(70,70,229,0.2);">
+          <div class="field-label" style="font-size: 13px; color: #4646e5; margin-bottom: 12px;">Hizalama Ayarları</div>
+
+          <div style="margin-bottom: 15px;">
+            <div
+              style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
+              <span>Dikey Konum (Yukarı/Aşağı)</span>
+              <span id="hair-y-val">0</span>
+            </div>
+            <input type="range" id="hairYSlider" min="-200" max="150" value="0" class="mini-slider" style="width: 100%; height: 4px; margin: 8px 0;">
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <div
+              style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
+              <span>Yatay Konum (Sağ/Sol)</span>
+              <span id="hair-x-val">0</span>
+            </div>
+            <input type="range" id="hairXSlider" min="-100" max="100" value="0" class="mini-slider"
+              style="width: 100%; height: 4px; margin: 8px 0;">
+          </div>
+
+          <div>
+            <div
+              style="display: flex; justify-content: space-between; font-size: 11px; color: #6060aa; font-weight: 600;">
+              <span>Boyut (Büyült/Küçült)</span>
+              <span id="hair-scale-shelf-val">100%</span>
+            </div>
+            <input type="range" id="hairScaleShelfSlider" min="50" max="300" value="100" class="mini-slider"
+              style="width: 100%; height: 4px; margin: 8px 0;">
+          </div>
+
+          <p class="shelf-note" style="margin-top: 10px; font-style: italic;">Saçın tam oturması için yukarıdaki
+            sürgüleri kullanabilirsiniz.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="accessoryShelf" class="shelf-section">
+      <div class="shelf-board">
+        <div class="field-label">Glasses Shelf</div>
+        <div class="shelf-row" id="shelfGlassesList">
+          <!-- Glasses items will be added here -->
+        </div>
+
+        <div class="field-label" style="margin-top: 15px;">Hats Shelf</div>
+        <div class="shelf-row" id="shelfHatsList">
+          <!-- Hats items will be added here -->
+        </div>
+
+        <div class="field-label" style="margin-top: 15px;">Jewelry Cabinet</div>
+        <div id="shelfAccessoryList"
+          style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;"></div>
+        <p class="shelf-note">Küpe ve kolyeler dinamik olarak yüklenir.</p>
+      </div>
+    </div>
+  </div> <!-- RIGHT BEAUTY SHELF -->
+
   <script>
+
+
     const sliders = document.querySelectorAll('.refine-slider');
     const livePreview = document.getElementById('livePreview');
     const finishBtn = document.getElementById('finishBtn');
 
     let debounceTimer;
     let selectedOverlay = null;
+    let selectedHairScale = 1.0;
+    let selectedHairX = 0;
+    let selectedHairY = 0;
     let currentImagePath = 'static/uploads/original.jpg';
+
+    // Hair Position Listeners
+    document.getElementById('hairYSlider')?.addEventListener('input', (e) => {
+      selectedHairY = parseInt(e.target.value, 10);
+      document.getElementById('hair-y-val').textContent = selectedHairY;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 150);
+    });
+
+    document.getElementById('hairXSlider')?.addEventListener('input', (e) => {
+      selectedHairX = parseInt(e.target.value, 10);
+      document.getElementById('hair-x-val').textContent = selectedHairX;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 150);
+    });
+
+    document.getElementById('hairScaleShelfSlider')?.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      selectedHairScale = val / 100;
+      document.getElementById('hair-scale-shelf-val').textContent = val + '%';
+
+      // Sync main slider if it exists
+      const mainSlider = document.getElementById('hairLengthSlider');
+      if (mainSlider) mainSlider.value = val;
+      const mainLabel = document.getElementById('hair_length-val');
+      if (mainLabel) mainLabel.textContent = val + '%';
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 150);
+    });
 
     let selectedAccessories = {
       earring: null,
@@ -482,36 +1298,62 @@
       .then(r => r.json())
       .then(files => {
         const container = document.getElementById('hairstyleList');
+        const shelfContainer = document.getElementById('shelfHairstyleList');
 
         if (!files || files.length === 0) {
-          container.innerHTML = '<span style="font-size:12px;color:#8888bb;">static/hairstyles/ klasörüne PNG ekle</span>';
+          const msg = '<span style="font-size:12px;color:#8888bb;">static/hairstyles/ klasörüne PNG ekle</span>';
+          if (container) container.innerHTML = msg;
+          if (shelfContainer) shelfContainer.innerHTML = msg;
           return;
         }
 
-        container.innerHTML = '';
+        if (container) container.innerHTML = '';
+        if (shelfContainer) shelfContainer.innerHTML = '';
 
         files.forEach(file => {
+          // Sol Panel Butonu
           const btn = document.createElement('button');
-          btn.textContent = file.replace('.png', '');
-          btn.dataset.overlay = file;
           btn.className = 'mini-btn';
+          btn.dataset.overlay = file;
+          btn.innerHTML = `<img src="/static/hairstyles/${file}" style="width:100%; height:100%; object-fit:contain;" title="${file.replace('.png', '')}">`;
           btn.onclick = () => selectOverlay(file, btn);
-          container.appendChild(btn);
+          if (container) container.appendChild(btn);
+
+          // Sağ Raf Kartı
+          if (shelfContainer) {
+            const shelfBtn = document.createElement('div');
+            shelfBtn.className = 'shelf-item-card';
+            shelfBtn.dataset.overlay = file;
+            shelfBtn.innerHTML = `<img src="/static/hairstyles/${file}" title="${file.replace('.png', '')}">`;
+            shelfBtn.onclick = () => selectOverlay(file, shelfBtn);
+            if (shelfContainer) shelfContainer.appendChild(shelfBtn);
+          }
         });
       });
 
     function selectOverlay(file, btn) {
-      selectedOverlay = file;
-
-      document.querySelectorAll('#hairstyleList button').forEach(b => {
-        b.classList.remove('active');
-      });
-
-      btn.classList.add('active');
+      if (selectedOverlay === file) {
+        selectedOverlay = null;
+        btn.classList.remove('active');
+      } else {
+        selectedOverlay = file;
+        document.querySelectorAll('#hairstyleList button, #shelfHairstyleList .shelf-item-card').forEach(b => {
+          b.classList.remove('active');
+        });
+        btn.classList.add('active');
+      }
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyAllTransforms, 100);
     }
+
+    document.getElementById('hairLengthSlider')?.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      document.getElementById('hair_length-val').textContent = val + '%';
+      selectedHairScale = val / 100;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 200);
+    });
 
     function clearHairstyle() {
       selectedOverlay = null;
@@ -548,39 +1390,57 @@
         .then(r => r.json())
         .then(files => {
           const container = document.getElementById(listId);
+          const shelfContainer = document.getElementById('shelfAccessoryList');
 
           if (!files || files.length === 0) {
-            container.innerHTML = `<span style="font-size:12px;color:#8888bb;">static/accessories/${category}/ içine PNG ekle</span>`;
+            const msg = `<span style="font-size:12px;color:#8888bb;">static/accessories/${category}/ içine PNG ekle</span>`;
+            if (container) container.innerHTML = msg;
             return;
           }
 
-          container.innerHTML = '';
+          if (container) container.innerHTML = '';
 
           files.forEach(file => {
+            // Main Panel Button
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.textContent = file.replace('.png', '');
-            btn.dataset.item = file;
             btn.className = 'mini-btn';
+            btn.dataset.item = file;
+            btn.innerHTML = `<img src="/static/accessories/${category}/${file}" style="width:100%; height:100%; object-fit:contain;" title="${file.replace('.png', '')}">`;
             btn.onclick = () => selectAccessory(typeName, file, btn, listId);
-            container.appendChild(btn);
+            if (container) container.appendChild(btn);
+
+            // Shelf Panel Card
+            if (shelfContainer) {
+              const shelfBtn = document.createElement('div');
+              shelfBtn.className = 'shelf-item-card';
+              shelfBtn.dataset.item = file;
+              shelfBtn.innerHTML = `<img src="/static/accessories/${category}/${file}" title="${file.replace('.png', '')}">`;
+              shelfBtn.onclick = () => selectAccessory(typeName, file, shelfBtn, listId);
+              shelfContainer.appendChild(shelfBtn);
+            }
           });
         })
         .catch(err => {
           console.error('Accessory load error:', err);
-          document.getElementById(listId).innerHTML =
-            '<span style="font-size:12px;color:#cc4444;">Could not load accessories</span>';
+          if (document.getElementById(listId)) {
+            document.getElementById(listId).innerHTML =
+              '<span style="font-size:12px;color:#cc4444;">Could not load accessories</span>';
+          }
         });
     }
 
     function selectAccessory(typeName, file, btn, listId) {
-      selectedAccessories[typeName] = file;
-
-      document.querySelectorAll(`#${listId} button`).forEach(b => {
-        b.classList.remove('active');
-      });
-
-      btn.classList.add('active');
+      if (selectedAccessories[typeName] === file) {
+        selectedAccessories[typeName] = null;
+        btn.classList.remove('active');
+      } else {
+        selectedAccessories[typeName] = file;
+        document.querySelectorAll(`#${listId} button`).forEach(b => {
+          b.classList.remove('active');
+        });
+        btn.classList.add('active');
+      }
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyAllTransforms, 100);
@@ -602,18 +1462,473 @@
     loadAccessories('earrings', 'earringList', 'earring');
     loadAccessories('necklaces', 'necklaceList', 'necklace');
 
+    let shelfMakeup = {
+      type: null,
+      color: null,
+      intensity: 0.65
+    };
+
+    function openShelfCategory(sectionId, clickedBtn) {
+      document.querySelectorAll('.shelf-section').forEach(section => {
+        section.classList.remove('active');
+      });
+
+      document.getElementById(sectionId).classList.add('active');
+
+      document.querySelectorAll('.shelf-tab').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      clickedBtn.classList.add('active');
+    }
+
+    function chooseShelfLipstick(color) {
+      shelfMakeup.type = "lip_color";
+      shelfMakeup.color = color;
+      shelfMakeup.intensity = 0.8;
+
+      if (makeupType) makeupType.value = "lip_color";
+      if (makeupColor) makeupColor.value = color;
+      if (makeupIntensity) {
+        makeupIntensity.value = 0.8;
+        const valTxt = document.getElementById('makeup_intensity-val');
+        if (valTxt) valTxt.textContent = "80%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearShelfMakeup() {
+      shelfMakeup.type = null;
+      shelfMakeup.color = null;
+
+      if (makeupType) makeupType.value = "";
+      if (makeupIntensity) makeupIntensity.value = 0.5;
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    let shelfLens = {
+      color: null,
+      intensity: 0.7
+    };
+
+    function chooseShelfLens(color) {
+      shelfLens.color = color;
+      shelfLens.intensity = 0.85;
+
+      // Sync with main makeup controls
+      if (makeupType) makeupType.value = 'eye_color';
+      if (makeupColor) makeupColor.value = color;
+      if (makeupIntensity) {
+        makeupIntensity.value = 0.85;
+        const valTxt = document.getElementById('makeup_intensity-val');
+        if (valTxt) valTxt.textContent = "85%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearShelfLens() {
+      shelfLens.color = null;
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+
+    function toggleColorPalette(paletteId) {
+      const palette = document.getElementById(paletteId);
+      // Find the button right before the palette
+      const btn = palette.previousElementSibling;
+      palette.classList.toggle('active');
+
+      if (palette.classList.contains('active')) {
+        btn.textContent = "Paleti Gizle";
+      } else {
+        if (paletteId.includes('lens')) btn.textContent = "Diğer Lens Renkleri...";
+        else if (paletteId.includes('blush')) btn.textContent = "Diğer Allık Renkleri...";
+        else if (paletteId.includes('eyeshadow')) btn.textContent = "Diğer Far Renkleri...";
+        else if (paletteId.includes('eyebrow')) btn.textContent = "Diğer Kaş Renkleri...";
+        else if (paletteId.includes('hair')) btn.textContent = "Diğer Saç Renkleri...";
+        else btn.textContent = "Diğer Ruj Renkleri...";
+      }
+    }
+
+    let shelfEyebrow = {
+      color: null,
+      intensity: 0.6
+    };
+
+    function chooseShelfEyebrow(color) {
+      shelfEyebrow.color = color;
+      shelfEyebrow.intensity = 0.7;
+
+      // Sync with main eyebrow controls
+      const picker = document.getElementById('eyebrowColorPicker');
+      const sliders = document.querySelectorAll('.refine-slider');
+      const ebSlider = Array.from(sliders).find(s => s.dataset.type === 'eyebrow_color');
+
+      if (picker) picker.value = color;
+      if (ebSlider) {
+        ebSlider.value = 70;
+        const valTxt = document.getElementById('eyebrow_color-val');
+        if (valTxt) valTxt.textContent = "70%";
+      }
+
+      // Also sync with makeup panel if it happens to be selected there
+      if (makeupType) makeupType.value = 'eyebrow_color';
+      if (makeupColor) makeupColor.value = color;
+      if (makeupIntensity) {
+        makeupIntensity.value = 0.7;
+        const valTxt = document.getElementById('makeup_intensity-val');
+        if (valTxt) valTxt.textContent = "70%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearShelfEyebrow() {
+      shelfEyebrow.color = null;
+
+      // Sync with main eyebrow controls
+      const picker = document.getElementById('eyebrowColorPicker');
+      const sliders = document.querySelectorAll('.refine-slider');
+      const ebSlider = Array.from(sliders).find(s => s.dataset.type === 'eyebrow_color');
+
+      if (picker) picker.value = "#3b1f0a"; // Default brown
+      if (ebSlider) {
+        ebSlider.value = 0;
+        const valTxt = document.getElementById('eyebrow_color-val');
+        if (valTxt) valTxt.textContent = "0%";
+      }
+
+      // Also sync with makeup panel if needed
+      if (makeupType && makeupType.value === 'eyebrow_color') {
+        makeupType.value = "";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function chooseShelfHairColor(color) {
+      const picker = document.getElementById('hairColorPicker');
+      const sliders = document.querySelectorAll('.refine-slider');
+      const hcSlider = Array.from(sliders).find(s => s.dataset.type === 'hair_color');
+
+      if (picker) picker.value = color;
+      if (hcSlider) {
+        hcSlider.value = 35;
+        const valTxt = document.getElementById('hair_color-val');
+        if (valTxt) valTxt.textContent = "35%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    let shelfBlush = {
+      color: null,
+      intensity: 0.75
+    };
+
+    function chooseShelfBlush(color) {
+      shelfBlush.color = color;
+      shelfBlush.intensity = 0.75;
+
+      // Sync with main makeup controls
+      if (makeupType) makeupType.value = 'blush';
+      if (makeupColor) makeupColor.value = color;
+      if (makeupIntensity) {
+        makeupIntensity.value = 0.75;
+        const valTxt = document.getElementById('makeup_intensity-val');
+        if (valTxt) valTxt.textContent = "75%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearShelfBlush() {
+      shelfBlush.color = null;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    let shelfEyeshadow = {
+      color: null,
+      intensity: 0.7
+    };
+
+    function chooseShelfEyeshadow(color) {
+      shelfEyeshadow.color = color;
+      shelfEyeshadow.intensity = 0.7;
+
+      // Sync with main makeup controls
+      if (makeupType) makeupType.value = 'eyeshadow';
+      if (makeupColor) makeupColor.value = color;
+      if (makeupIntensity) {
+        makeupIntensity.value = 0.7;
+        const valTxt = document.getElementById('makeup_intensity-val');
+        if (valTxt) valTxt.textContent = "70%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function clearShelfEyeshadow() {
+      shelfEyeshadow.color = null;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 100);
+    }
+
+    function initColorPalette() {
+      const lipstickGrid = document.getElementById('lipstickColorGrid');
+      const lensGrid = document.getElementById('lensColorGrid');
+      const blushGrid = document.getElementById('blushColorGrid');
+      const eyeshadowGrid = document.getElementById('eyeshadowColorGrid');
+      const eyebrowGrid = document.getElementById('eyebrowColorGrid');
+      const hairGrid = document.getElementById('hairColorGrid');
+      if (!lipstickGrid && !lensGrid && !blushGrid && !eyeshadowGrid && !eyebrowGrid && !hairGrid) return;
+
+      const colors = [
+        // Reds & Pinks
+        "#ff0000", "#e61919", "#cc0000", "#b30000", "#990000", "#ff4d4d", "#ff8080", "#ffb3b3", "#ff6666", "#e6004d",
+        "#ff3399", "#ff66b2", "#ff99cc", "#ff007f", "#cc0066", "#99004d", "#ff1a8c", "#ff4da6", "#ff80bf", "#ffb3d9",
+        // Purples & Berries
+        "#800080", "#990099", "#b300b3", "#cc00cc", "#e600e6", "#660066", "#4d004d", "#8a2be2", "#9400d3", "#9932cc",
+        "#8b008b", "#800020", "#4b0082", "#ba55d3", "#da70d6", "#ee82ee", "#dda0dd", "#c71585", "#db7093", "#ff00ff",
+        // Nudes & Oranges
+        "#bc8f8f", "#cd853f", "#d2b48c", "#deb887", "#f4a460", "#e9967a", "#fa8072", "#ffa07a", "#ff7f50", "#ff6347",
+        "#ff4500", "#ff8c00", "#ffa500", "#ffd700", "#f0e68c", "#bdb76b", "#a0522d", "#8b4513", "#5d3a1a", "#3d2b1f",
+        // Others/Fantasy
+        "#000000", "#1a1a1a", "#333333", "#4d4d4d", "#666666", "#808080", "#999999", "#b3b3b3", "#cccccc", "#e6e6e6",
+        "#0000ff", "#008000", "#00ffff", "#008080", "#4a90e2", "#50C878", "#C9A86A", "#9b59b6", "#27ae60", "#2980b9"
+      ];
+
+      const hairColors = [
+        "#000000", "#1a1a1a", "#2b1a12", "#3b1f0a", "#4a2c1a", "#5d3a24", "#704214", "#8b4513", "#a0522d", "#cd853f",
+        "#deb887", "#f5deb3", "#fff8dc", "#ffd700", "#daa520", "#b8860b", "#800000", "#8b0000", "#a52a2a", "#b22222",
+        "#c71585", "#db7093", "#ff69b4", "#ff1493", "#4b0082", "#8a2be2", "#9400d3", "#9932cc", "#0000ff", "#00008b"
+      ];
+
+      colors.forEach(color => {
+        if (lipstickGrid) {
+          const swatch = document.createElement('div');
+          swatch.className = 'color-swatch';
+          swatch.style.background = color;
+          swatch.title = color;
+          swatch.onclick = () => chooseShelfLipstick(color);
+          lipstickGrid.appendChild(swatch);
+        }
+
+        if (lensGrid) {
+          const lensSwatch = document.createElement('div');
+          lensSwatch.className = 'color-swatch';
+          lensSwatch.style.background = color;
+          lensSwatch.title = color;
+          lensSwatch.onclick = () => chooseShelfLens(color);
+          lensGrid.appendChild(lensSwatch);
+        }
+
+        if (blushGrid) {
+          const blushSwatch = document.createElement('div');
+          blushSwatch.className = 'color-swatch';
+          blushSwatch.style.background = color;
+          blushSwatch.title = color;
+          blushSwatch.onclick = () => chooseShelfBlush(color);
+          blushGrid.appendChild(blushSwatch);
+        }
+
+        if (eyeshadowGrid) {
+          const eyeshadowSwatch = document.createElement('div');
+          eyeshadowSwatch.className = 'color-swatch';
+          eyeshadowSwatch.style.background = color;
+          eyeshadowSwatch.title = color;
+          eyeshadowSwatch.onclick = () => chooseShelfEyeshadow(color);
+          eyeshadowGrid.appendChild(eyeshadowSwatch);
+        }
+      });
+
+      if (hairGrid) {
+        hairColors.forEach(color => {
+          const swatch = document.createElement('div');
+          swatch.className = 'color-swatch';
+          swatch.style.background = color;
+          swatch.title = color;
+          swatch.onclick = () => chooseShelfHairColor(color);
+          hairGrid.appendChild(swatch);
+        });
+      }
+
+      if (eyebrowGrid) {
+        hairColors.slice(0, 15).forEach(color => {
+          const swatch = document.createElement('div');
+          swatch.className = 'color-swatch';
+          swatch.style.background = color;
+          swatch.title = color;
+          swatch.onclick = () => chooseShelfEyebrow(color);
+          eyebrowGrid.appendChild(swatch);
+        });
+      }
+    }
+
+    function initAccessoryShelves() {
+      const glassesData = [
+        { name: "Classic", file: "glasses1.png" },
+        { name: "Sunglasses", file: "glasses2.png" },
+        { name: "Harry Potter", file: "glasses3.png" },
+        { name: "Snow Goggles", file: "glasses4.png" }
+      ];
+
+      const hatsData = [
+        { name: "Baseball Cap", file: "hat1.png" },
+        { name: "Beret", file: "hat2.png" },
+        { name: "Sun Hat", file: "hat3.png" },
+        { name: "Sleep Hat", file: "hat4.png" }
+      ];
+
+      const glassesGrid = document.getElementById('shelfGlassesList');
+      const hatsGrid = document.getElementById('shelfHatsList');
+
+      if (glassesGrid) {
+        glassesData.forEach(item => {
+          const btn = document.createElement('div');
+          btn.className = 'shelf-item-card';
+          btn.innerHTML = `<img src="/static/accessories/glasses/${item.file}" title="${item.name}">`;
+          btn.onclick = () => {
+            const sel = document.getElementById('glassesSelect');
+            if (sel) {
+              if (sel.value === item.file) {
+                sel.value = ""; // Toggle off if same
+              } else {
+                sel.value = item.file; // Set new
+              }
+              applyAllTransforms();
+            }
+          };
+          glassesGrid.appendChild(btn);
+        });
+      }
+
+      if (hatsGrid) {
+        hatsData.forEach(item => {
+          const btn = document.createElement('div');
+          btn.className = 'shelf-item-card';
+          btn.innerHTML = `<img src="/static/accessories/hats/${item.file}" title="${item.name}">`;
+          btn.onclick = () => {
+            const sel = document.getElementById('hatSelect');
+            if (sel) {
+              if (sel.value === item.file) {
+                sel.value = ""; // Toggle off if same
+              } else {
+                sel.value = item.file; // Set new
+              }
+              applyAllTransforms();
+            }
+          };
+          hatsGrid.appendChild(btn);
+        });
+      }
+    }
+
+    // Initialize palette and shelves on load
+    document.addEventListener('DOMContentLoaded', () => {
+      initColorPalette();
+      initAccessoryShelves();
+    });
+
     function buildTransforms() {
       const transforms = [];
+      const activeTypes = new Set();
 
-     if (makeupType && makeupType.value) {
-  const intensityVal = parseInt(document.getElementById("makeupIntensity").value, 10) / 100;
+      // 1. Check Shelf Selections (Priority)
+      if (shelfMakeup.type) {
+        let intensity = shelfMakeup.intensity;
+        if (makeupType && makeupType.value === shelfMakeup.type) {
+          intensity = parseFloat(makeupIntensity.value);
+        }
+        transforms.push({
+          type: shelfMakeup.type,
+          color: shelfMakeup.color,
+          intensity: intensity
+        });
+        activeTypes.add(shelfMakeup.type);
+      }
 
-  transforms.push({
-    type: makeupType.value,
-    color: makeupColor ? makeupColor.value : "#d96b86",
-    intensity: intensityVal
-  });
-}
+      if (shelfBlush.color) {
+        let intensity = shelfBlush.intensity;
+        if (makeupType && (makeupType.value === 'blush')) {
+          intensity = parseFloat(makeupIntensity.value);
+        }
+        transforms.push({
+          type: 'blush',
+          color: shelfBlush.color,
+          intensity: intensity
+        });
+        activeTypes.add('blush');
+      }
+
+      if (shelfEyeshadow.color) {
+        let intensity = shelfEyeshadow.intensity;
+        if (makeupType && (makeupType.value === 'eyeshadow')) {
+          intensity = parseFloat(makeupIntensity.value);
+        }
+        transforms.push({
+          type: 'eyeshadow',
+          color: shelfEyeshadow.color,
+          intensity: intensity
+        });
+        activeTypes.add('eyeshadow');
+      }
+
+      if (shelfLens.color) {
+        let intensity = shelfLens.intensity;
+        if (makeupType && (makeupType.value === 'eye_color')) {
+          intensity = parseFloat(makeupIntensity.value);
+        }
+        transforms.push({
+          type: 'eye_color',
+          color: shelfLens.color,
+          intensity: intensity
+        });
+        activeTypes.add('eye_color');
+      }
+
+      if (shelfEyebrow.color) {
+        let intensity = shelfEyebrow.intensity;
+        // Check if main makeup slider or eyebrow color slider is being used
+        const ebSlider = Array.from(document.querySelectorAll('.refine-slider')).find(s => s.dataset.type === 'eyebrow_color');
+        
+        if (makeupType && (makeupType.value === 'eyebrow_color')) {
+          intensity = parseFloat(makeupIntensity.value);
+        } else if (ebSlider && parseInt(ebSlider.value, 10) !== 0) {
+          intensity = parseInt(ebSlider.value, 10) / 100;
+        }
+
+        transforms.push({
+          type: 'eyebrow_color',
+          params: { color: shelfEyebrow.color },
+          intensity: intensity
+        });
+        activeTypes.add('eyebrow_color');
+      }
+
+      // 2. Check Manual Selection (Only if not already handled by shelf)
+      if (makeupType && makeupType.value && !activeTypes.has(makeupType.value)) {
+        const intensityVal = parseFloat(makeupIntensity.value);
+        transforms.push({
+          type: makeupType.value,
+          color: makeupColor ? makeupColor.value : "#d96b86",
+          intensity: intensityVal
+        });
+      }
 
       const selectedGlasses = document.getElementById("glassesSelect")?.value;
       const selectedHat = document.getElementById("hatSelect")?.value;
@@ -629,32 +1944,49 @@
         });
       }
 
-     sliders.forEach(slider => {
-  const val = parseInt(slider.value, 10);
+      sliders.forEach(slider => {
+        if (slider.dataset.type === 'hair_length' || activeTypes.has(slider.dataset.type)) {
+          return; // Skip if already handled by shelf
+        }
 
-  if (val !== 0) {
-    const t = {
-      type: slider.dataset.type,
-      intensity: val / 100
-    };
+        const val = parseInt(slider.value, 10);
 
-    if (slider.dataset.type === 'hair_color') {
-      t.params = { color: document.getElementById('hairColorPicker').value };
-    }
+        if (val !== 0) {
+          const t = {
+            type: slider.dataset.type,
+            intensity: val / 100
+          };
 
-    if (slider.dataset.type === 'eyebrow_color') {
-      t.params = { color: document.getElementById('eyebrowColorPicker').value };
-    }
+          if (slider.dataset.type === 'hair_color') {
+            t.params = { color: document.getElementById('hairColorPicker').value };
+          }
 
-    transforms.push(t);
-  }
-});
+          if (slider.dataset.type === 'eyebrow_color') {
+            t.params = { color: document.getElementById('eyebrowColorPicker').value };
+          }
+
+          transforms.push(t);
+        }
+      });
       if (selectedOverlay) {
+        const hcSlider = Array.from(sliders).find(s => s.dataset.type === 'hair_color');
+        let overlayColor = null;
+        let overlayColorIntensity = 0;
+        if (hcSlider && parseInt(hcSlider.value, 10) !== 0) {
+          overlayColor = document.getElementById('hairColorPicker').value;
+          overlayColorIntensity = parseInt(hcSlider.value, 10) / 100;
+        }
+
         transforms.push({
           type: 'hair_overlay',
           intensity: 1.0,
           params: {
-            overlay: selectedOverlay
+            overlay: selectedOverlay,
+            scale: selectedHairScale,
+            x_offset: selectedHairX,
+            y_offset: selectedHairY,
+            color: overlayColor,
+            color_intensity: overlayColorIntensity
           }
         });
       }
@@ -757,25 +2089,79 @@
       }
     });
     document.getElementById('eyebrowColorPicker')?.addEventListener('input', () => {
-  const val = parseInt(document.querySelector('[data-type="eyebrow_color"]').value, 10);
-  if (val > 0) {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(applyAllTransforms, 400);
-  }
-});
+      const val = parseInt(document.querySelector('[data-type="eyebrow_color"]').value, 10);
+      if (val > 0) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
+      }
+    });
+
+    function syncMakeupFromPanel() {
+      const type = makeupType ? makeupType.value : "";
+      const color = makeupColor ? makeupColor.value : "";
+      const intensity = makeupIntensity ? parseFloat(makeupIntensity.value) : 0.5;
+
+      // Update corresponding shelf object to keep it persistent
+      if (type === 'lip_color') {
+        shelfMakeup.type = 'lip_color';
+        shelfMakeup.color = color;
+        shelfMakeup.intensity = intensity;
+      } else if (type === 'blush') {
+        shelfBlush.color = color;
+        shelfBlush.intensity = intensity;
+      } else if (type === 'eyeshadow') {
+        shelfEyeshadow.color = color;
+        shelfEyeshadow.intensity = intensity;
+      } else if (type === 'eyebrow_color') {
+        shelfEyebrow.color = color;
+        shelfEyebrow.intensity = intensity;
+      } else if (type === 'eye_color') {
+        shelfLens.color = color;
+        shelfLens.intensity = intensity;
+      }
+
+      const label = document.getElementById("makeup_intensity-val");
+      if (label && makeupIntensity) {
+        const percent = Math.round(parseFloat(makeupIntensity.value) * 100);
+        label.textContent = percent + "%";
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyAllTransforms, 150);
+    }
 
     if (makeupType) {
-      makeupType.addEventListener("change", applyAllTransforms);
+      makeupType.addEventListener("change", syncMakeupFromPanel);
     }
 
     if (makeupColor) {
-      makeupColor.addEventListener("input", applyAllTransforms);
-      makeupColor.addEventListener("change", applyAllTransforms);
+      makeupColor.addEventListener("input", syncMakeupFromPanel);
+      makeupColor.addEventListener("change", syncMakeupFromPanel);
     }
 
     if (makeupIntensity) {
-      makeupIntensity.addEventListener("input", applyAllTransforms);
-      makeupIntensity.addEventListener("change", applyAllTransforms);
+      makeupIntensity.addEventListener("input", syncMakeupFromPanel);
+      makeupIntensity.addEventListener("change", syncMakeupFromPanel);
+    }
+
+    // NEW: Sync manual color pickers back to shelf state
+    const ebPicker = document.getElementById('eyebrowColorPicker');
+    if (ebPicker) {
+      ebPicker.addEventListener('input', (e) => {
+        shelfEyebrow.color = e.target.value;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
+      });
+    }
+
+    const hcPicker = document.getElementById('hairColorPicker');
+    if (hcPicker) {
+      hcPicker.addEventListener('input', (e) => {
+        // Hair doesn't have a shelf object yet, but it's handled via buildTransforms directly
+        // So no extra shelf object update needed here, but we trigger the transform
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyAllTransforms, 400);
+      });
     }
 
     finishBtn.addEventListener('click', async () => {
@@ -811,4 +2197,5 @@
     });
   </script>
 </body>
+
 </html>
