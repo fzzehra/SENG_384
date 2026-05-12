@@ -12,7 +12,7 @@ from backend.routes.analysis import analysis_bp
 from backend.routes.metrics import metrics_bp
 from backend.routes.export import export_bp
 from backend.routes.auth import auth_bp
-
+from backend.routes.fourier_phase import fourier_phase_bp
 
 def create_app():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,7 +40,8 @@ def create_app():
     app.register_blueprint(analysis_bp, url_prefix="/analyze")
     app.register_blueprint(metrics_bp, url_prefix="/metrics")
     app.register_blueprint(export_bp, url_prefix="/export")
-
+    app.register_blueprint(fourier_phase_bp, url_prefix="/fourier-phase")
+    
     @app.context_processor
     def inject_current_user():
         return {"current_user": session.get("username")}

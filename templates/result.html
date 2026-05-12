@@ -272,6 +272,33 @@
         </div>
       </div>
     </div>
+    <div class="card full-width">
+  <h2>
+    Fourier Phase Effect
+  </h2>
+
+  <div class="input-group">
+    <label>Phase Intensity</label>
+    <input type="range" id="phaseIntensity" min="0" max="1" step="0.1" value="0.5">
+  </div>
+
+  <button id="phaseBtn" style="
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, #6060e5, #4646e5);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+  ">
+    Apply Fourier Phase
+  </button>
+
+  <div style="margin-top: 20px;" class="img-frame">
+    <img id="phaseResult" src="" alt="Fourier phase result">
+  </div>
+</div>
     <!-- Rapor İndirme Alanı -->
     <div style="margin-top: 40px; width: 100%; display: flex; justify-content: center; animation: fadeUp 0.8s 0.3s ease both;">
       <a href="#" id="downloadReportBtn" class="nav-btn" style="

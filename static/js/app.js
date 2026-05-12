@@ -121,3 +121,31 @@ if (analyzeBtn) {
         }
     });
 }
+const phaseBtn = document.getElementById("phaseBtn");
+
+if (phaseBtn) {
+  phaseBtn.addEventListener("click", async () => {
+    const intensity = document.getElementById("phaseIntensity").value;
+
+    const response = await fetch("/fourier-phase/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        image_path: "static/uploads/transformed.jpg",
+        intensity: parseFloat(intensity)
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      alert(data.message || "Fourier phase failed");
+      return;
+    }
+
+    document.getElementById("phaseResult").src =
+      "/" + data.data.output_path + "?v=" + new Date().getTime();
+  });
+}
