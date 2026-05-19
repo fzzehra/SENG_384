@@ -543,14 +543,14 @@ def transform_image():
                 landmark_result = process_landmark_pipeline(output_image)
 
                 if landmark_result.get("success"):
-                    moustache_len = int(3 + (t_intensity * 12))
+                    moustache_len = int(10 + (t_intensity * 10))
 
                     output_image = apply_moustache(
                         output_image,
                         landmark_result["landmarks"],
-                        intensity=t_intensity,
+                        intensity=max(0.45, t_intensity),
                         hair_len=moustache_len,
-                        color=(5, 5, 5)
+                        color=(20, 20, 20)
                     )
 
                     results_meta.append("moustache")

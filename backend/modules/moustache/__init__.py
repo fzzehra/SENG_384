@@ -1,1 +1,1 @@
-from backend.modules.moustache.moustache import apply_moustache
+from .moustache import apply_moustache

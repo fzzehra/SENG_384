@@ -1,126 +1,79 @@
 import cv2
 import numpy as np
-import random
-import math
 
-def apply_moustache(image, landmarks, intensity=0.7, hair_len=12, color=(8, 8, 8)):
-    if landmarks is None or len(landmarks) < 468:
+
+def apply_moustache(image, landmarks, intensity=0.7, hair_len=12, color=(15, 15, 15)):
+    print(">>> YENI MOUSTACHE KODU CALISTI")
+
+    if landmarks is None or len(landmarks) < 292:
         return image
 
     h, w = image.shape[:2]
     output = image.copy().astype(np.float32)
+    mask = np.zeros((h, w), dtype=np.uint8)
 
     coords = []
     for lm in landmarks:
-        lx, ly = lm[0], lm[1]
-        if lx <= 1.0 and ly <= 1.0:
-            coords.append((int(lx * w), int(ly * h)))
+        x, y = lm[0], lm[1]
+        if x <= 1.0 and y <= 1.0:
+            coords.append((int(x * w), int(y * h)))
         else:
-            coords.append((int(lx), int(ly)))
+            coords.append((int(x), int(y)))
 
     def pt(i):
-        return coords[i]
-
-    def get_pts(idxs):
-        return np.array([coords[i] for i in idxs], np.int32)
+        return np.array(coords[i], dtype=np.int32)
 
     left_mouth = pt(61)
     right_mouth = pt(291)
-    nose_base = pt(164)
-    cupid = pt(0)
+    upper_lip = pt(13)
+    nose_bottom = pt(2)
 
-    mouth_w = abs(right_mouth[0] - left_mouth[0])
+    mouth_width = int(np.linalg.norm(right_mouth - left_mouth))
+    cx = int((left_mouth[0] + right_mouth[0]) / 2)
+    cy = int((nose_bottom[1] + upper_lip[1]) / 2) + 3
 
-    y_top = int(nose_base[1] + h * 0.005)
-    y_bottom = int(cupid[1] - h * 0.005)
+    wing_offset = int(mouth_width * 0.20)
+    wing_w = max(20, int(mouth_width * 0.22))
+    wing_h = max(6, int(hair_len * 0.35))
 
-    if y_bottom <= y_top:
-        y_bottom = y_top + int(h * 0.035)
+    left_center = (cx - wing_offset, cy)
+    right_center = (cx + wing_offset, cy)
 
-    x_left = int(left_mouth[0] - mouth_w * 0.08)
-    x_right = int(right_mouth[0] + mouth_w * 0.08)
-    center_x = int((left_mouth[0] + right_mouth[0]) / 2)
+    # Sol parça
+    cv2.ellipse(mask, left_center, (wing_w, wing_h), -8, 200, 360, 255, -1)
 
-    mask = np.zeros((h, w), dtype=np.uint8)
+    # Sağ parça
+    cv2.ellipse(mask, right_center, (wing_w, wing_h), 8, 180, 340, 255, -1)
 
-    left_poly = np.array([
-        [x_left, int(y_bottom)],
-        [int(center_x - mouth_w * 0.04), int(y_bottom)],
-        [int(center_x - mouth_w * 0.03), int(y_top)],
-        [int(left_mouth[0] + mouth_w * 0.08), int(y_top)],
-    ], dtype=np.int32)
+    # Ortayı kapat ama çok kalın yapma
+    bridge_w = max(8, int(mouth_width * 0.05))
+    bridge_h = max(3, int(wing_h * 0.55))
+    cv2.ellipse(mask, (cx, cy), (bridge_w, bridge_h), 0, 0, 360, 255, -1)
 
-    right_poly = np.array([
-        [int(center_x + mouth_w * 0.04), int(y_bottom)],
-        [x_right, int(y_bottom)],
-        [int(right_mouth[0] - mouth_w * 0.08), int(y_top)],
-        [int(center_x + mouth_w * 0.03), int(y_top)],
-    ], dtype=np.int32)
+    # Yukarı taşmayı kes
+    upper_cut = max(0, nose_bottom[1] + 2)
+    mask[:upper_cut, :] = 0
 
-    cv2.fillPoly(mask, [left_poly], 255)
-    cv2.fillPoly(mask, [right_poly], 255)
+    # Aşağı taşmayı kes
+    lower_cut = min(h, upper_lip[1] + wing_h + 2)
+    mask[lower_cut:, :] = 0
 
-    lips = [
-        61, 185, 40, 39, 37, 0,
-        267, 269, 270, 409, 291,
-        375, 321, 405, 314, 17,
-        84, 181, 91, 146
-    ]
+    # Boşlukları kapat
+    kernel_close = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 7))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel_close)
 
-    lip_mask = np.zeros((h, w), dtype=np.uint8)
-    cv2.fillPoly(lip_mask, [get_pts(lips)], 255)
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
-    lip_mask = cv2.dilate(lip_mask, kernel, iterations=1)
-    mask = cv2.subtract(mask, lip_mask)
+    # Çok hafif yay
+    kernel_dilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    mask = cv2.dilate(mask, kernel_dilate, iterations=1)
 
-    # ✅ Noise maskı kaldırıldı — kılları siliyordu
-    # Sadece Gaussian blur ile yumuşat
-    mask_f = cv2.GaussianBlur(mask, (13, 13), 0).astype(np.float32) / 255.0
+    # Yumuşat
+    mask = cv2.GaussianBlur(mask, (17, 9), 0)
 
-    hair_layer = np.zeros_like(image, dtype=np.float32)
-    ys, xs = np.where(mask > 15)
+    intensity = float(max(0.0, min(1.0, intensity)))
+    alpha = (mask.astype(np.float32) / 255.0) * (0.35 + 0.45 * intensity)
 
-    density = 0.85
-    # ✅ Kıl uzunluğu kısaltıldı
-    dynamic_len = hair_len * (0.8 + intensity * 0.6)
+    b, g, r = color
+    for c, val in enumerate((b, g, r)):
+        output[:, :, c] = output[:, :, c] * (1.0 - alpha) + val * alpha
 
-    for i in range(len(xs)):
-        if random.random() > density:
-            continue
-
-        x, y = xs[i], ys[i]
-        local_strength = mask_f[y, x]
-
-        if random.random() > local_strength:
-            continue
-
-        if x < center_x:
-            # ✅ Açı aralığı genişletildi → dağınık görünüm
-            angle = math.radians(random.uniform(120, 200))
-        else:
-            angle = math.radians(random.uniform(-20, 60))
-
-        # ✅ Uzunluk varyasyonu artırıldı
-        length = dynamic_len * random.uniform(0.3, 1.0) * local_strength
-
-        x2 = int(x + length * math.cos(angle))
-        y2 = int(y + length * math.sin(angle))
-
-        v = random.randint(-20, 15)
-        c = (
-            int(np.clip(color[0] + v, 0, 255)),
-            int(np.clip(color[1] + v, 0, 255)),
-            int(np.clip(color[2] + v, 0, 255))
-        )
-
-        # ✅ Bazı kıllar 2px kalınlık → derinlik hissi
-        thickness = 1 if random.random() > 0.25 else 2
-        cv2.line(hair_layer, (x, y), (x2, y2), c, thickness, cv2.LINE_AA)
-
-    # Shadow biraz azaltıldı (daha hafif altyapı)
-    shadow_alpha = (mask_f * intensity * 0.40)[:, :, None]
-    output = output * (1.0 - shadow_alpha)
-
-    final = output + (hair_layer * 4.0)
-
-    return np.clip(final, 0, 255).astype(np.uint8)
+    return np.clip(output, 0, 255).astype(np.uint8)
