@@ -7,35 +7,27 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:wght@700&display=swap');
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
     :root {
-      --ink: #1a1a2e;
       --indigo: #4646e5;
       --indigo-lt: rgba(70,70,229,0.10);
-      --indigo-md: rgba(70,70,229,0.18);
       --glass: rgba(255,255,255,0.72);
-      --radius: 20px;
       --tab-h: 52px;
     }
 
     body {
-      min-height: 100vh;
-      background: linear-gradient(135deg,#f0f4ff 0%,#e8fcd4 55%,#f4f0ff 100%);
-      font-family: 'DM Sans', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 24px 20px 40px;
-      color: var(--ink);
+      min-height:100vh;
+      background:linear-gradient(135deg,#f0f4ff 0%,#e8fcd4 55%,#f4f0ff 100%);
+      font-family:'DM Sans',sans-serif;
+      display:flex; flex-direction:column; align-items:center;
+      padding:24px 20px 40px; color:#1a1a2e;
     }
-
-    /* ─── BLOBS ─── */
     .blob { position:fixed; border-radius:50%; filter:blur(70px); opacity:.32; pointer-events:none; z-index:0; }
     .blob-1 { width:340px;height:340px;background:#b0b0ff;top:-100px;left:-80px; }
     .blob-2 { width:280px;height:280px;background:#a8f0c0;bottom:-80px;right:-60px; }
 
-    /* ─── HEADER ─── */
+    /* HEADER */
     .page-header { text-align:center; margin-bottom:28px; z-index:1; animation:fadeDown .55s ease both; }
     .badge {
       display:inline-block; background:var(--indigo-lt); color:var(--indigo);
@@ -45,78 +37,59 @@
     }
     .page-header h1 { font-family:'Playfair Display',serif; font-size:38px; color:#2a2a7a; line-height:1.2; }
 
-    /* ─── OUTER CARD ─── */
+    /* OUTER CARD */
     .studio-card {
-      width:100%; max-width:1100px; z-index:1;
+      width:100%; max-width:1140px; z-index:1;
       background:var(--glass); backdrop-filter:blur(24px);
-      border:1px solid rgba(255,255,255,.85);
-      border-radius:28px;
-      box-shadow:0 20px 60px rgba(70,70,229,.10);
-      overflow:hidden;
+      border:1px solid rgba(255,255,255,.85); border-radius:28px;
+      box-shadow:0 20px 60px rgba(70,70,229,.10); overflow:hidden;
       animation:fadeUp .65s .12s ease both;
     }
 
-    /* ─── TOP TAB BAR ─── */
+    /* TAB BAR */
     .tab-bar {
-      display:flex;
-      background:rgba(255,255,255,.55);
+      display:flex; background:rgba(255,255,255,.55);
       border-bottom:1px solid rgba(70,70,229,.08);
-      padding:0 24px;
-      gap:4px;
+      padding:0 24px; gap:2px;
       position:sticky; top:0; z-index:20;
+      overflow-x:auto;
     }
     .tab-btn {
-      position:relative;
-      display:flex; align-items:center; gap:8px;
-      padding:0 22px;
-      height:var(--tab-h);
+      position:relative; display:flex; align-items:center; gap:8px;
+      padding:0 20px; height:var(--tab-h);
       background:none; border:none; cursor:pointer;
-      font-family:'DM Sans',sans-serif;
-      font-size:13px; font-weight:500; color:#6060aa;
-      transition:color .2s;
-      white-space:nowrap;
+      font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500;
+      color:#6060aa; transition:color .2s; white-space:nowrap;
     }
-    .tab-btn .tab-icon { font-size:16px; }
     .tab-btn::after {
-      content:'';
-      position:absolute; bottom:0; left:22px; right:22px; height:2.5px;
+      content:''; position:absolute; bottom:0; left:20px; right:20px; height:2.5px;
       background:var(--indigo); border-radius:2px 2px 0 0;
-      opacity:0; transform:scaleX(.4); transition:opacity .2s, transform .2s;
+      opacity:0; transform:scaleX(.4); transition:opacity .2s,transform .2s;
     }
     .tab-btn:hover { color:var(--indigo); }
     .tab-btn.active { color:var(--indigo); font-weight:600; }
     .tab-btn.active::after { opacity:1; transform:scaleX(1); }
 
-    /* ─── BODY: preview + panel ─── */
-    .studio-body {
-      display:grid;
-      grid-template-columns:440px 1fr;
-      gap:0;
-      min-height:540px;
-    }
+    /* BODY */
+    .studio-body { display:grid; grid-template-columns:320px 1fr; min-height:560px; }
 
-    /* ─── LEFT: PREVIEW ─── */
+    /* PREVIEW COL */
     .preview-col {
       background:rgba(255,255,255,.45);
       border-right:1px solid rgba(70,70,229,.07);
-      padding:24px 20px 24px 24px;
+      padding:22px 18px 22px 22px;
       display:flex; flex-direction:column; gap:16px;
     }
     .preview-wrap {
       border-radius:16px; overflow:hidden;
       border:1.5px solid rgba(70,70,229,.10);
-      background:#fff;
-      box-shadow:0 8px 24px rgba(0,0,0,.06);
-      flex-shrink:0;
+      background:#fff; box-shadow:0 8px 24px rgba(0,0,0,.06);
     }
     .preview-wrap img { width:100%; height:auto; display:block; }
-
     .finish-btn {
-      width:100%; padding:14px;
-      border-radius:14px; border:none; cursor:pointer;
-      background:linear-gradient(135deg,#6060e5,#4646e5);
-      color:#fff; font-family:'DM Sans',sans-serif;
-      font-size:15px; font-weight:600;
+      width:100%; padding:14px; border-radius:14px; border:none; cursor:pointer;
+      background:linear-gradient(135deg,#6060e5,#4646e5); color:#fff;
+      font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600;
       display:flex; align-items:center; justify-content:center; gap:10px;
       box-shadow:0 6px 22px rgba(70,70,229,.34);
       transition:transform .25s, box-shadow .25s;
@@ -124,193 +97,52 @@
     .finish-btn:hover { transform:translateY(-3px); box-shadow:0 10px 30px rgba(70,70,229,.44); }
     .finish-btn:disabled { opacity:.65; transform:none; cursor:not-allowed; }
 
-    /* ─── RIGHT: PANEL AREA ─── */
-    .panel-col {
-      overflow-y:auto;
-      max-height:calc(100vh - 200px);
-      padding:24px 24px 32px;
-    }
+    /* PANEL COL */
+    .panel-col { overflow-y:auto; max-height:calc(100vh - 200px); padding:24px 26px 36px; }
 
-    /* ─── TAB PANELS ─── */
     .tab-panel { display:none; flex-direction:column; gap:14px; }
-    .tab-panel.active { display:flex; animation:panelIn .3s ease both; }
+    .tab-panel.active { display:flex; animation:panelIn .28s ease both; }
+    @keyframes panelIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
-    @keyframes panelIn {
-      from { opacity:0; transform:translateY(10px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
-
-    /* ─── SECTION TITLE ─── */
-    .section-title {
+    /* SECTION TITLE */
+    .sec-title {
       font-size:11px; font-weight:600; letter-spacing:1.2px;
-      text-transform:uppercase; color:#8888bb; margin-bottom:2px;
+      text-transform:uppercase; color:#8888bb;
       padding-bottom:8px; border-bottom:1px solid rgba(70,70,229,.07);
     }
 
-    /* ─── CONTROL CARD ─── */
+    /* CTRL CARD */
     .ctrl-card {
       background:rgba(255,255,255,.55);
       border:1px solid rgba(70,70,229,.07);
-      border-radius:14px;
-      padding:14px 16px;
+      border-radius:14px; padding:14px 16px;
     }
-    .ctrl-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
-    .ctrl-label { font-size:13px; font-weight:600; color:#2a2a7a; }
+    .ctrl-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+    .ctrl-lbl { font-size:13px; font-weight:600; color:#2a2a7a; }
     .ctrl-val { font-size:13px; font-weight:600; color:var(--indigo); }
 
     input[type="range"] {
       appearance:none; -webkit-appearance:none;
-      width:100%; height:5px;
-      background:rgba(70,70,229,.12); border-radius:5px; outline:none;
-      margin:10px 0 4px;
+      width:100%; height:5px; background:rgba(70,70,229,.12);
+      border-radius:5px; outline:none; margin:10px 0 4px;
     }
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance:none; width:20px; height:20px;
-      background:var(--indigo); border:3px solid #fff;
-      border-radius:50%; cursor:pointer;
-      box-shadow:0 3px 10px rgba(70,70,229,.35);
-      transition:transform .15s;
+      background:var(--indigo); border:3px solid #fff; border-radius:50%;
+      cursor:pointer; box-shadow:0 3px 10px rgba(70,70,229,.35); transition:transform .15s;
     }
     input[type="range"]::-webkit-slider-thumb:hover { transform:scale(1.18); }
 
-    /* center tick for bidirectional sliders */
     .tick-wrap { position:relative; }
     .tick-wrap::before {
-      content:''; position:absolute; left:50%; top:-6px;
-      transform:translateX(-50%);
-      width:2px; height:8px;
-      background:rgba(70,70,229,.35); border-radius:1px;
+      content:''; position:absolute; left:50%; top:-5px; transform:translateX(-50%);
+      width:2px; height:8px; background:rgba(70,70,229,.35); border-radius:1px;
     }
 
-    /* ─── COLOR ROW ─── */
-    .color-row { display:flex; align-items:center; gap:10px; margin:8px 0 4px; }
+    input[type="color"] { width:36px; height:28px; border:none; border-radius:7px; cursor:pointer; padding:0; }
+    .color-row { display:flex; align-items:center; gap:8px; margin:8px 0 4px; }
     .color-row label { font-size:11px; font-weight:600; color:#8888bb; }
-    input[type="color"] {
-      width:36px; height:28px; border:none; border-radius:7px; cursor:pointer; padding:0;
-    }
 
-    /* ─── SELECT ─── */
-    select {
-      width:100%; padding:8px 10px; border-radius:10px;
-      border:1px solid rgba(70,70,229,.18); font-family:inherit;
-      color:#2a2a7a; background:rgba(255,255,255,.75);
-      font-size:13px; margin:8px 0;
-    }
-
-    /* ─── MAKEUP SECTION ─── */
-    .makeup-grid {
-      display:grid; grid-template-columns:1fr 1fr; gap:12px;
-    }
-    .makeup-card {
-      background:rgba(255,255,255,.6);
-      border:1px solid rgba(70,70,229,.09);
-      border-radius:14px; padding:14px;
-      display:flex; flex-direction:column; gap:8px;
-    }
-    .makeup-card-title { font-size:12px; font-weight:600; color:#2a2a7a; }
-
-    /* Lipstick row */
-    .lipstick-row { display:flex; gap:6px; flex-wrap:wrap; }
-    .lip-swatch {
-      width:26px; height:26px; border-radius:50%;
-      border:2px solid transparent; cursor:pointer;
-      transition:transform .15s, border-color .15s;
-      box-shadow:0 2px 6px rgba(0,0,0,.15);
-    }
-    .lip-swatch:hover { transform:scale(1.15); }
-    .lip-swatch.active { border-color:var(--indigo); }
-
-    /* Color palette grid */
-    .palette-grid { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
-    .pal-swatch {
-      width:20px; height:20px; border-radius:4px; cursor:pointer;
-      border:1px solid rgba(0,0,0,.06);
-      transition:transform .1s;
-    }
-    .pal-swatch:hover { transform:scale(1.2); }
-
-    /* Lens dots */
-    .lens-row { display:flex; gap:8px; flex-wrap:wrap; }
-    .lens-dot {
-      width:32px; height:32px; border-radius:50%;
-      background:radial-gradient(circle at center, transparent 12%, var(--c) 44%, rgba(0,0,0,.8) 94%);
-      border:1.5px solid rgba(255,255,255,.3);
-      box-shadow:inset 0 0 6px rgba(0,0,0,.5), 0 3px 6px rgba(0,0,0,.18);
-      cursor:pointer; position:relative; transition:transform .15s;
-    }
-    .lens-dot:hover { transform:scale(1.1); }
-    .lens-dot::after {
-      content:''; position:absolute; top:6px; left:7px;
-      width:9px; height:5px; background:rgba(255,255,255,.45);
-      border-radius:50%; transform:rotate(-30deg);
-    }
-    .lens-dot.active { outline:2.5px solid var(--indigo); outline-offset:2px; }
-
-    /* Eyeshadow palette */
-    .es-swatch {
-      width:32px; height:24px; border-radius:5px; cursor:pointer;
-      border:1px solid rgba(0,0,0,.08); transition:transform .12s;
-      box-shadow:inset 0 2px 4px rgba(0,0,0,.15);
-    }
-    .es-swatch:hover { transform:scale(1.12); }
-    .es-swatch.active { outline:2.5px solid var(--indigo); outline-offset:2px; }
-
-    /* Blush */
-    .blush-swatch {
-      width:32px; height:32px; border-radius:50%; cursor:pointer;
-      box-shadow:0 3px 8px rgba(0,0,0,.12); border:1.5px solid rgba(255,255,255,.6);
-      transition:transform .15s;
-    }
-    .blush-swatch:hover { transform:scale(1.1); }
-    .blush-swatch.active { outline:2.5px solid var(--indigo); outline-offset:2px; }
-
-    /* Eyebrow */
-    .brow-swatch {
-      width:36px; height:14px; border-radius:99px; cursor:pointer;
-      box-shadow:0 2px 6px rgba(0,0,0,.15); border:1.5px solid rgba(255,255,255,.5);
-      transition:transform .12s;
-    }
-    .brow-swatch:hover { transform:scale(1.1); }
-    .brow-swatch.active { outline:2.5px solid var(--indigo); outline-offset:2px; }
-
-    /* Hair color chips */
-    .hair-chip-row { display:flex; gap:6px; flex-wrap:wrap; }
-    .hair-chip {
-      width:28px; height:28px; border-radius:50%; cursor:pointer;
-      border:2px solid transparent;
-      box-shadow:0 2px 6px rgba(0,0,0,.18);
-      transition:transform .12s, border-color .12s;
-    }
-    .hair-chip:hover { transform:scale(1.12); }
-    .hair-chip.active { border-color:var(--indigo); }
-
-    /* Accessory thumbnail */
-    .acc-list { display:flex; flex-wrap:wrap; gap:8px; }
-    .acc-card {
-      width:56px; height:56px; background:#fff; border-radius:12px;
-      border:1.5px solid rgba(70,70,229,.1);
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; transition:all .2s;
-      box-shadow:0 3px 8px rgba(0,0,0,.05);
-    }
-    .acc-card:hover { transform:translateY(-4px) scale(1.05); border-color:var(--indigo); }
-    .acc-card.active { border-color:var(--indigo); background:var(--indigo-lt); }
-    .acc-card img { max-width:80%; max-height:80%; object-fit:contain; }
-
-    /* Hairstyle */
-    .hs-list { display:flex; flex-wrap:wrap; gap:8px; }
-    .hs-card {
-      width:58px; height:58px; background:#fff; border-radius:12px;
-      border:1.5px solid rgba(70,70,229,.1);
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; transition:all .2s;
-      overflow:hidden;
-    }
-    .hs-card img { width:100%; height:100%; object-fit:cover; }
-    .hs-card:hover { transform:translateY(-4px) scale(1.05); border-color:var(--indigo); }
-    .hs-card.active { border-color:var(--indigo); box-shadow:0 0 0 3px var(--indigo-lt); }
-
-    /* Remove / small btn */
     .sm-btn {
       background:none; border:1px solid rgba(70,70,229,.25); border-radius:8px;
       padding:4px 12px; font-size:11px; color:var(--indigo); cursor:pointer;
@@ -318,15 +150,220 @@
     }
     .sm-btn:hover { background:var(--indigo-lt); }
 
-    /* Position sliders (Hair tab) */
+    /* ══════════════════════════════════════════
+       MAKEUP — KOZMETIK GÖRSELLER
+    ══════════════════════════════════════════ */
+
+    /* Sahne zemini */
+    .cosmetic-shelf {
+      background:linear-gradient(180deg,#fff7fb,#f0ecff);
+      border-radius:16px;
+      padding:16px 14px 20px;
+      border:1px solid rgba(70,70,229,.07);
+      position:relative;
+    }
+    .shelf-label {
+      font-size:11px; font-weight:600; letter-spacing:1px;
+      text-transform:uppercase; color:#9090bb; margin-bottom:12px;
+    }
+
+    /* ── RAF ÇUBUĞU ── */
+    .shelf-row {
+      position:relative;
+      display:flex; gap:10px; flex-wrap:wrap;
+      padding:14px 4px 24px;
+      margin-bottom:8px;
+      justify-content:center;
+    }
+    .shelf-row::after {
+      content:''; position:absolute; left:0; right:0; bottom:4px; height:8px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#3d3d5c,#74749a,#3d3d5c);
+      box-shadow:0 5px 12px rgba(0,0,0,.18);
+    }
+
+    /* ── RUJ ── */
+    .lipstick-item {
+      width:44px; height:100px; background:transparent; border:none;
+      cursor:pointer; position:relative;
+      transition:transform .3s cubic-bezier(.4,0,.2,1);
+      filter:drop-shadow(0 10px 16px rgba(0,0,0,.22));
+    }
+    .lipstick-item:hover { transform:translateY(-8px) scale(1.07); }
+    .lipstick-item.active { transform:translateY(-10px) scale(1.1); }
+    .lipstick-item.active::before { box-shadow:0 0 0 2px var(--indigo),0 0 12px rgba(70,70,229,.4) !important; }
+
+    /* gümüş iç tüp */
+    .lipstick-item .li-inner {
+      position:absolute; left:13px; bottom:44px; width:18px; height:46px;
+      background:linear-gradient(90deg,#b8b8c0,#fff 40%,#9090a0);
+      border-radius:2px; z-index:1;
+    }
+    /* renkli uç */
+    .lipstick-item .li-tip {
+      position:absolute; left:13px; bottom:80px; width:18px; height:20px;
+      background:var(--lc); border-radius:9px 9px 2px 2px;
+      box-shadow:inset -4px 0 8px rgba(0,0,0,.25),inset 3px 3px 5px rgba(255,255,255,.2);
+      z-index:2;
+    }
+    /* siyah gövde */
+    .lipstick-item .li-body {
+      position:absolute; left:6px; bottom:0; width:32px; height:60px;
+      background:linear-gradient(135deg,#1a1a1a 0%,#333 50%,#000 100%);
+      border-radius:4px; border:1px solid rgba(255,255,255,.08);
+      box-shadow:inset 0 0 12px rgba(0,0,0,.55); z-index:3;
+    }
+    .lipstick-item .li-body::after {
+      content:'D'; position:absolute; bottom:7px; left:0; right:0; text-align:center;
+      color:rgba(255,255,255,.16); font-family:'Playfair Display',serif; font-size:15px;
+    }
+    /* gümüş yüzük */
+    .lipstick-item .li-ring {
+      position:absolute; left:4px; bottom:56px; width:36px; height:7px;
+      background:linear-gradient(90deg,#9090a0,#fff,#9090a0);
+      border-radius:2px; z-index:5; box-shadow:0 2px 4px rgba(0,0,0,.18);
+    }
+    /* alt topuz */
+    .lipstick-item .li-knob {
+      position:absolute; left:9px; bottom:-6px; width:26px; height:12px;
+      background:radial-gradient(circle at 50% 20%,#fff,#b8b8c0 60%,#808090);
+      border-radius:50%; z-index:4; box-shadow:0 4px 8px rgba(0,0,0,.28);
+    }
+
+    /* ── ALLIKALLAR (compact) ── */
+    .blush-item {
+      width:48px; height:48px; border-radius:50%; background:#1a1a1a;
+      border:1px solid #333; box-shadow:0 4px 10px rgba(0,0,0,.28),inset 0 1px 1px rgba(255,255,255,.08);
+      cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center;
+      transition:transform .2s;
+    }
+    .blush-item:hover { transform:translateY(-4px) scale(1.1); }
+    .blush-item.active { outline:2.5px solid var(--indigo); outline-offset:2px; }
+    .blush-item .blush-fill {
+      width:32px; height:32px; border-radius:50%;
+      background:var(--bc); box-shadow:inset 0 2px 4px rgba(0,0,0,.2);
+      border:1px solid rgba(0,0,0,.08);
+    }
+    .blush-item::after {
+      content:''; position:absolute; top:5px; right:7px; width:9px; height:5px;
+      background:rgba(255,255,255,.14); border-radius:50%; transform:rotate(35deg);
+    }
+
+    /* ── GÖZ FARI (palette) ── */
+    .eyeshadow-item {
+      width:54px; height:42px; background:#111; border-radius:6px;
+      border:1px solid #333; box-shadow:0 4px 10px rgba(0,0,0,.28);
+      cursor:pointer; position:relative; display:flex; flex-direction:column;
+      padding:5px; gap:4px; transition:transform .2s;
+    }
+    .eyeshadow-item:hover { transform:translateY(-4px) scale(1.06); }
+    .eyeshadow-item.active { outline:2.5px solid var(--indigo); outline-offset:2px; }
+    .eyeshadow-item .es-pan {
+      flex:1; width:100%; background:var(--ec);
+      border-radius:3px; box-shadow:inset 0 2px 5px rgba(0,0,0,.3);
+      border:1px solid rgba(255,255,255,.05);
+    }
+    .eyeshadow-item .es-brush {
+      height:4px; width:85%; background:linear-gradient(90deg,#333,#555,#333);
+      border-radius:2px; align-self:center;
+    }
+
+    /* ── LENS ── */
+    .lens-item {
+      width:44px; height:44px; border-radius:50%;
+      background:radial-gradient(circle at center,transparent 14%,var(--lnc) 44%,rgba(0,0,0,.82) 95%);
+      border:1.5px solid rgba(255,255,255,.28);
+      box-shadow:inset 0 0 8px rgba(0,0,0,.55),0 4px 8px rgba(0,0,0,.2);
+      cursor:pointer; position:relative; transition:transform .18s;
+    }
+    .lens-item:hover { transform:scale(1.1) translateY(-3px); }
+    .lens-item.active { outline:2.5px solid var(--indigo); outline-offset:3px; }
+    .lens-item::after {
+      content:''; position:absolute; top:8px; left:10px; width:11px; height:6px;
+      background:rgba(255,255,255,.48); border-radius:50%; transform:rotate(-30deg);
+    }
+
+    /* ── KAŞ KALEMİ ── */
+   /* ── KAŞ KALEMİ ── */
+.eyebrow-item {
+  width:36px; height:110px; background:transparent; border:none;
+  cursor:pointer; position:relative; display:flex; flex-direction:column;
+  align-items:center;
+  filter:drop-shadow(0 8px 14px rgba(0,0,0,.22));
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+}
+.eyebrow-item:hover  { transform:translateY(-9px) scale(1.07); }
+.eyebrow-item.active { transform:translateY(-11px) scale(1.09); }
+.eyebrow-item .p-cap    { width:14px;height:10px;background:linear-gradient(90deg,#c0c0cc,#eee 50%,#a0a0b0);border-radius:3px 3px 1px 1px;border:1px solid rgba(255,255,255,.4); }
+.eyebrow-item .p-eraser { width:13px;height:8px;background:radial-gradient(ellipse at 40% 35%,#f9c4c4,#e08080);border-radius:2px;border:1px solid rgba(180,80,80,.3);margin-top:-1px; }
+.eyebrow-item .p-ring   { width:15px;height:5px;background:linear-gradient(90deg,#aaa,#fff 50%,#999);border-radius:1px;margin-top:-1px; }
+.eyebrow-item .p-body   { width:14px;flex:1;background:linear-gradient(90deg,color-mix(in srgb,var(--ewc) 70%,#000 30%) 0%,var(--ewc) 30%,color-mix(in srgb,var(--ewc) 80%,#fff 20%) 50%,var(--ewc) 70%,color-mix(in srgb,var(--ewc) 60%,#000 40%) 100%);margin-top:-1px; }
+.eyebrow-item .p-shave  { width:14px;height:14px;position:relative;overflow:hidden;margin-top:-1px; }
+.eyebrow-item .p-shave::before { content:'';position:absolute;inset:0;background:linear-gradient(170deg,color-mix(in srgb,var(--ewc) 80%,#fff 20%) 0%,color-mix(in srgb,var(--ewc) 60%,#000 40%) 60%,#deb887 61%,#c8a065 100%);clip-path:polygon(0 0,100% 0,50% 100%); }
+.eyebrow-item .p-tip    { width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:8px solid var(--ewc);filter:brightness(.35);margin-top:-1px; }
+
+    /* Palette toggle grid */
+    .palette-grid {
+      display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;
+    }
+    .pal-dot {
+      width:20px; height:20px; border-radius:4px; cursor:pointer;
+      border:1px solid rgba(0,0,0,.06); transition:transform .1s;
+    }
+    .pal-dot:hover { transform:scale(1.22); }
+    .pal-dot.active { outline:2px solid var(--indigo); outline-offset:1px; }
+
+    /* intensity row inside makeup card */
+    .int-row { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+    .int-lbl { font-size:12px; color:#8888bb; font-weight:500; }
+    .int-val { font-size:12px; font-weight:600; color:var(--indigo); }
+
+    /* ── HAIR ── */
+    .hs-list { display:flex; flex-wrap:wrap; gap:8px; }
+    .hs-card {
+      width:58px; height:58px; background:#fff; border-radius:12px;
+      border:1.5px solid rgba(70,70,229,.1);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; overflow:hidden; transition:all .2s;
+    }
+    .hs-card img { width:100%; height:100%; object-fit:cover; }
+    .hs-card:hover { transform:translateY(-4px); border-color:var(--indigo); }
+    .hs-card.active { border-color:var(--indigo); box-shadow:0 0 0 3px var(--indigo-lt); }
+
+    .hair-chip-row { display:flex; flex-wrap:wrap; gap:6px; }
+    .hair-chip {
+      width:28px; height:28px; border-radius:50%; cursor:pointer;
+      border:2px solid transparent; box-shadow:0 2px 6px rgba(0,0,0,.18);
+      transition:transform .12s,border-color .12s;
+    }
+    .hair-chip:hover { transform:scale(1.12); }
+    .hair-chip.active { border-color:var(--indigo); }
+
     .pos-label { display:flex; justify-content:space-between; font-size:11px; font-weight:600; color:#8888bb; }
+
+    /* ── ACCESSORIES ── */
+    .acc-list { display:flex; flex-wrap:wrap; gap:8px; }
+    .acc-card {
+      width:56px; height:56px; background:#fff; border-radius:12px;
+      border:1.5px solid rgba(70,70,229,.1);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all .2s; box-shadow:0 3px 8px rgba(0,0,0,.05);
+    }
+    .acc-card img { max-width:80%; max-height:80%; object-fit:contain; }
+    .acc-card:hover { transform:translateY(-4px) scale(1.05); border-color:var(--indigo); }
+    .acc-card.active { border-color:var(--indigo); background:var(--indigo-lt); }
+
+    select {
+      width:100%; padding:8px 10px; border-radius:10px;
+      border:1px solid rgba(70,70,229,.18); font-family:inherit;
+      color:#2a2a7a; background:rgba(255,255,255,.75); font-size:13px; margin:8px 0;
+    }
 
     @keyframes fadeDown { from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:translateY(0)} }
     @keyframes fadeUp   { from{opacity:0;transform:translateY(22px)}  to{opacity:1;transform:translateY(0)} }
   </style>
 </head>
 <body>
-
 <div class="blob blob-1"></div>
 <div class="blob blob-2"></div>
 
@@ -337,26 +374,17 @@
 
 <div class="studio-card">
 
-  <!-- ══ TAB BAR ══ -->
+  <!-- TAB BAR -->
   <div class="tab-bar">
-    <button class="tab-btn active" data-tab="face">
-      <span class="tab-icon">✦</span> Face &amp; Body
-    </button>
-    <button class="tab-btn" data-tab="makeup">
-      <span class="tab-icon">💄</span> Makeup
-    </button>
-    <button class="tab-btn" data-tab="hair">
-      <span class="tab-icon">✂️</span> Hair
-    </button>
-    <button class="tab-btn" data-tab="accessories">
-      <span class="tab-icon">💍</span> Accessories
-    </button>
+    <button class="tab-btn active" data-tab="face">✦ Face &amp; Body</button>
+    <button class="tab-btn" data-tab="makeup">💄 Makeup</button>
+    <button class="tab-btn" data-tab="hair">✂️ Hair</button>
+    <button class="tab-btn" data-tab="accessories">💍 Accessories</button>
   </div>
 
-  <!-- ══ STUDIO BODY ══ -->
   <div class="studio-body">
 
-    <!-- LEFT: Preview -->
+    <!-- ── PREVIEW ── -->
     <div class="preview-col">
       <div class="preview-wrap">
         <img id="livePreview" src="/static/uploads/original.jpg" alt="Live Preview">
@@ -369,194 +397,146 @@
       </button>
     </div>
 
-    <!-- RIGHT: Panels -->
+    <!-- ── PANELS ── -->
     <div class="panel-col">
 
-      <!-- ══════════ FACE & BODY ══════════ -->
+      <!-- ════════ FACE & BODY ════════ -->
       <div class="tab-panel active" id="panel-face">
-        <div class="section-title">Shape &amp; Expression</div>
+        <div class="sec-title">Shape &amp; Expression</div>
 
-        <!-- Face Slim -->
         <div class="ctrl-card">
-          <div class="ctrl-row">
-            <span class="ctrl-label">Face Slim / Widen</span>
-            <span class="ctrl-val" id="slim_face-val">0%</span>
-          </div>
-          <div class="tick-wrap">
-            <input type="range" class="refine-slider" data-type="slim_face" min="-100" max="100" value="0">
-          </div>
+          <div class="ctrl-row"><span class="ctrl-lbl">Face Slim / Widen</span><span class="ctrl-val" id="slim_face-val">0%</span></div>
+          <div class="tick-wrap"><input type="range" class="refine-slider" data-type="slim_face" min="-100" max="100" value="0"></div>
         </div>
-
-        <!-- Smile -->
         <div class="ctrl-card">
-          <div class="ctrl-row">
-            <span class="ctrl-label">Smile Enhance</span>
-            <span class="ctrl-val" id="smile-val">0%</span>
-          </div>
+          <div class="ctrl-row"><span class="ctrl-lbl">Smile Enhance</span><span class="ctrl-val" id="smile-val">0%</span></div>
           <input type="range" class="refine-slider" data-type="smile" min="0" max="100" value="0">
         </div>
-
-        <!-- Aging -->
         <div class="ctrl-card">
-          <div class="ctrl-row">
-            <span class="ctrl-label">Aging Effect</span>
-            <span class="ctrl-val" id="aging-val">0%</span>
-          </div>
+          <div class="ctrl-row"><span class="ctrl-lbl">Aging Effect</span><span class="ctrl-val" id="aging-val">0%</span></div>
           <input type="range" class="refine-slider" data-type="aging" min="0" max="100" value="0">
         </div>
-
-        <!-- De-Aging -->
         <div class="ctrl-card">
-          <div class="ctrl-row">
-            <span class="ctrl-label">De-Aging</span>
-            <span class="ctrl-val" id="deaging-val">0%</span>
-          </div>
+          <div class="ctrl-row"><span class="ctrl-lbl">De-Aging</span><span class="ctrl-val" id="deaging-val">0%</span></div>
           <input type="range" class="refine-slider" data-type="deaging" min="0" max="100" value="0">
         </div>
-
-        <!-- Lip Widening -->
         <div class="ctrl-card">
-          <div class="ctrl-row">
-            <span class="ctrl-label">Lip Widening</span>
-            <span class="ctrl-val" id="lip_widen-val">0%</span>
-          </div>
+          <div class="ctrl-row"><span class="ctrl-lbl">Lip Widening</span><span class="ctrl-val" id="lip_widen-val">0%</span></div>
           <input type="range" class="refine-slider" data-type="lip_widen" min="0" max="100" value="0">
         </div>
 
-        <div class="section-title" style="margin-top:6px;">Beard &amp; Brows</div>
-
-        <!-- Beard -->
+        <div class="sec-title" style="margin-top:4px;">Beard &amp; Brows</div>
         <div class="ctrl-card">
-          <div class="ctrl-row">
-            <span class="ctrl-label">Beard</span>
-            <span class="ctrl-val" id="beard-val">0%</span>
-          </div>
+          <div class="ctrl-row"><span class="ctrl-lbl">Beard</span><span class="ctrl-val" id="beard-val">0%</span></div>
           <input type="range" class="refine-slider" data-type="beard" min="0" max="100" value="0">
         </div>
-
-        <!-- Moustache -->
         <div class="ctrl-card">
-          <div class="ctrl-row">
-            <span class="ctrl-label">Moustache</span>
-            <span class="ctrl-val" id="moustache-val">0%</span>
-          </div>
+          <div class="ctrl-row"><span class="ctrl-lbl">Moustache</span><span class="ctrl-val" id="moustache-val">0%</span></div>
           <input type="range" class="refine-slider" data-type="moustache" min="0" max="100" value="0">
         </div>
-
-        <!-- Eyebrow Thickening -->
         <div class="ctrl-card">
-          <div class="ctrl-row">
-            <span class="ctrl-label">Eyebrow Thickening</span>
-            <span class="ctrl-val" id="eyebrow-val">0%</span>
-          </div>
+          <div class="ctrl-row"><span class="ctrl-lbl">Eyebrow Thickening</span><span class="ctrl-val" id="eyebrow-val">0%</span></div>
           <input type="range" class="refine-slider" data-type="eyebrow" min="0" max="100" value="0">
         </div>
       </div>
 
-      <!-- ══════════ MAKEUP ══════════ -->
+      <!-- ════════ MAKEUP ════════ -->
       <div class="tab-panel" id="panel-makeup">
 
-        <!-- LIP COLOR -->
-        <div class="section-title">Lip Color</div>
-        <div class="ctrl-card">
-          <div class="lipstick-row" id="lipSwatchRow"></div>
-          <div class="palette-grid" id="lipPaletteGrid" style="display:none;margin-top:8px;"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-            <button class="sm-btn" onclick="togglePalette('lipPaletteGrid',this)">More colors</button>
+        <!-- RUJ -->
+        <div class="cosmetic-shelf">
+          <div class="shelf-label">Lipstick</div>
+          <div class="shelf-row" id="lipRow"></div>
+          <div class="palette-grid" id="lipPalette" style="display:none"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <button class="sm-btn" onclick="togglePal('lipPalette',this)">More colors</button>
             <button class="sm-btn" onclick="clearMakeup('lip_color')">Remove</button>
           </div>
-          <div class="ctrl-row" style="margin-top:10px;">
-            <span class="ctrl-label" style="font-size:12px;">Intensity</span>
-            <span class="ctrl-val" id="lip-int-val">65%</span>
+          <div class="int-row">
+            <span class="int-lbl">Intensity</span><span class="int-val" id="lip-iv">65%</span>
           </div>
-          <input type="range" id="lipIntensity" min="0" max="100" value="65">
+          <input type="range" id="lipInt" min="0" max="100" value="65">
         </div>
 
-        <!-- BLUSH -->
-        <div class="section-title">Blush</div>
-        <div class="ctrl-card">
-          <div class="lipstick-row" id="blushSwatchRow"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-            <div class="color-row" style="margin:0;">
+        <!-- ALLIKALLAR -->
+        <div class="cosmetic-shelf">
+          <div class="shelf-label">Blush</div>
+          <div class="shelf-row" id="blushRow"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <div class="color-row" style="margin:0">
               <label>Custom</label>
               <input type="color" id="blushCustom" value="#ffb3b3">
             </div>
             <button class="sm-btn" onclick="clearMakeup('blush')">Remove</button>
           </div>
-          <div class="ctrl-row" style="margin-top:10px;">
-            <span class="ctrl-label" style="font-size:12px;">Intensity</span>
-            <span class="ctrl-val" id="blush-int-val">65%</span>
+          <div class="int-row">
+            <span class="int-lbl">Intensity</span><span class="int-val" id="blush-iv">65%</span>
           </div>
-          <input type="range" id="blushIntensity" min="0" max="100" value="65">
+          <input type="range" id="blushInt" min="0" max="100" value="65">
         </div>
 
-        <!-- EYESHADOW -->
-        <div class="section-title">Eyeshadow</div>
-        <div class="ctrl-card">
-          <div class="lipstick-row" id="esSwatchRow"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-            <div class="color-row" style="margin:0;">
+        <!-- GÖZ FARI -->
+        <div class="cosmetic-shelf">
+          <div class="shelf-label">Eyeshadow</div>
+          <div class="shelf-row" id="esRow"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <div class="color-row" style="margin:0">
               <label>Custom</label>
               <input type="color" id="esCustom" value="#8b4513">
             </div>
             <button class="sm-btn" onclick="clearMakeup('eyeshadow')">Remove</button>
           </div>
-          <div class="ctrl-row" style="margin-top:10px;">
-            <span class="ctrl-label" style="font-size:12px;">Intensity</span>
-            <span class="ctrl-val" id="es-int-val">65%</span>
+          <div class="int-row">
+            <span class="int-lbl">Intensity</span><span class="int-val" id="es-iv">65%</span>
           </div>
-          <input type="range" id="esIntensity" min="0" max="100" value="65">
+          <input type="range" id="esInt" min="0" max="100" value="65">
         </div>
 
-        <!-- EYE LENSES -->
-        <div class="section-title">Eye Lenses</div>
-        <div class="ctrl-card">
-          <div class="lens-row" id="lensRow"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-            <div class="color-row" style="margin:0;">
+        <!-- LENS -->
+        <div class="cosmetic-shelf">
+          <div class="shelf-label">Eye Lenses</div>
+          <div class="shelf-row" id="lensRow"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <div class="color-row" style="margin:0">
               <label>Custom</label>
               <input type="color" id="lensCustom" value="#4a90e2">
             </div>
             <button class="sm-btn" onclick="clearMakeup('eye_color')">Remove</button>
           </div>
-          <div class="ctrl-row" style="margin-top:10px;">
-            <span class="ctrl-label" style="font-size:12px;">Intensity</span>
-            <span class="ctrl-val" id="lens-int-val">75%</span>
+          <div class="int-row">
+            <span class="int-lbl">Intensity</span><span class="int-val" id="lens-iv">75%</span>
           </div>
-          <input type="range" id="lensIntensity" min="0" max="100" value="75">
+          <input type="range" id="lensInt" min="0" max="100" value="75">
         </div>
 
-        <!-- EYEBROW COLOR -->
-        <div class="section-title">Eyebrow Color</div>
-        <div class="ctrl-card">
-          <div class="lipstick-row" id="browSwatchRow"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-            <div class="color-row" style="margin:0;">
+        <!-- KAŞ BOYASI -->
+        <div class="cosmetic-shelf">
+          <div class="shelf-label">Eyebrow Color</div>
+          <div class="shelf-row" id="browRow"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <div class="color-row" style="margin:0">
               <label>Custom</label>
               <input type="color" id="browCustom" value="#3b1f0a">
             </div>
             <button class="sm-btn" onclick="clearMakeup('eyebrow_color')">Remove</button>
           </div>
-          <div class="ctrl-row" style="margin-top:10px;">
-            <span class="ctrl-label" style="font-size:12px;">Intensity</span>
-            <span class="ctrl-val" id="brow-int-val">60%</span>
+          <div class="int-row">
+            <span class="int-lbl">Intensity</span><span class="int-val" id="brow-iv">60%</span>
           </div>
-          <input type="range" id="browIntensity" min="0" max="100" value="60">
+          <input type="range" id="browInt" min="0" max="100" value="60">
         </div>
-      </div>
 
-      <!-- ══════════ HAIR ══════════ -->
+      </div><!-- /panel-makeup -->
+
+      <!-- ════════ HAIR ════════ -->
       <div class="tab-panel" id="panel-hair">
-
-        <div class="section-title">Hairstyle</div>
+        <div class="sec-title">Hairstyle</div>
         <div class="ctrl-card">
-          <div class="hs-list" id="hairstyleList">
-            <span style="font-size:12px;color:#8888bb;">Loading…</span>
-          </div>
+          <div class="hs-list" id="hairstyleList"><span style="font-size:12px;color:#8888bb;">Loading…</span></div>
           <button class="sm-btn" style="margin-top:10px;" onclick="clearHairstyle()">Remove hairstyle</button>
         </div>
 
-        <div class="section-title">Hair Color</div>
+        <div class="sec-title">Hair Color</div>
         <div class="ctrl-card">
           <div class="hair-chip-row" id="hairChipRow"></div>
           <div class="color-row" style="margin-top:10px;">
@@ -564,13 +544,13 @@
             <input type="color" id="hairColorPicker" value="#3b1f0a">
           </div>
           <div class="ctrl-row" style="margin-top:8px;">
-            <span class="ctrl-label" style="font-size:12px;">Intensity</span>
+            <span class="ctrl-lbl" style="font-size:12px;">Intensity</span>
             <span class="ctrl-val" id="hair_color-val">0%</span>
           </div>
           <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0">
         </div>
 
-        <div class="section-title">Position &amp; Size</div>
+        <div class="sec-title">Position &amp; Size</div>
         <div class="ctrl-card" style="display:flex;flex-direction:column;gap:14px;">
           <div>
             <div class="pos-label"><span>Vertical (Up / Down)</span><span id="hair-y-val">0</span></div>
@@ -587,34 +567,23 @@
         </div>
       </div>
 
-      <!-- ══════════ ACCESSORIES ══════════ -->
+      <!-- ════════ ACCESSORIES ════════ -->
       <div class="tab-panel" id="panel-accessories">
+        <div class="sec-title">Glasses</div>
+        <div class="ctrl-card"><div class="acc-list" id="glassesList"></div></div>
 
-        <div class="section-title">Glasses</div>
-        <div class="ctrl-card">
-          <div class="acc-list" id="glassesList"></div>
-          <button class="sm-btn" style="margin-top:10px;" onclick="clearAccessory('glasses')">Remove</button>
-        </div>
+        <div class="sec-title">Hats</div>
+        <div class="ctrl-card"><div class="acc-list" id="hatsList"></div></div>
 
-        <div class="section-title">Hats</div>
+        <div class="sec-title">Earrings</div>
         <div class="ctrl-card">
-          <div class="acc-list" id="hatsList"></div>
-          <button class="sm-btn" style="margin-top:10px;" onclick="clearAccessory('hat')">Remove</button>
-        </div>
-
-        <div class="section-title">Earrings</div>
-        <div class="ctrl-card">
-          <div class="acc-list" id="earringList">
-            <span style="font-size:12px;color:#8888bb;">Loading…</span>
-          </div>
+          <div class="acc-list" id="earringList"><span style="font-size:12px;color:#8888bb;">Loading…</span></div>
           <button class="sm-btn" style="margin-top:10px;" onclick="clearAccessory('earring')">Remove</button>
         </div>
 
-        <div class="section-title">Necklaces</div>
+        <div class="sec-title">Necklaces</div>
         <div class="ctrl-card">
-          <div class="acc-list" id="necklaceList">
-            <span style="font-size:12px;color:#8888bb;">Loading…</span>
-          </div>
+          <div class="acc-list" id="necklaceList"><span style="font-size:12px;color:#8888bb;">Loading…</span></div>
           <button class="sm-btn" style="margin-top:10px;" onclick="clearAccessory('necklace')">Remove</button>
         </div>
       </div>
@@ -624,25 +593,18 @@
 </div><!-- /studio-card -->
 
 <script>
-// ─────────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────────
-let state = {
-  makeup: {},          // { lip_color:{color,intensity}, blush:{color,intensity}, ... }
-  overlay: null,
-  hairScale: 1.0, hairX: 0, hairY: 0,
-  accessories: { earring: null, necklace: null, glasses: null, hat: null }
-};
-let debounceTimer;
+// ─── STATE ───────────────────────────────────
+const makeup = {};   // { type: { color, intensity } }
+let overlay = null, hairScale = 1.0, hairX = 0, hairY = 0;
+const acc = { earring: null, necklace: null, glasses: null, hat: null };
+let debounce;
 let currentImagePath = 'static/uploads/original.jpg';
 
 const livePreview = document.getElementById('livePreview');
 const params = new URLSearchParams(window.location.search);
 if (params.get('img')) { currentImagePath = params.get('img'); livePreview.src = '/' + currentImagePath; }
 
-// ─────────────────────────────────────────────
-// TAB SWITCHING
-// ─────────────────────────────────────────────
+// ─── TAB SWITCHING ────────────────────────────
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -652,12 +614,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// ─────────────────────────────────────────────
-// SLIDER LABELS
-// ─────────────────────────────────────────────
-document.querySelectorAll('.refine-slider').forEach(slider => {
-  slider.addEventListener('input', e => {
-    let v = parseInt(e.target.value, 10);
+// ─── FACE SLIDERS ────────────────────────────
+document.querySelectorAll('.refine-slider').forEach(s => {
+  s.addEventListener('input', e => {
+    let v = parseInt(e.target.value);
     if (e.target.dataset.type === 'slim_face' && v > -5 && v < 5) { v = 0; e.target.value = 0; }
     const lbl = document.getElementById(e.target.dataset.type + '-val');
     if (lbl) lbl.textContent = v + '%';
@@ -665,65 +625,49 @@ document.querySelectorAll('.refine-slider').forEach(slider => {
   });
 });
 
-// Per-section intensity sliders
-function wireIntensity(inputId, labelId, type) {
-  const el = document.getElementById(inputId);
-  const lbl = document.getElementById(labelId);
-  if (!el) return;
-  el.addEventListener('input', () => {
-    if (lbl) lbl.textContent = el.value + '%';
-    if (state.makeup[type]) state.makeup[type].intensity = parseInt(el.value) / 100;
-    trigger();
-  });
-}
-wireIntensity('lipIntensity',   'lip-int-val',   'lip_color');
-wireIntensity('blushIntensity', 'blush-int-val', 'blush');
-wireIntensity('esIntensity',    'es-int-val',    'eyeshadow');
-wireIntensity('lensIntensity',  'lens-int-val',  'eye_color');
-wireIntensity('browIntensity',  'brow-int-val',  'eyebrow_color');
-
-// Custom color pickers (blush / eyeshadow / lens / brow)
-['blushCustom','esCustom','lensCustom','browCustom'].forEach(id => {
-  document.getElementById(id)?.addEventListener('input', e => {
-    const map = { blushCustom:'blush', esCustom:'eyeshadow', lensCustom:'eye_color', browCustom:'eyebrow_color' };
-    applyMakeup(map[id], e.target.value, getCurrentIntensity(map[id]));
-  });
-});
-
-document.getElementById('hairColorPicker')?.addEventListener('input', () => trigger());
-
-// ─────────────────────────────────────────────
-// MAKEUP HELPERS
-// ─────────────────────────────────────────────
-function getCurrentIntensity(type) {
-  const map = { lip_color:'lipIntensity', blush:'blushIntensity', eyeshadow:'esIntensity',
-                eye_color:'lensIntensity', eyebrow_color:'browIntensity' };
-  const el = document.getElementById(map[type]);
-  return el ? parseInt(el.value) / 100 : 0.65;
-}
-
-function applyMakeup(type, color, intensity) {
-  state.makeup[type] = { color, intensity };
+// ─── MAKEUP HELPERS ──────────────────────────
+function applyMakeup(type, color, intensityPct) {
+  makeup[type] = { color, intensity: intensityPct / 100 };
   trigger();
 }
-
 function clearMakeup(type) {
-  delete state.makeup[type];
-  // deselect swatches
-  document.querySelectorAll(`[data-makeup="${type}"]`).forEach(el => el.classList.remove('active'));
+  delete makeup[type];
+  document.querySelectorAll(`[data-mk="${type}"]`).forEach(e => e.classList.remove('active'));
   trigger();
 }
-
-function togglePalette(id, btn) {
+function getIntPct(inputId) { return parseInt(document.getElementById(inputId)?.value || 65); }
+function togglePal(id, btn) {
   const el = document.getElementById(id);
   const vis = el.style.display !== 'none';
   el.style.display = vis ? 'none' : 'flex';
   btn.textContent = vis ? 'More colors' : 'Hide';
 }
 
-// ─────────────────────────────────────────────
-// BUILD SWATCHES
-// ─────────────────────────────────────────────
+// Intensity sliders
+[
+  ['lipInt',   'lip-iv',   'lip_color'],
+  ['blushInt', 'blush-iv', 'blush'],
+  ['esInt',    'es-iv',    'eyeshadow'],
+  ['lensInt',  'lens-iv',  'eye_color'],
+  ['browInt',  'brow-iv',  'eyebrow_color'],
+].forEach(([id, lblId, type]) => {
+  document.getElementById(id)?.addEventListener('input', e => {
+    document.getElementById(lblId).textContent = e.target.value + '%';
+    if (makeup[type]) { makeup[type].intensity = e.target.value / 100; trigger(); }
+  });
+});
+
+// Custom color pickers
+document.getElementById('blushCustom')?.addEventListener('input', e =>
+  applyMakeup('blush', e.target.value, getIntPct('blushInt')));
+document.getElementById('esCustom')?.addEventListener('input', e =>
+  applyMakeup('eyeshadow', e.target.value, getIntPct('esInt')));
+document.getElementById('lensCustom')?.addEventListener('input', e =>
+  applyMakeup('eye_color', e.target.value, getIntPct('lensInt')));
+document.getElementById('browCustom')?.addEventListener('input', e =>
+  applyMakeup('eyebrow_color', e.target.value, getIntPct('browInt')));
+
+// ─── BUILD COSMETIC ITEMS ────────────────────
 const LIP_COLORS   = ['#c9184a','#ff4d6d','#9d0208','#e5989b','#b5179e','#7b2cbf','#a44a3f','#6a040f'];
 const BLUSH_COLORS = ['#ffb3b3','#ffcc99','#e6a8d7','#cd853f','#f4a460','#e9967a','#deb887','#c9ada7'];
 const ES_COLORS    = ['#8b4513','#6a0dad','#ffd700','#333333','#1f618d','#117864','#cb4335','#f39c12'];
@@ -731,117 +675,135 @@ const LENS_COLORS  = ['#4a90e2','#50C878','#C9A86A','#9b59b6','#00bcd4','#ff7043
 const BROW_COLORS  = ['#4a2c1a','#1a1a1a','#8b4513','#c4a484','#5d3a24','#704214','#3b1f0a','#2b1a12'];
 const HAIR_COLORS  = ['#000000','#2b1a12','#3b1f0a','#8b4513','#cd853f','#deb887','#c4a484','#ffd700',
                       '#800000','#a52a2a','#c71585','#4b0082','#0000ff','#27ae60','#ff6347','#708090'];
+const ALL_PALETTE  = ['#ff0000','#cc0000','#990000','#ff4d4d','#ffb3b3','#ff3399','#ff99cc','#ff007f',
+  '#cc0066','#800080','#b300b3','#8a2be2','#9932cc','#8b008b','#4b0082','#cd853f',
+  '#d2b48c','#ffa07a','#ff7f50','#ff6347','#ff4500','#ffd700','#000000','#333333',
+  '#666666','#999999','#4a90e2','#50C878','#C9A86A','#9b59b6','#27ae60','#00bcd4'];
 
-const ALL_COLORS   = ['#ff0000','#e61919','#cc0000','#b30000','#990000','#ff4d4d','#ff8080','#ffb3b3',
-  '#ff6666','#e6004d','#ff3399','#ff66b2','#ff99cc','#ff007f','#cc0066','#99004d',
-  '#800080','#990099','#b300b3','#8a2be2','#9400d3','#9932cc','#8b008b','#4b0082',
-  '#bc8f8f','#cd853f','#d2b48c','#deb887','#f4a460','#e9967a','#fa8072','#ffa07a',
-  '#ff7f50','#ff6347','#ff4500','#ffd700','#000000','#333333','#666666','#999999',
-  '#4a90e2','#50C878','#C9A86A','#9b59b6','#27ae60','#2980b9','#00bcd4','#ff7043'];
-
-function makeSwatch(color, cls, dataType, handler) {
-  const el = document.createElement('div');
-  el.className = cls;
-  el.style.background = color;
-  el.dataset.makeup = dataType;
-  el.addEventListener('click', () => {
-    document.querySelectorAll(`[data-makeup="${dataType}"]`).forEach(s => s.classList.remove('active'));
-    el.classList.add('active');
-    handler(color);
-  });
-  return el;
+function selectItem(type, color, el, container) {
+  container.querySelectorAll(`[data-mk="${type}"]`).forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
 }
 
-function buildSwatches() {
-  // Lip
-  const lipRow = document.getElementById('lipSwatchRow');
-  LIP_COLORS.forEach(c => lipRow.appendChild(makeSwatch(c, 'lip-swatch', 'lip_color',
-    col => applyMakeup('lip_color', col, getCurrentIntensity('lip_color')))));
-
-  const lipGrid = document.getElementById('lipPaletteGrid');
-  lipGrid.style.flexWrap = 'wrap';
-  ALL_COLORS.forEach(c => {
-    const s = makeSwatch(c, 'pal-swatch', 'lip_color',
-      col => applyMakeup('lip_color', col, getCurrentIntensity('lip_color')));
-    lipGrid.appendChild(s);
+// Ruj oluştur
+function buildLipstick(color, container, type) {
+  const btn = document.createElement('button');
+  btn.className = 'lipstick-item'; btn.style.setProperty('--lc', color); btn.dataset.mk = type;
+  btn.innerHTML = `<div class="li-inner"></div><div class="li-tip"></div><div class="li-body"></div><div class="li-ring"></div><div class="li-knob"></div>`;
+  btn.addEventListener('click', () => {
+    selectItem(type, color, btn, container);
+    applyMakeup(type, color, getIntPct('lipInt'));
   });
+  return btn;
+}
 
-  // Blush
-  const blushRow = document.getElementById('blushSwatchRow');
-  BLUSH_COLORS.forEach(c => blushRow.appendChild(makeSwatch(c, 'blush-swatch', 'blush',
-    col => { document.getElementById('blushCustom').value = col; applyMakeup('blush', col, getCurrentIntensity('blush')); })));
+// Allık oluştur
+function buildBlush(color, container) {
+  const btn = document.createElement('button');
+  btn.className = 'blush-item'; btn.style.setProperty('--bc', color); btn.dataset.mk = 'blush';
+  btn.innerHTML = `<div class="blush-fill"></div>`;
+  btn.addEventListener('click', () => {
+    selectItem('blush', color, btn, container);
+    document.getElementById('blushCustom').value = color;
+    applyMakeup('blush', color, getIntPct('blushInt'));
+  });
+  return btn;
+}
 
-  // Eyeshadow
-  const esRow = document.getElementById('esSwatchRow');
-  ES_COLORS.forEach(c => esRow.appendChild(makeSwatch(c, 'es-swatch', 'eyeshadow',
-    col => { document.getElementById('esCustom').value = col; applyMakeup('eyeshadow', col, getCurrentIntensity('eyeshadow')); })));
+// Far oluştur
+function buildEyeshadow(color, container) {
+  const btn = document.createElement('button');
+  btn.className = 'eyeshadow-item'; btn.style.setProperty('--ec', color); btn.dataset.mk = 'eyeshadow';
+  btn.innerHTML = `<div class="es-pan"></div><div class="es-brush"></div>`;
+  btn.addEventListener('click', () => {
+    selectItem('eyeshadow', color, btn, container);
+    document.getElementById('esCustom').value = color;
+    applyMakeup('eyeshadow', color, getIntPct('esInt'));
+  });
+  return btn;
+}
 
-  // Lenses
-  const lensRow = document.getElementById('lensRow');
-  LENS_COLORS.forEach(c => {
-    const el = document.createElement('div');
-    el.className = 'lens-dot'; el.style.setProperty('--c', c);
-    el.dataset.makeup = 'eye_color';
-    el.addEventListener('click', () => {
-      document.querySelectorAll('[data-makeup="eye_color"]').forEach(s => s.classList.remove('active'));
-      el.classList.add('active');
-      document.getElementById('lensCustom').value = c;
-      applyMakeup('eye_color', c, getCurrentIntensity('eye_color'));
+// Lens oluştur
+function buildLens(color, container) {
+  const btn = document.createElement('button');
+  btn.className = 'lens-item'; btn.style.setProperty('--lnc', color); btn.dataset.mk = 'eye_color';
+  btn.addEventListener('click', () => {
+    selectItem('eye_color', color, btn, container);
+    document.getElementById('lensCustom').value = color;
+    applyMakeup('eye_color', color, getIntPct('lensInt'));
+  });
+  return btn;
+}
+
+// Kaş kalemi oluştur
+function buildBrow(color, container) {
+  const btn = document.createElement('button');
+  btn.className = 'eyebrow-item'; btn.style.setProperty('--ewc', color); btn.dataset.mk = 'eyebrow_color';
+  btn.innerHTML = `<div class="p-cap"></div><div class="p-eraser"></div>
+  <div class="p-ring"></div><div class="p-body"></div>
+  <div class="p-shave"></div><div class="p-tip"></div>`;
+  btn.addEventListener('click', () => {
+    selectItem('eyebrow_color', color, btn, container);
+    document.getElementById('browCustom').value = color;
+    applyMakeup('eyebrow_color', color, getIntPct('browInt'));
+  });
+  return btn;
+}
+
+function buildAllSwatches() {
+  const lipRow   = document.getElementById('lipRow');
+  const blushRow = document.getElementById('blushRow');
+  const esRow    = document.getElementById('esRow');
+  const lensRow  = document.getElementById('lensRow');
+  const browRow  = document.getElementById('browRow');
+  const lipPal   = document.getElementById('lipPalette');
+
+  LIP_COLORS.forEach(c => lipRow.appendChild(buildLipstick(c, lipRow, 'lip_color')));
+  ALL_PALETTE.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'pal-dot'; d.style.background = c; d.dataset.mk = 'lip_color';
+    d.addEventListener('click', () => {
+      selectItem('lip_color', c, d, lipPal);
+      applyMakeup('lip_color', c, getIntPct('lipInt'));
     });
-    lensRow.appendChild(el);
+    lipPal.appendChild(d);
   });
 
-  // Brow
-  const browRow = document.getElementById('browSwatchRow');
-  BROW_COLORS.forEach(c => browRow.appendChild(makeSwatch(c, 'brow-swatch', 'eyebrow_color',
-    col => { document.getElementById('browCustom').value = col; applyMakeup('eyebrow_color', col, getCurrentIntensity('eyebrow_color')); })));
+  BLUSH_COLORS.forEach(c => blushRow.appendChild(buildBlush(c, blushRow)));
+  ES_COLORS.forEach(c    => esRow.appendChild(buildEyeshadow(c, esRow)));
+  LENS_COLORS.forEach(c  => lensRow.appendChild(buildLens(c, lensRow)));
+  BROW_COLORS.forEach(c  => browRow.appendChild(buildBrow(c, browRow)));
 
   // Hair chips
-  const hairRow = document.getElementById('hairChipRow');
+  const chipRow = document.getElementById('hairChipRow');
   HAIR_COLORS.forEach(c => {
-    const el = document.createElement('div');
-    el.className = 'hair-chip'; el.style.background = c;
-    el.addEventListener('click', () => {
-      document.querySelectorAll('.hair-chip').forEach(h => h.classList.remove('active'));
-      el.classList.add('active');
+    const d = document.createElement('div');
+    d.className = 'hair-chip'; d.style.background = c;
+    d.addEventListener('click', () => {
+      chipRow.querySelectorAll('.hair-chip').forEach(h => h.classList.remove('active'));
+      d.classList.add('active');
       document.getElementById('hairColorPicker').value = c;
       trigger();
     });
-    hairRow.appendChild(el);
+    chipRow.appendChild(d);
   });
 }
 
-// ─────────────────────────────────────────────
-// ACCESSORIES
-// ─────────────────────────────────────────────
-const GLASSES_DATA = [
-  { name:'Classic',       file:'glasses1.png' },
-  { name:'Sunglasses',    file:'glasses2.png' },
-  { name:'Harry Potter',  file:'glasses3.png' },
-  { name:'Snow Goggles',  file:'glasses4.png' },
-];
-const HATS_DATA = [
-  { name:'Baseball Cap', file:'hat1.png' },
-  { name:'Beret',        file:'hat2.png' },
-  { name:'Sun Hat',      file:'hat3.png' },
-  { name:'Sleep Hat',    file:'hat4.png' },
-];
+// ─── ACCESSORIES ─────────────────────────────
+const GLASSES = [{name:'Classic',file:'glasses1.png'},{name:'Sunglasses',file:'glasses2.png'},
+                 {name:'Harry Potter',file:'glasses3.png'},{name:'Snow Goggles',file:'glasses4.png'}];
+const HATS    = [{name:'Baseball Cap',file:'hat1.png'},{name:'Beret',file:'hat2.png'},
+                 {name:'Sun Hat',file:'hat3.png'},{name:'Sleep Hat',file:'hat4.png'}];
 
-function buildAccGrid(items, containerId, pathPrefix, stateKey) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
+function buildAccGrid(items, containerId, pathPrefix, key) {
+  const el = document.getElementById(containerId); if (!el) return;
   el.innerHTML = '';
   items.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'acc-card';
+    const card = document.createElement('div'); card.className = 'acc-card';
     card.innerHTML = `<img src="/static/${pathPrefix}/${item.file}" title="${item.name}">`;
     card.addEventListener('click', () => {
-      if (state.accessories[stateKey] === item.file) {
-        state.accessories[stateKey] = null; card.classList.remove('active');
-      } else {
-        el.querySelectorAll('.acc-card').forEach(c => c.classList.remove('active'));
-        state.accessories[stateKey] = item.file; card.classList.add('active');
-      }
+      if (acc[key] === item.file) { acc[key] = null; card.classList.remove('active'); }
+      else { el.querySelectorAll('.acc-card').forEach(c => c.classList.remove('active')); acc[key] = item.file; card.classList.add('active'); }
       trigger();
     });
     el.appendChild(card);
@@ -849,214 +811,121 @@ function buildAccGrid(items, containerId, pathPrefix, stateKey) {
 }
 
 function clearAccessory(key) {
-  state.accessories[key] = null;
-  const listMap = { earring:'earringList', necklace:'necklaceList', glasses:'glassesList', hat:'hatsList' };
-  document.querySelectorAll(`#${listMap[key]} .acc-card`).forEach(c => c.classList.remove('active'));
+  acc[key] = null;
+  const ids = { earring:'earringList', necklace:'necklaceList', glasses:'glassesList', hat:'hatsList' };
+  document.querySelectorAll(`#${ids[key]} .acc-card`).forEach(c => c.classList.remove('active'));
   trigger();
 }
 
-function loadAccessoryFetch(category, listId, stateKey) {
+function loadAccFetch(category, listId, key) {
   fetch(`/accessories/${category}`)
     .then(r => r.json())
     .then(files => {
-      const el = document.getElementById(listId);
-      if (!el) return;
+      const el = document.getElementById(listId); if (!el) return;
       el.innerHTML = '';
-      if (!files || !files.length) { el.innerHTML = '<span style="font-size:12px;color:#8888bb;">No items found</span>'; return; }
+      if (!files?.length) { el.innerHTML = '<span style="font-size:12px;color:#8888bb;">No items</span>'; return; }
       files.forEach(file => {
-        const card = document.createElement('div');
-        card.className = 'acc-card';
+        const card = document.createElement('div'); card.className = 'acc-card';
         card.innerHTML = `<img src="/static/accessories/${category}/${file}" title="${file.replace('.png','')}">`;
         card.addEventListener('click', () => {
-          if (state.accessories[stateKey] === file) {
-            state.accessories[stateKey] = null; card.classList.remove('active');
-          } else {
-            el.querySelectorAll('.acc-card').forEach(c => c.classList.remove('active'));
-            state.accessories[stateKey] = file; card.classList.add('active');
-          }
+          if (acc[key] === file) { acc[key] = null; card.classList.remove('active'); }
+          else { el.querySelectorAll('.acc-card').forEach(c => c.classList.remove('active')); acc[key] = file; card.classList.add('active'); }
           trigger();
         });
         el.appendChild(card);
       });
-    }).catch(() => {
-      const el = document.getElementById(listId);
-      if (el) el.innerHTML = '<span style="font-size:12px;color:#cc4444;">Could not load</span>';
-    });
+    }).catch(() => { document.getElementById(listId).innerHTML = '<span style="font-size:12px;color:#cc4444;">Could not load</span>'; });
 }
 
-// ─────────────────────────────────────────────
-// HAIRSTYLES
-// ─────────────────────────────────────────────
+// ─── HAIRSTYLES ──────────────────────────────
 function clearHairstyle() {
-  state.overlay = null;
+  overlay = null;
   document.querySelectorAll('#hairstyleList .hs-card').forEach(c => c.classList.remove('active'));
   trigger();
 }
-
 function loadHairstyles() {
-  fetch('/hairstyles')
-    .then(r => r.json())
-    .then(files => {
-      const el = document.getElementById('hairstyleList');
-      if (!el) return;
-      el.innerHTML = '';
-      if (!files || !files.length) { el.innerHTML = '<span style="font-size:12px;color:#8888bb;">No hairstyles found</span>'; return; }
-      files.forEach(file => {
-        const card = document.createElement('div');
-        card.className = 'hs-card';
-        card.innerHTML = `<img src="/static/hairstyles/${file}" title="${file.replace('.png','')}">`;
-        card.addEventListener('click', () => {
-          if (state.overlay === file) {
-            state.overlay = null; card.classList.remove('active');
-          } else {
-            el.querySelectorAll('.hs-card').forEach(c => c.classList.remove('active'));
-            state.overlay = file; card.classList.add('active');
-          }
-          trigger();
-        });
-        el.appendChild(card);
+  fetch('/hairstyles').then(r => r.json()).then(files => {
+    const el = document.getElementById('hairstyleList'); if (!el) return;
+    el.innerHTML = '';
+    if (!files?.length) { el.innerHTML = '<span style="font-size:12px;color:#8888bb;">No hairstyles</span>'; return; }
+    files.forEach(file => {
+      const card = document.createElement('div'); card.className = 'hs-card';
+      card.innerHTML = `<img src="/static/hairstyles/${file}" title="${file.replace('.png','')}">`;
+      card.addEventListener('click', () => {
+        if (overlay === file) { overlay = null; card.classList.remove('active'); }
+        else { el.querySelectorAll('.hs-card').forEach(c => c.classList.remove('active')); overlay = file; card.classList.add('active'); }
+        trigger();
       });
+      el.appendChild(card);
     });
+  });
 }
 
-// ─────────────────────────────────────────────
-// HAIR POSITION SLIDERS
-// ─────────────────────────────────────────────
-document.getElementById('hairYSlider')?.addEventListener('input', e => {
-  state.hairY = parseInt(e.target.value);
-  document.getElementById('hair-y-val').textContent = state.hairY;
-  trigger();
-});
-document.getElementById('hairXSlider')?.addEventListener('input', e => {
-  state.hairX = parseInt(e.target.value);
-  document.getElementById('hair-x-val').textContent = state.hairX;
-  trigger();
-});
-document.getElementById('hairScaleSlider')?.addEventListener('input', e => {
-  const v = parseInt(e.target.value);
-  state.hairScale = v / 100;
-  document.getElementById('hair-scale-val').textContent = v + '%';
-  trigger();
-});
+// Hair position
+document.getElementById('hairYSlider')?.addEventListener('input', e => { hairY = parseInt(e.target.value); document.getElementById('hair-y-val').textContent = hairY; trigger(); });
+document.getElementById('hairXSlider')?.addEventListener('input', e => { hairX = parseInt(e.target.value); document.getElementById('hair-x-val').textContent = hairX; trigger(); });
+document.getElementById('hairScaleSlider')?.addEventListener('input', e => { const v = parseInt(e.target.value); hairScale = v/100; document.getElementById('hair-scale-val').textContent = v+'%'; trigger(); });
+document.getElementById('hairColorPicker')?.addEventListener('input', () => trigger());
 
-// ─────────────────────────────────────────────
-// BUILD TRANSFORMS
-// ─────────────────────────────────────────────
+// ─── TRANSFORM BUILDER ───────────────────────
 function buildTransforms() {
-  const transforms = [];
-
-  // Makeup
-  Object.entries(state.makeup).forEach(([type, { color, intensity }]) => {
-    transforms.push({ type, color, intensity,
-      params: type === 'eyebrow_color' ? { color } : undefined });
+  const t = [];
+  Object.entries(makeup).forEach(([type, { color, intensity }]) => {
+    t.push({ type, color, intensity, params: type === 'eyebrow_color' ? { color } : undefined });
   });
-
-  // Slider-based (face/body)
-  document.querySelectorAll('.refine-slider').forEach(slider => {
-    if (slider.dataset.type === 'hair_color') return; // handled separately
-    const v = parseInt(slider.value, 10);
-    if (v !== 0) {
-      transforms.push({ type: slider.dataset.type, intensity: v / 100 });
-    }
+  document.querySelectorAll('.refine-slider').forEach(s => {
+    if (s.dataset.type === 'hair_color') return;
+    const v = parseInt(s.value);
+    if (v !== 0) t.push({ type: s.dataset.type, intensity: v / 100 });
   });
-
-  // Hair color slider
-  const hcSlider = document.querySelector('[data-type="hair_color"]');
-  if (hcSlider && parseInt(hcSlider.value) !== 0) {
-    transforms.push({
-      type: 'hair_color',
-      intensity: parseInt(hcSlider.value) / 100,
-      params: { color: document.getElementById('hairColorPicker').value }
-    });
+  const hcS = document.querySelector('[data-type="hair_color"]');
+  if (hcS && parseInt(hcS.value) !== 0)
+    t.push({ type:'hair_color', intensity:parseInt(hcS.value)/100, params:{ color: document.getElementById('hairColorPicker').value } });
+  if (overlay) {
+    const hcS2 = document.querySelector('[data-type="hair_color"]');
+    t.push({ type:'hair_overlay', intensity:1.0, params:{ overlay, scale:hairScale, x_offset:hairX, y_offset:hairY,
+      color: hcS2 && parseInt(hcS2.value) > 0 ? document.getElementById('hairColorPicker').value : null,
+      color_intensity: hcS2 ? parseInt(hcS2.value)/100 : 0 } });
   }
-
-  // Hair overlay
-  if (state.overlay) {
-    const hcSlider2 = document.querySelector('[data-type="hair_color"]');
-    transforms.push({
-      type: 'hair_overlay', intensity: 1.0,
-      params: {
-        overlay: state.overlay,
-        scale: state.hairScale,
-        x_offset: state.hairX,
-        y_offset: state.hairY,
-        color: hcSlider2 && parseInt(hcSlider2.value) > 0 ? document.getElementById('hairColorPicker').value : null,
-        color_intensity: hcSlider2 ? parseInt(hcSlider2.value) / 100 : 0
-      }
-    });
-  }
-
-  // Accessories
-  const glasses = state.accessories.glasses;
-  const hat     = state.accessories.hat;
-  if (glasses || hat) {
-    transforms.push({ type: 'accessories', intensity: 1,
-      params: { glasses: glasses || null, hat: hat || null } });
-  }
-  if (state.accessories.earring) {
-    transforms.push({ type: 'earring', intensity: 1, params: { item: state.accessories.earring } });
-  }
-  if (state.accessories.necklace) {
-    transforms.push({ type: 'necklace', intensity: 1, params: { item: state.accessories.necklace } });
-  }
-
-  return transforms;
+  if (acc.glasses || acc.hat)
+    t.push({ type:'accessories', intensity:1, params:{ glasses:acc.glasses||null, hat:acc.hat||null } });
+  if (acc.earring)  t.push({ type:'earring',  intensity:1, params:{ item:acc.earring } });
+  if (acc.necklace) t.push({ type:'necklace', intensity:1, params:{ item:acc.necklace } });
+  return t;
 }
 
-// ─────────────────────────────────────────────
-// APPLY
-// ─────────────────────────────────────────────
-function trigger() {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(applyAll, 320);
-}
+function trigger() { clearTimeout(debounce); debounce = setTimeout(applyAll, 320); }
 
 async function applyAll() {
   const transforms = buildTransforms();
-  if (!transforms.length) {
-    livePreview.src = '/' + currentImagePath + '?v=' + Date.now();
-    return;
-  }
+  if (!transforms.length) { livePreview.src = '/' + currentImagePath + '?v=' + Date.now(); return; }
   try {
-    const res = await fetch('/transform/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_path: currentImagePath, transforms })
-    });
+    const res = await fetch('/transform/', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ image_path: currentImagePath, transforms }) });
     const data = await res.json();
     if (data.success) livePreview.src = '/static/uploads/transformed.jpg?v=' + Date.now();
-    else console.error('Transform failed:', data);
-  } catch (e) { console.error(e); }
+  } catch(e) { console.error(e); }
 }
 
-// ─────────────────────────────────────────────
-// FINISH BUTTON
-// ─────────────────────────────────────────────
 document.getElementById('finishBtn')?.addEventListener('click', async () => {
   const btn = document.getElementById('finishBtn');
   btn.disabled = true; btn.textContent = 'Saving…';
   const transforms = buildTransforms();
   try {
-    await fetch('/save-history', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        transform_type: transforms.map(t => t.type).join(', ') || 'none',
-        intensity: transforms.length ? transforms.reduce((s,t) => s + Math.abs(t.intensity||0), 0) / transforms.length : 0
-      })
-    });
-  } catch(e) { console.error(e); }
+    await fetch('/save-history', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ transform_type: transforms.map(t=>t.type).join(', ')||'none',
+        intensity: transforms.length ? transforms.reduce((s,t)=>s+Math.abs(t.intensity||0),0)/transforms.length : 0 }) });
+  } catch(e) {}
   window.location.href = '/preview';
 });
 
-// ─────────────────────────────────────────────
-// INIT
-// ─────────────────────────────────────────────
-buildSwatches();
-buildAccGrid(GLASSES_DATA, 'glassesList', 'accessories/glasses', 'glasses');
-buildAccGrid(HATS_DATA,    'hatsList',    'accessories/hats',    'hat');
-loadAccessoryFetch('earrings', 'earringList', 'earring');
-loadAccessoryFetch('necklaces', 'necklaceList', 'necklace');
+// ─── INIT ────────────────────────────────────
+buildAllSwatches();
+buildAccGrid(GLASSES, 'glassesList', 'accessories/glasses', 'glasses');
+buildAccGrid(HATS,    'hatsList',    'accessories/hats',    'hat');
+loadAccFetch('earrings',  'earringList',  'earring');
+loadAccFetch('necklaces', 'necklaceList', 'necklace');
 loadHairstyles();
 </script>
 </body>

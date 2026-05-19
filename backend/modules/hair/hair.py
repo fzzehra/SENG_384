@@ -188,19 +188,29 @@ EYEBROW_LANDMARKS = {
 def apply_eyebrow_color(image, landmarks, color_hex='#000000', intensity=0.5):
     h, w = image.shape[:2]
     color_bgr = _hex_to_bgr(color_hex)
-    
+
     mask = np.zeros((h, w), dtype=np.uint8)
     
+    # Her kaşı ayrı ayrı çiz — birbirine karışmasın
     for side, indices in EYEBROW_LANDMARKS.items():
+        side_mask = np.zeros((h, w), dtype=np.uint8)
         pts = np.array([landmarks[i] for i in indices], dtype=np.int32)
-        cv2.fillConvexPoly(mask, pts, 255)
-    
-    mask = cv2.GaussianBlur(mask, (7, 7), 0)
-    
-    color_layer = np.full_like(image, color_bgr, dtype=np.float32)
-    alpha = (mask.astype(np.float32) / 255.0 * intensity)[:, :, None]
-    
-    result = image.astype(np.float32) * (1 - alpha) + color_layer * alpha
-    return np.clip(result, 0, 255).astype(np.uint8)
+        hull = cv2.convexHull(pts)
+        cv2.fillPoly(side_mask, [hull], 255)
+        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        side_mask = cv2.dilate(side_mask, k, iterations=1)
+        mask = cv2.bitwise_or(mask, side_mask)
 
-   
+    mask = cv2.GaussianBlur(mask, (7, 7), 0)
+
+    # Sadece koyu piksellere uygula
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0
+    dark_weight = np.clip((0.5 - gray) / 0.3, 0.0, 1.0)
+
+    combined = (mask.astype(np.float32) / 255.0) * dark_weight
+    alpha = np.clip(combined * intensity * 0.9, 0.0, 0.9)
+
+    color_layer = np.full_like(image, color_bgr, dtype=np.float32)
+    result = image.astype(np.float32) * (1 - alpha[:, :, None]) + color_layer * alpha[:, :, None]
+
+    return np.clip(result, 0, 255).astype(np.uint8)
