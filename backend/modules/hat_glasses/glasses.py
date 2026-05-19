@@ -8,6 +8,12 @@ GLASSES_CONFIG = {
     "glasses2.png": {"scale": 1.65, "x_offset": 0, "y_offset": 0},
     "glasses3.png": {"scale": 1.7, "x_offset": 0, "y_offset": 0},
     "glasses4.png": {"scale": 1.7, "x_offset": 0, "y_offset": 0},
+    "glasses5.png": {"scale": 1.7, "x_offset": 0, "y_offset": 0},
+    "glasses6.png": {"scale": 1.7, "x_offset": 0, "y_offset": 0},
+    "glasses7.png": {"scale": 2.7, "x_offset": 0, "y_offset": 0},
+    "glasses8.png": {"scale": 1.9, "x_offset": 0, "y_offset": 0},
+    "glasses9.png": {"scale": 2.55, "x_offset": 0, "y_offset": 3},
+    "glasses10.png": {"scale": 2.5, "x_offset": 0, "y_offset": 1},
 }
 
 

@@ -39,12 +39,13 @@
 
     /* OUTER CARD */
     .studio-card {
-      width:100%; max-width:1140px; z-index:1;
-      background:var(--glass); backdrop-filter:blur(24px);
-      border:1px solid rgba(255,255,255,.85); border-radius:28px;
-      box-shadow:0 20px 60px rgba(70,70,229,.10); overflow:hidden;
-      animation:fadeUp .65s .12s ease both;
-    }
+    width: 100%;
+    max-width: 1200px; /* Eğer 1100px ise bunu 1200px veya 1250px yap */
+    z-index: 1;
+    background: var(--glass);
+    backdrop-filter: blur(24px);
+    /* Diğer mevcut border, radius vb. satırların aynen kalsın */
+  }
 
     /* TAB BAR */
     .tab-bar {
@@ -71,8 +72,12 @@
     .tab-btn.active::after { opacity:1; transform:scaleX(1); }
 
     /* BODY */
-    .studio-body { display:grid; grid-template-columns:320px 1fr; min-height:560px; }
-
+    .studio-body {
+      display: grid;
+      grid-template-columns: 45% 55%; /* Resim alanını %45'e çıkardık, ayarları %55'e daralttık */
+      gap: 0;
+      min-height: 540px;
+    }
     /* PREVIEW COL */
     .preview-col {
       background:rgba(255,255,255,.45);
@@ -284,7 +289,7 @@
     }
 
     /* ── KAŞ KALEMİ ── */
-   /* ── KAŞ KALEMİ ── */
+    /* ── KAŞ KALEMİ ── */
 .eyebrow-item {
   width:36px; height:110px; background:transparent; border:none;
   cursor:pointer; position:relative; display:flex; flex-direction:column;
@@ -344,14 +349,20 @@
     /* ── ACCESSORIES ── */
     .acc-list { display:flex; flex-wrap:wrap; gap:8px; }
     .acc-card {
-      width:56px; height:56px; background:#fff; border-radius:12px;
+      width:66px; height:80px; background:#fff; border-radius:12px;
       border:1.5px solid rgba(70,70,229,.1);
-      display:flex; align-items:center; justify-content:center;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:4px; padding:6px 4px 6px;
       cursor:pointer; transition:all .2s; box-shadow:0 3px 8px rgba(0,0,0,.05);
     }
-    .acc-card img { max-width:80%; max-height:80%; object-fit:contain; }
+    .acc-card img { max-width:75%; max-height:40px; object-fit:contain; }
     .acc-card:hover { transform:translateY(-4px) scale(1.05); border-color:var(--indigo); }
     .acc-card.active { border-color:var(--indigo); background:var(--indigo-lt); }
+    .acc-name {
+      font-size:9px; font-weight:600; color:#6060aa;
+      text-align:center; line-height:1.2; word-break:break-word;
+      padding:0 2px; max-width:100%;
+    }
 
     select {
       width:100%; padding:8px 10px; border-radius:10px;
@@ -567,30 +578,41 @@
         </div>
       </div>
 
-      <!-- ════════ ACCESSORIES ════════ -->
-      <div class="tab-panel" id="panel-accessories">
+     <div class="tab-panel" id="panel-accessories">
+        
         <div class="sec-title">Glasses</div>
-        <div class="ctrl-card"><div class="acc-list" id="glassesList"></div></div>
-
+        <div class="ctrl-card" style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="acc-list" id="glassesList"></div>
+          <div style="margin-top: 5px;">
+            <button class="sm-btn" onclick="clearAccessory('glasses')">Remove</button>
+          </div>
+        </div>
+        
         <div class="sec-title">Hats</div>
-        <div class="ctrl-card"><div class="acc-list" id="hatsList"></div></div>
+        <div class="ctrl-card" style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="acc-list" id="hatsList"></div>
+          <div style="margin-top: 5px;">
+            <button class="sm-btn" onclick="clearAccessory('hat')">Remove</button>
+          </div>
+        </div>
 
         <div class="sec-title">Earrings</div>
-        <div class="ctrl-card">
+        <div class="ctrl-card" style="display: flex; flex-direction: column; gap: 10px;">
           <div class="acc-list" id="earringList"><span style="font-size:12px;color:#8888bb;">Loading…</span></div>
-          <button class="sm-btn" style="margin-top:10px;" onclick="clearAccessory('earring')">Remove</button>
+          <div style="margin-top: 5px;">
+            <button class="sm-btn" onclick="clearAccessory('earring')">Remove</button>
+          </div>
         </div>
 
         <div class="sec-title">Necklaces</div>
-        <div class="ctrl-card">
+        <div class="ctrl-card" style="display: flex; flex-direction: column; gap: 10px;">
           <div class="acc-list" id="necklaceList"><span style="font-size:12px;color:#8888bb;">Loading…</span></div>
-          <button class="sm-btn" style="margin-top:10px;" onclick="clearAccessory('necklace')">Remove</button>
+          <div style="margin-top: 5px;">
+            <button class="sm-btn" onclick="clearAccessory('necklace')">Remove</button>
+          </div>
         </div>
-      </div>
 
-    </div><!-- /panel-col -->
-  </div><!-- /studio-body -->
-</div><!-- /studio-card -->
+      </div></div></div></div>```
 
 <script>
 // ─── STATE ───────────────────────────────────
@@ -791,7 +813,10 @@ function buildAllSwatches() {
 
 // ─── ACCESSORIES ─────────────────────────────
 const GLASSES = [{name:'Classic',file:'glasses1.png'},{name:'Sunglasses',file:'glasses2.png'},
-                 {name:'Harry Potter',file:'glasses3.png'},{name:'Snow Goggles',file:'glasses4.png'}];
+                 {name:'Harry Potter',file:'glasses3.png'},{name:'Snow Goggles',file:'glasses4.png'},
+                 {name:'Pink Glasses',file:'glasses5.png'},{name:'Round Glasses',file:'glasses6.png'},
+                 {name:'Cat-Eye Glasses',file:'glasses7.png'},{name:'Cute Glasses',file:'glasses8.png'},
+                 {name:'Futuristic Sun-Glasses',file:'glasses9.png'},{name:'Formal Sun-Glasses',file:'glasses10.png'}];
 const HATS    = [{name:'Baseball Cap',file:'hat1.png'},{name:'Beret',file:'hat2.png'},
                  {name:'Sun Hat',file:'hat3.png'},{name:'Sleep Hat',file:'hat4.png'}];
 
@@ -800,7 +825,7 @@ function buildAccGrid(items, containerId, pathPrefix, key) {
   el.innerHTML = '';
   items.forEach(item => {
     const card = document.createElement('div'); card.className = 'acc-card';
-    card.innerHTML = `<img src="/static/${pathPrefix}/${item.file}" title="${item.name}">`;
+    card.innerHTML = `<img src="/static/${pathPrefix}/${item.file}" title="${item.name}"><span class="acc-name">${item.name}</span>`;
     card.addEventListener('click', () => {
       if (acc[key] === item.file) { acc[key] = null; card.classList.remove('active'); }
       else { el.querySelectorAll('.acc-card').forEach(c => c.classList.remove('active')); acc[key] = item.file; card.classList.add('active'); }
@@ -826,7 +851,7 @@ function loadAccFetch(category, listId, key) {
       if (!files?.length) { el.innerHTML = '<span style="font-size:12px;color:#8888bb;">No items</span>'; return; }
       files.forEach(file => {
         const card = document.createElement('div'); card.className = 'acc-card';
-        card.innerHTML = `<img src="/static/accessories/${category}/${file}" title="${file.replace('.png','')}">`;
+        card.innerHTML = `<img src="/static/accessories/${category}/${file}" title="${file.replace('.png','')}"><span class="acc-name">${file.replace('.png','').replace(/_/g,' ')}</span>`;
         card.addEventListener('click', () => {
           if (acc[key] === file) { acc[key] = null; card.classList.remove('active'); }
           else { el.querySelectorAll('.acc-card').forEach(c => c.classList.remove('active')); acc[key] = file; card.classList.add('active'); }
@@ -917,7 +942,7 @@ document.getElementById('finishBtn')?.addEventListener('click', async () => {
       body: JSON.stringify({ transform_type: transforms.map(t=>t.type).join(', ')||'none',
         intensity: transforms.length ? transforms.reduce((s,t)=>s+Math.abs(t.intensity||0),0)/transforms.length : 0 }) });
   } catch(e) {}
-  window.location.href = '/preview';
+  window.location.href = '/preview-page';
 });
 
 // ─── INIT ────────────────────────────────────
