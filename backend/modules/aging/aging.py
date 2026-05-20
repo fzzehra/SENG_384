@@ -73,7 +73,7 @@ def _make_wrinkle_map(h, w, landmarks, face_scale, seed=42):
     w_px = max(0.8, 1.2 * S)
 
     # 1. Alın (Daha seyrek ve kavisli)
-    n_forehead = rng.integers(3, 5)
+    n_forehead = rng.integers(4, 7)
     for i in range(n_forehead):
         t = (i + 1) / (n_forehead + 1)
         cy = int(top[1] + t * face_h * 0.18)
@@ -81,23 +81,83 @@ def _make_wrinkle_map(h, w, landmarks, face_scale, seed=42):
         p2 = (int(right[0] - face_w * 0.2), cy + rng.integers(-5, 5))
         _stamp_wrinkle_natural(p1, p2, w_px, rng.uniform(0.3, 0.5))
 
-    # 2. Göz Kenarı (Karga Ayakları - Daha ince)
+    # göz çevresi (karga ayakları + alt göz çizgileri)
     for eye_idx, sign in [(33, -1), (263, 1)]:
-        ex, ey = _lm(landmarks, eye_idx)
-        for k in range(3):
-            angle = np.radians(-30 + k * 30)
-            length = face_w * rng.uniform(0.05, 0.08)
-            _stamp_wrinkle_natural((ex, ey), (int(ex + sign*np.cos(angle)*length), int(ey + np.sin(angle)*length)), w_px * 0.7, 0.4)
 
+        ex, ey = _lm(landmarks, eye_idx)
+
+        # karga ayakları
+        for k in range(4):
+
+            angle = np.radians(-35 + k * 25)
+            length = face_w * rng.uniform(0.06, 0.11)
+
+            _stamp_wrinkle_natural(
+                (ex, ey),
+                (
+                    int(ex + sign * np.cos(angle) * length),
+                    int(ey + np.sin(angle) * length)
+                ),
+                w_px * 0.8,
+                rng.uniform(0.55, 0.82)
+            )
+
+    # alt göz kapağı ince çizgiler
+    for k in range(2):
+
+        p1 = (
+            int(ex - sign * face_w * 0.08),
+            int(ey + face_h * 0.03)
+        )
+
+        p2 = (
+            int(p1[0] + sign * face_w * 0.16),
+            int(ey + face_h * 0.05)
+        )
+
+        _stamp_wrinkle_natural(
+            p1,
+            p2,
+            w_px * 0.6,
+            rng.uniform(0.35, 0.5)
+        )
     # 3. Nasolabial (Burun-Ağız kenarı)
+    # nazolabial çizgiler (burun kenarı -> ağız)
     for n_idx, m_idx in [(129, 61), (358, 291)]:
+
+        _stamp_wrinkle_natural(
+            _lm(landmarks, n_idx),
+            _lm(landmarks, m_idx),
+            w_px * 2.0,
+            rng.uniform(0.75, 0.95)
+        )
+
+        # marionette çizgileri (ağız köşesi aşağı)
+    for m_idx, jaw_idx in [(61, 152), (291, 152)]:
+
+        mouth = _lm(landmarks, m_idx)
+        chin = _lm(landmarks, jaw_idx)
+
+        p2 = (
+            mouth[0] + rng.integers(-4, 4),
+            int(mouth[1] + (chin[1] - mouth[1]) * 0.6)
+        )
+
+        _stamp_wrinkle_natural(
+            mouth,
+            p2,
+            w_px * 1.4,
+            rng.uniform(0.55, 0.75)
+        ) 
         _stamp_wrinkle_natural(_lm(landmarks, n_idx), _lm(landmarks, m_idx), w_px * 1.2, 0.45)
 
     # Gürültü ile doku modülasyonu (Çizgiyi parçalar, deri gözenek etkisi verir)
     noise = _perlin_like_noise(h, w, scale=2.0, seed=seed)
     canvas = canvas * (0.7 + 0.3 * noise)
     
-    return cv2.GaussianBlur(canvas, (3, 3), 0)
+    canvas = cv2.GaussianBlur(canvas, (7, 7), 1.8)
+    canvas = np.clip(canvas, 0, 0.55)
+    return canvas
 
 # ---------------------------------------------------------------------------
 # UYGULAMA (Shadow/Highlight Displacement)
@@ -115,10 +175,11 @@ def _apply_wrinkles(image, face_mask, intensity, landmarks):
     # Bu, deri rengini (griye dönmeden) korur
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
     
-    # Kırışıklık "Çukur" (Gölge) Etkisi
-    lab[:, :, 0] -= (wrinkle_map * intensity * 65.0) 
-    # Kırışıklık "Tümsek" (Highlight) Etkisi - Işığın vurduğu kenar
-    lab[:, :, 0] += (cv2.Laplacian(wrinkle_map, cv2.CV_32F).clip(0,1) * intensity * 20.0)
+    # Daha doğal: sert çizgi yerine yumuşak gölge
+    soft_wrinkle = cv2.GaussianBlur(wrinkle_map, (9, 9), 2.0)
+
+    lab[:, :, 0] -= (soft_wrinkle * intensity * 62.0)
+    lab[:, :, 0] += (cv2.Laplacian(soft_wrinkle, cv2.CV_32F).clip(0, 1) * intensity * 14.0)
 
     res = cv2.cvtColor(np.clip(lab, 0, 255).astype(np.uint8), cv2.COLOR_LAB2BGR)
     return res
@@ -129,29 +190,92 @@ def _apply_wrinkles(image, face_mask, intensity, landmarks):
 def _gray_hair(image, landmarks, intensity):
     h, w = image.shape[:2]
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    _, sat, val = cv2.split(hsv)
+    hue, sat, val = cv2.split(hsv)
 
-    # Saç maskesi ve Yüz dışlama
-    hair_mask = cv2.inRange(val, 0, 160) & cv2.inRange(sat, 10, 250)
-    
-    # Landmark tabanlı kafa bölgesi (Boyuna inmeyi engeller)
+    # Koyu saç + kahverengi saç adayları
+    dark_hair = cv2.bitwise_and(
+        cv2.inRange(val, 0, 135),
+        cv2.inRange(sat, 25, 255)
+    )
+
+    brown_hair = cv2.bitwise_and(
+        cv2.inRange(hue, 5, 35),
+        cv2.inRange(sat, 45, 255)
+    )
+    brown_hair = cv2.bitwise_and(brown_hair, cv2.inRange(val, 35, 210))
+
+    hair_color = cv2.bitwise_or(dark_hair, brown_hair)
+
+    # Mavi/gri arka planı ve cilt tonlarını ele
+    blue_bg = cv2.inRange(hue, 85, 145)
+    low_sat = cv2.inRange(sat, 0, 20)
+    hair_color[blue_bg > 0] = 0
+    hair_color[low_sat > 0] = 0
+
+    hair_region = np.zeros((h, w), dtype=np.uint8)
+    face_exclude = np.zeros((h, w), dtype=np.uint8)
+
     top = _lm(landmarks, 10)
-    exclude_mask = np.zeros((h, w), dtype=np.uint8)
-    # Yüzü ve omuz altını koru
-    cv2.circle(exclude_mask, (_lm(landmarks, 1)[0], _lm(landmarks, 1)[1]), int(_dist(_lm(landmarks, 234), _lm(landmarks, 454))*1.2), 255, -1)
-    
-    final_hair_mask = cv2.bitwise_and(hair_mask, exclude_mask)
-    final_hair_mask = cv2.GaussianBlur(final_hair_mask.astype(np.float32)/255.0, (15, 15), 0)
+    chin = _lm(landmarks, 152)
+    left = _lm(landmarks, 234)
+    right = _lm(landmarks, 454)
 
-    # Saçın dokusunu bozmadan grileştir (Desaturate)
-    gray_img = cv2.cvtColor(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2BGR)
-    
-    alpha = (final_hair_mask * intensity * 0.8)[:, :, None]
-    # Hafif gümüş parlaklığı ekle
-    blended = image.astype(np.float32)*(1-alpha) + (gray_img.astype(np.float32) * 1.1)*alpha
-    
-    return np.clip(blended, 0, 255).astype(np.uint8)
+    face_w = _dist(left, right)
+    face_h = _dist(top, chin)
+    cx = (left[0] + right[0]) // 2
 
+    # Saç bölgesi: yüzün üstü ve yanları, boyuna inmez
+    x1 = max(0, int(left[0] - face_w * 0.45))
+    x2 = min(w, int(right[0] + face_w * 0.45))
+    y1 = max(0, int(top[1] - face_h * 0.55))
+    y2 = min(h, int(chin[1] - face_h * 0.12))
+
+    cv2.ellipse(
+        hair_region,
+        ((x1 + x2) // 2, (y1 + y2) // 2),
+        ((x2 - x1) // 2, (y2 - y1) // 2),
+        0,
+        0,
+        360,
+        255,
+        -1
+    )
+
+    # Yüzü tamamen çıkar: kaş, göz, dudak, burun boyanmasın
+    cv2.ellipse(
+        face_exclude,
+        (cx, int(top[1] + face_h * 0.42)),
+        (int(face_w * 0.58), int(face_h * 0.68)),
+        0,
+        0,
+        360,
+        255,
+        -1
+    )
+
+    face_exclude = cv2.dilate(face_exclude, np.ones((13, 13), np.uint8), iterations=2)
+
+    hair_mask = cv2.bitwise_and(hair_color, hair_region)
+    hair_mask = cv2.bitwise_and(hair_mask, cv2.bitwise_not(face_exclude))
+
+    kernel = np.ones((5, 5), np.uint8)
+    hair_mask = cv2.morphologyEx(hair_mask, cv2.MORPH_OPEN, kernel)
+    hair_mask = cv2.morphologyEx(hair_mask, cv2.MORPH_CLOSE, kernel)
+    hair_mask = cv2.GaussianBlur(hair_mask, (11, 11), 0)
+
+    alpha = hair_mask.astype(np.float32) / 255.0
+    alpha = np.clip(alpha * intensity * 0.95, 0, 0.75)
+    alpha = alpha[:, :, None]
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray_bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR).astype(np.float32)
+
+    silver = np.full_like(image, (185, 190, 195), dtype=np.float32)
+    target = gray_bgr * 0.60 + silver * 0.40
+
+    result = image.astype(np.float32) * (1 - alpha) + target * alpha
+
+    return np.clip(result, 0, 255).astype(np.uint8)
 # ---------------------------------------------------------------------------
 # ANA FLOW
 # ---------------------------------------------------------------------------
@@ -160,12 +284,88 @@ def apply_aging_effect(image, intensity=0.5, landmarks=None):
     
     img = image.copy()
     # 1. Saç (Omuzlara sızma engellendi)
-    img = _gray_hair(img, landmarks, intensity)
+    #img = _gray_hair(img, landmarks, intensity)
     
     # 2. Yüz Maskesi
     f_mask = _build_face_mask(image.shape[0], image.shape[1], landmarks)
     
     # 3. Kırışıklıklar (Gri bant değil, gölge-ışık bükülmesi)
-    img = _apply_wrinkles(img, f_mask, intensity, landmarks)
+    img = _apply_wrinkles(img, f_mask, intensity * 1.35, landmarks)
+    img = _apply_sagging(img, landmarks, intensity)
     
     return img
+def _apply_sagging(image, landmarks, intensity):
+    if landmarks is None or len(landmarks) < 468:
+        return image
+
+    h, w = image.shape[:2]
+    output = image.copy()
+
+    def p(idx):
+        x, y = landmarks[idx]
+        return int(x), int(y)
+
+    left_face = p(234)
+    right_face = p(454)
+    chin = p(152)
+    nose = p(1)
+
+    face_w = abs(right_face[0] - left_face[0])
+    face_h = abs(chin[1] - nose[1])
+
+    # Sarkma maskesi: alt yanak + çene/gıdı bölgesi
+    mask = np.zeros((h, w), dtype=np.float32)
+
+    center_x = (left_face[0] + right_face[0]) // 2
+    center_y = int(nose[1] + face_h * 0.10)
+
+    cv2.ellipse(
+        mask,
+        (center_x, center_y),
+        (int(face_w * 0.55), int(face_h * 0.12)),
+        0,
+        0,
+        360,
+        1.0,
+        -1
+    )
+
+    # ağız üstünü etkilemesin
+    mask[:int(nose[1] + face_h * 0.02), :] = 0
+
+    mask = cv2.GaussianBlur(mask, (51, 51), 0)
+
+    # displacement map
+    yy, xx = np.indices((h, w), dtype=np.float32)
+
+    sag_amount = intensity * 1.2
+
+    map_x = xx.copy()
+    map_y = yy - (mask * sag_amount)
+
+    sagged = cv2.remap(
+        output,
+        map_x,
+        map_y,
+        interpolation=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_REFLECT
+    )
+
+    # gıdı için çene altını hafif karart
+    shadow = np.zeros((h, w), dtype=np.float32)
+    cv2.ellipse(
+        shadow,
+        (center_x, int(chin[1] + face_h * 0.15)),
+        (int(face_w * 0.35), int(face_h * 0.18)),
+        0,
+        0,
+        360,
+        1.0,
+        -1
+    )
+    shadow = cv2.GaussianBlur(shadow, (41, 41), 0)
+
+    shadow_3 = shadow[:, :, None] * intensity * 0.08
+    sagged = sagged.astype(np.float32) * (1 - shadow_3)
+
+    return np.clip(sagged, 0, 255).astype(np.uint8)
