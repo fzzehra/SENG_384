@@ -115,17 +115,30 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_fact
     chin = landmarks[152]
     left_temple = landmarks[234]
     right_temple = landmarks[454]
-
     face_w = abs(right_temple[0] - left_temple[0])
     face_h = abs(chin[1] - top_head[1])
-    cx = (left_temple[0] + right_temple[0]) // 2
 
-    hairline_y = top_head[1]
+    # Horizontal center: prefer temples midpoint, but blend with nose tip if available
+    cx = int((left_temple[0] + right_temple[0]) / 2)
+    if len(landmarks) > 1:
+        nose_tip = landmarks[1]
+        # weighted average: temples 0.8, nose 0.2 — keeps accessory centered on face middle
+        cx = int(0.8 * cx + 0.2 * nose_tip[0])
+
+    # Hairline / top alignment: prefer explicit hairline landmarks when available
+    hairline_candidates = [top_head[1]]
     if len(landmarks) > 299:
-        left_hairline = landmarks[299]
-        right_hairline = landmarks[70]
-        hairline_y = int((left_hairline[1] + right_hairline[1]) / 2)
+        hairline_candidates.append(landmarks[299][1])
+    if len(landmarks) > 70:
+        hairline_candidates.append(landmarks[70][1])
+    # also include a conservative top-most face point to avoid placing too low
+    ys = [int(p[1]) for p in landmarks if isinstance(p, (list, tuple))]
+    if ys:
+        hairline_candidates.append(min(ys))
 
+    hairline_y = int(sum(hairline_candidates) / len(hairline_candidates))
+
+    # target width: proportional to temple distance (face width), scaled by provided factor
     target_w = max(int(face_w * 1.45 * scale_factor), 1)
     scale = target_w / float(overlay.shape[1])
     target_h = max(int(overlay.shape[0] * scale), 1)
