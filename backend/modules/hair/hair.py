@@ -1,6 +1,16 @@
+#hair.py 
+import os
 import cv2
 import numpy as np
 
+# Peruk PNG'lerinin saç-çizgisi anchor oranları (üstten yüzde).
+# Yeni bir peruk eklendiğinde buraya kaydını yap; yoksa varsayılan kullanılır.
+#HAIRSTYLE_ANCHORS = {
+    # "long_wavy.png": 0.18,
+    # "buzzcut.png":   0.30,
+    # "afro.png":      0.10,
+#}
+#DEFAULT_HAIRLINE_ANCHOR = 0.20
 
 def _hex_to_bgr(hex_color):
     hex_color = hex_color.lstrip('#')
@@ -84,6 +94,10 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_fact
     overlay = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
     if overlay is None:
         return image
+
+    # === DEBUG (geçici) ===
+    print(f"[HAIR DEBUG] PNG: {os.path.basename(overlay_path)}")
+    print(f"[HAIR DEBUG] PNG size: {overlay.shape[1]}x{overlay.shape[0]}")
     
     # Remove baked-in background (white or checkerboard) if needed
     b, g, r = cv2.split(overlay[:, :, :3])
@@ -109,52 +123,109 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_fact
         # Create new alpha from mask
         overlay = cv2.merge([b, g, r, bg_mask])
 
+
+    # === PERUĞUN İÇ BOŞLUĞUNU ÖLÇ ===
+    # PNG'nin orta kısmında yüzün geçeceği transparan delik var.
+    # Bu deliğin genişliğini ölçüp ona göre ölçekleme yapacağız.
+    inner_width_ratio = 1.0  # varsayılan: iç delik yoksa dış genişlik kullanılır
+    if overlay.shape[2] == 4:
+        alpha = overlay[:, :, 3]
+        oh, ow = alpha.shape
+
+        # Dikey ortadan al — saçın "yüz seviyesi" bandı
+        # Üstten %40 ile %75 arası genelde yüzün durduğu yer
+        mid_band = alpha[int(oh * 0.40):int(oh * 0.75), :]
+
+        # Bu bandın her satırındaki transparan piksel sayısının ortalaması
+        # = ortadaki deliğin yatay genişliği
+        transparent_per_row = np.sum(mid_band < 50, axis=1)  # her satırda kaç transparan piksel
+        if len(transparent_per_row) > 0:
+            avg_hole_width = float(np.mean(transparent_per_row))
+            inner_width_ratio = avg_hole_width / float(ow)
+
+        print(f"[HAIR DEBUG] inner hole ratio: {inner_width_ratio:.2f} (delik PNG'nin %{int(inner_width_ratio*100)}'i)")
+
     h, w = image.shape[:2]
 
-    top_head = landmarks[10]
-    chin = landmarks[152]
-    left_temple = landmarks[234]
-    right_temple = landmarks[454]
-    face_w = abs(right_temple[0] - left_temple[0])
-    face_h = abs(chin[1] - top_head[1])
+    # === ANCHOR LANDMARK'LAR ===
+    # MediaPipe Face Mesh referansı:
+    #   10  = forehead top (kaş üstü, hairline DEĞİL)
+    #   152 = chin
+    #   234 / 454 = sol/sağ temple (kulak hizası)
+    #   127 / 356 = sol/sağ yüz dış kenarı (temple'dan biraz daha geniş)
+    #    33 /  263 = sol/sağ göz dış köşesi
+    top_head     = np.array(landmarks[10],  dtype=np.float32)
+    chin         = np.array(landmarks[152], dtype=np.float32)
+    left_temple  = np.array(landmarks[234], dtype=np.float32)
+    right_temple = np.array(landmarks[454], dtype=np.float32)
+    left_eye     = np.array(landmarks[33],  dtype=np.float32)
+    right_eye    = np.array(landmarks[263], dtype=np.float32)
 
-    # Horizontal center: prefer temples midpoint, but blend with nose tip if available
-    cx = int((left_temple[0] + right_temple[0]) / 2)
+    # === 1) ROTASYON: gözler arası açı (temple yerine, daha güvenilir) ===
+    eye_delta = right_eye - left_eye
+    angle_deg = float(np.degrees(np.arctan2(eye_delta[1], eye_delta[0])))
+
+    # === 2) YÜZ GENİŞLİĞİ (rotasyondan bağımsız, gerçek mesafe) ===
+    # Sadece x farkı değil, Euclid mesafe — eğik kafalarda doğru çalışır
+    face_w = float(np.linalg.norm(right_temple - left_temple))
+    face_h = float(np.linalg.norm(chin - top_head))
+
+    # === 3) YÜZ MERKEZİ (rotasyon-aware) ===
+    # Temple orta noktası + biraz nose ağırlığı, ama rotasyona göre düzelt
+    face_center = (left_temple + right_temple) / 2.0
     if len(landmarks) > 1:
-        nose_tip = landmarks[1]
-        # weighted average: temples 0.8, nose 0.2 — keeps accessory centered on face middle
-        cx = int(0.8 * cx + 0.2 * nose_tip[0])
+        nose_tip = np.array(landmarks[1], dtype=np.float32)
+        face_center = 0.75 * face_center + 0.25 * nose_tip
+    cx = float(face_center[0])
 
-    # Hairline / top alignment: prefer explicit hairline landmarks when available
-    hairline_candidates = [top_head[1]]
-    if len(landmarks) > 299:
-        hairline_candidates.append(landmarks[299][1])
-    if len(landmarks) > 70:
-        hairline_candidates.append(landmarks[70][1])
-    # also include a conservative top-most face point to avoid placing too low
-    ys = [int(p[1]) for p in landmarks if isinstance(p, (list, tuple))]
-    if ys:
-        hairline_candidates.append(min(ys))
+    # === 4) HAIRLINE TAHMİNİ ===
+    # Kritik nokta: landmarks[10] "alın üstü" değil, kaşların ~2-3cm üstü.
+    # Gerçek saç çizgisi yüz yüksekliğinin yaklaşık %25-30'u kadar yukarıda.
+    # top_head'den chin'e olan vektörün TERS yönünde, face_h * 0.30 kadar ekstrapole ediyoruz.
+    face_axis = top_head - chin                      # çeneden alına vektör
+    face_axis_norm = face_axis / (np.linalg.norm(face_axis) + 1e-6)
+    hairline_point = top_head + face_axis_norm * (face_h * 0.10)
+    hairline_y = float(hairline_point[1])
+    # cx'i de hairline noktasının x'iyle harmanla — eğik kafalarda hizalamayı düzeltir
+    cx = 0.5 * cx + 0.5 * float(hairline_point[0])
+    # Yaw tahmini: burun-çene ekseninin yüz merkez ekseninden sapması
+    nose_to_chin = np.array(landmarks[152]) - np.array(landmarks[1])
+    face_midline = (left_temple + right_temple) / 2.0 - chin
+    # Eğer kafa yana dönükse peruğu o yöne kaydır
+    yaw_offset_x = (nose_tip[0] - face_center[0]) * 0.3
+    cx += yaw_offset_x
 
-    hairline_y = int(sum(hairline_candidates) / len(hairline_candidates))
+    # === 5) PERUK GENİŞLİĞİ ===
+    # Peruk yüzden biraz geniş olmalı (saç yüz konturundan dışarı taşar).
+    # 1.45 katsayısı çoğu PNG için iyi; ama PNG'nin kendi en/boy oranını da hesaba kat.
+    # === ASIL ÖLÇEKLEME: İç delik yüze eşit olacak şekilde ölçekle ===
+    # Hedef: peruğun iç deliği ≈ face_w × 1.05 (yüzden %5 geniş, hafif boşluk için)
+    # Yani: target_w × inner_width_ratio = face_w × 1.05
+    # Buradan: target_w = (face_w × 1.05) / inner_width_ratio
+    if inner_width_ratio > 0.15:  # makul bir delik varsa
+        target_w = int((face_w * 1.05 * scale_factor) / inner_width_ratio)
+    else:
+        # Delik yok veya çok küçük → düz dış ölçekleme
+        target_w = int(face_w * 1.15 * scale_factor)
+    target_w = max(target_w, 1)
 
-    # target width: proportional to temple distance (face width), scaled by provided factor
-    target_w = max(int(face_w * 1.45 * scale_factor), 1)
+    print(f"[HAIR DEBUG] target_w computed: {target_w} (face_w={face_w:.0f}, ratio={inner_width_ratio:.2f})")
+    print(f"[HAIR DEBUG] face_w={face_w:.1f}, target_w={target_w}, scale_factor={scale_factor}")
+    print(f"[HAIR DEBUG] hairline_y={hairline_y:.1f}, top_head.y={top_head[1]:.1f}, chin.y={chin[1]:.1f}")
     scale = target_w / float(overlay.shape[1])
     target_h = max(int(overlay.shape[0] * scale), 1)
 
     overlay_resized = cv2.resize(overlay, (target_w, target_h), interpolation=cv2.INTER_AREA)
 
-    angle = 0.0
-    if len(landmarks) > 454:
-        delta = np.array(right_temple) - np.array(left_temple)
-        angle = float(np.degrees(np.arctan2(delta[1], delta[0])))
+    overlay_rotated = _rotate_image(overlay_resized, angle_deg)
 
-    overlay_rotated = _rotate_image(overlay_resized, angle)
+    x_start = int(cx - overlay_rotated.shape[1] // 2 + x_offset)
+    HAIRLINE_ANCHOR_RATIO = 0.20
+    y_start = int(hairline_y - overlay_rotated.shape[0] * HAIRLINE_ANCHOR_RATIO + y_offset)
 
-    # Apply offsets here
-    x_start = cx - overlay_rotated.shape[1] // 2 + x_offset
-    y_start = hairline_y - int(overlay_rotated.shape[0] * 0.15) + y_offset
+    #overlay_filename = os.path.basename(overlay_path)
+#HAIRLINE_ANCHOR_RATIO = HAIRSTYLE_ANCHORS.get(overlay_filename, DEFAULT_HAIRLINE_ANCHOR)
+#y_start = int(hairline_y - overlay_rotated.shape[0] * HAIRLINE_ANCHOR_RATIO) + y_offset
 
     x1 = max(0, x_start)
     y1 = max(0, y_start)
@@ -181,7 +252,10 @@ def apply_hair_overlay(image, landmarks, overlay_path, intensity=1.0, scale_fact
         crop[:, :, :3] = np.clip(blended, 0, 255).astype(np.uint8)
 
     alpha = crop[:, :, 3:4].astype(np.float32) / 255.0
-    alpha = cv2.GaussianBlur(alpha, (21, 21), 0)
+    # Resim çözünürlüğüne göre adaptif blur
+    blur_size = max(5, int(face_w * 0.04))
+    if blur_size % 2 == 0: blur_size += 1  # tek sayı olmalı
+    alpha = cv2.GaussianBlur(alpha, (blur_size, blur_size), 0)
     if len(alpha.shape) == 2:
         alpha = alpha[:, :, np.newaxis]
     alpha = np.clip(alpha * intensity, 0.0, 1.0)

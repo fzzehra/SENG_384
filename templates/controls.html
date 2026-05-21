@@ -1,3 +1,5 @@
+<!-- controls.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -561,7 +563,10 @@
           <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0">
         </div>
 
-        <div class="sec-title">Position &amp; Size</div>
+        <div class="sec-title">Fine Tuning (Optional)</div>
+        <div style="font-size:11px;color:#8888bb;margin-bottom:8px;padding:0 4px;">
+            Peruk otomatik olarak yüzüne göre yerleştirildi. Aşağıdaki ayarlar sadece ince düzeltme için — gerekmedikçe dokunmana gerek yok.
+        </div>
         <div class="ctrl-card" style="display:flex;flex-direction:column;gap:14px;">
           <div>
             <div class="pos-label"><span>Vertical (Up / Down)</span><span id="hair-y-val">0</span></div>
@@ -908,7 +913,12 @@ function buildTransforms() {
     t.push({ type:'hair_color', intensity:parseInt(hcS.value)/100, params:{ color: document.getElementById('hairColorPicker').value } });
   if (overlay) {
     const hcS2 = document.querySelector('[data-type="hair_color"]');
-    t.push({ type:'hair_overlay', intensity:1.0, params:{ overlay, scale:hairScale, x_offset:hairX, y_offset:hairY,
+    t.push({ type:'hair_overlay', intensity:1.0, params:{ 
+      overlay, 
+      scale: hairScale, 
+      x_offset: hairX, 
+      y_offset: hairY,
+      auto: true,
       color: hcS2 && parseInt(hcS2.value) > 0 ? document.getElementById('hairColorPicker').value : null,
       color_intensity: hcS2 ? parseInt(hcS2.value)/100 : 0 } });
   }

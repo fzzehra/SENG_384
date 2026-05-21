@@ -1,3 +1,5 @@
+#transform.py
+
 from backend.modules.accessories.jewelery import apply_jewelry_pipeline
 from backend.modules.makeup.makeup import apply_lip_color, apply_blush, apply_eyeshadow, apply_eye_color
 import os
@@ -502,6 +504,13 @@ def transform_image():
                 scale_factor = float(params.get("scale", 1.0)) if params.get("scale") is not None else 1.0
                 x_offset = int(params.get("x_offset", 0))
                 y_offset = int(params.get("y_offset", 0))
+                # Otomatik mod: kullanıcı manuel ayar göndermediyse, slider'lar 0/100'de kaldıysa,
+                 # tamamen otomatik landmark-tabanlı yerleşim kullanılır (zaten varsayılan).
+                # Manuel ayarlar SADECE landmark hizalamasının üstüne ince düzeltme olarak biner.
+                auto_mode = params.get("auto", True)
+                if auto_mode:
+                    # Otomatik modda offset/scale kullanıcı dokunmadıkça nötr kalır
+                    scale_factor = max(0.85, min(1.25, scale_factor))  # ekstrem değerleri kıs
                 wig_color = params.get("color", None)
                 wig_color_intensity = float(params.get("color_intensity", 0.0))
                 overlay_path = os.path.join(current_app.static_folder, "hairstyles", overlay_name)
