@@ -71,20 +71,21 @@ def generate_extended_landmarks(
     cx = (left_face[0] + right_face[0]) // 2
 
     extended = {
-        # kafa / saç sınırı tahmini
+       # kafa / saç sınırı tahmini
         "head_top": (
             cx,
-            max(0, int(top[1] - face_h * 0.32))
+            max(0, int(top[1] - face_h * 0.48))
         ),
+
         "hairline_left": (
-            max(0, int(left_face[0] - face_w * 0.18)),
-            int(top[1] + face_h * 0.02)
-        ),
-        "hairline_right": (
-            min(w - 1, int(right_face[0] + face_w * 0.18)),
+            max(0, int(left_face[0] - face_w * 0.30)),
             int(top[1] + face_h * 0.02)
         ),
 
+        "hairline_right": (
+            min(w - 1, int(right_face[0] + face_w * 0.30)),
+            int(top[1] + face_h * 0.02)
+        ),
         # kulak tahmini
         "left_ear": (
             max(0, int(left_face[0] - face_w * 0.16)),
