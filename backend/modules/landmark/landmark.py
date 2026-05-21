@@ -40,6 +40,92 @@ def detect_landmarks(image: np.ndarray) -> LandmarkList:
 
     return landmarks
 
+def generate_extended_landmarks(
+    landmarks: LandmarkList,
+    image_shape: Tuple[int, int, int]
+) -> Dict[str, Tuple[int, int]]:
+    """
+    MediaPipe FaceMesh 468 noktasına ek olarak tahmini kafa, kulak,
+    boyun ve omuz noktaları üretir.
+    """
+    if landmarks is None or len(landmarks) < 468:
+        return {}
+
+    h, w = image_shape[:2]
+
+    def p(idx):
+        x, y = landmarks[idx]
+        return int(x), int(y)
+
+    top = p(10)
+    chin = p(152)
+    left_face = p(234)
+    right_face = p(454)
+    left_eye = p(33)
+    right_eye = p(263)
+    left_mouth = p(61)
+    right_mouth = p(291)
+
+    face_w = abs(right_face[0] - left_face[0])
+    face_h = abs(chin[1] - top[1])
+    cx = (left_face[0] + right_face[0]) // 2
+
+    extended = {
+       # kafa / saç sınırı tahmini
+        "head_top": (
+            cx,
+            max(0, int(top[1] - face_h * 0.48))
+        ),
+
+        "hairline_left": (
+            max(0, int(left_face[0] - face_w * 0.30)),
+            int(top[1] + face_h * 0.02)
+        ),
+
+        "hairline_right": (
+            min(w - 1, int(right_face[0] + face_w * 0.30)),
+            int(top[1] + face_h * 0.02)
+        ),
+        # kulak tahmini
+        "left_ear": (
+            max(0, int(left_face[0] - face_w * 0.16)),
+            int((left_eye[1] + left_mouth[1]) / 2)
+        ),
+        "right_ear": (
+            min(w - 1, int(right_face[0] + face_w * 0.16)),
+            int((right_eye[1] + right_mouth[1]) / 2)
+        ),
+
+        # boyun tahmini
+        "neck_left": (
+            int(cx - face_w * 0.23),
+            min(h - 1, int(chin[1] + face_h * 0.10))
+        ),
+        "neck_right": (
+            int(cx + face_w * 0.23),
+            min(h - 1, int(chin[1] + face_h * 0.10))
+        ),
+        "neck_bottom_left": (
+            int(cx - face_w * 0.32),
+            min(h - 1, int(chin[1] + face_h * 0.42))
+        ),
+        "neck_bottom_right": (
+            int(cx + face_w * 0.32),
+            min(h - 1, int(chin[1] + face_h * 0.42))
+        ),
+
+        # omuz tahmini
+        "left_shoulder": (
+            max(0, int(cx - face_w * 1.08)),
+            min(h - 1, int(chin[1] + face_h * 0.58))
+        ),
+        "right_shoulder": (
+            min(w - 1, int(cx + face_w * 1.08)),
+            min(h - 1, int(chin[1] + face_h * 0.58))
+        ),
+    }
+
+    return extended
 
 def draw_landmarks(
     image: np.ndarray,
@@ -87,6 +173,29 @@ def draw_landmarks(
         for x, y in landmarks:
             cv2.circle(output, (x, y), radius, (0, 255, 0), -1)
 
+    extended = generate_extended_landmarks(landmarks, image.shape)
+
+    if extended:
+        # boyun
+        cv2.line(output, extended["neck_left"], extended["neck_bottom_left"], (180, 0, 255), 2)
+        cv2.line(output, extended["neck_right"], extended["neck_bottom_right"], (180, 0, 255), 2)
+        cv2.line(output, extended["neck_bottom_left"], extended["neck_bottom_right"], (180, 0, 255), 1)
+
+        # omuz
+        cv2.line(output, extended["left_shoulder"], extended["neck_bottom_left"], (255, 0, 180), 2)
+        cv2.line(output, extended["neck_bottom_right"], extended["right_shoulder"], (255, 0, 180), 2)
+
+        # kafa / saç sınırı
+        cv2.line(output, extended["hairline_left"], extended["head_top"], (255, 180, 0), 2)
+        cv2.line(output, extended["head_top"], extended["hairline_right"], (255, 180, 0), 2)
+
+        # kulak
+        cv2.circle(output, extended["left_ear"], 5, (255, 120, 0), 2)
+        cv2.circle(output, extended["right_ear"], 5, (255, 120, 0), 2)
+
+        # noktaları göster
+        for name, point in extended.items():
+            cv2.circle(output, point, radius + 2, (255, 0, 255), -1)
     return output
 
 
@@ -152,6 +261,7 @@ def process_landmark_pipeline(
     landmarks = detect_landmarks(image)
     validation = validate_landmarks(landmarks, image.shape)
 
+    extended_landmarks = generate_extended_landmarks(landmarks, image.shape)
     landmark_image = draw_landmarks(image, landmarks) if landmarks else image.copy()
 
     if output_path:
@@ -161,6 +271,7 @@ def process_landmark_pipeline(
         "success": validation["is_valid"],
         "num_landmarks": validation["count"],
         "landmarks": landmarks,
+        "extended_landmarks": extended_landmarks,
         "validation": validation,
         "output_path": output_path,
         "image_with_landmarks": landmark_image
