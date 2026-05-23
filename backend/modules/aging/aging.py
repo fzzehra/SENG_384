@@ -502,70 +502,53 @@ def _apply_age_spots(image, landmarks, intensity_raw):
     return cv2.cvtColor(np.clip(lab,0,255).astype(np.uint8), cv2.COLOR_LAB2BGR)
 
 def _gray_hair(image, landmarks, intensity):
+    if landmarks is None: return image
+    t = _remap_intensity(intensity)
     h, w = image.shape[:2]
-    intensity = np.clip(float(intensity), 0, 1)
-
     top = _lm(landmarks,10); chin = _lm(landmarks,152)
     left = _lm(landmarks,234); right = _lm(landmarks,454)
-    face_w = _dist(left,right); face_h = _dist(top,chin)
+    fw = _dist(left,right); fh = _dist(top,chin)
+    cx = (left[0]+right[0])//2
 
+    # 1) SAÇ MASKESİ – GrabCut
+    face = _build_face_mask(h,w,landmarks)
+    face_bg = cv2.dilate(face, np.ones((17,17),np.uint8), 1)
+
+    mask = np.full((h,w), cv2.GC_PR_BGD, np.uint8)
+    mask[face_bg>0] = cv2.GC_BGD
+
+    # saç tohumları – 3 nokta (tepe, sol, sağ)
+    pts = [
+        (cx, int(top[1] - fh*0.25)),
+        (int(left[0]+fw*0.08), int(top[1]+fh*0.05)),
+        (int(right[0]-fw*0.08), int(top[1]+fh*0.05))
+    ]
+    for x,y in pts:
+        if 0<=y<h and 0<=x<w:
+            mask[max(0,y-6):y+6, max(0,x-6):x+6] = cv2.GC_FGD
+
+    bgd = np.zeros((1,65),np.float64); fgd = np.zeros((1,65),np.float64)
+    cv2.grabCut(image, mask, None, bgd, fgd, 5, cv2.GC_INIT_WITH_MASK)
+    hair = np.where((mask==cv2.GC_FGD)|(mask==cv2.GC_PR_FGD),1,0).astype(np.float32)
+    hair = cv2.GaussianBlur(hair,(9,9),0)
+
+    # 2) SAÇIN KENDİ RENGİNDEN
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV).astype(np.float32)
     H,S,V = cv2.split(hsv)
-    V_orig = V.copy() # deri koruması için orijinal parlaklık
+    g = np.clip(t*1.12,0,1); wht = np.clip((t-0.55)*2.6,0,1)
+    f = hair * (0.55*g + 0.62*wht)
+    S = S*(1-f*0.74); V = V + (255-V)*f*0.26
+    out = cv2.cvtColor(np.dstack([H,np.clip(S,0,255),np.clip(V,0,255)]).astype(np.uint8), cv2.COLOR_HSV2BGR)
 
-    # 1) saç rengi – sıkı eşik (kırmızı lekeleri engeller)
-    dark = cv2.inRange(V_orig,0,145) & cv2.inRange(S,25,255)
-    brown = cv2.inRange(H,5,28) & cv2.inRange(S,40,255) & cv2.inRange(V_orig,25,190)
-    hair_color = cv2.bitwise_or(dark, brown)
-
-    # 2) geniş bölge
-    hair_region = np.zeros((h,w), np.uint8)
-    x1 = max(0, int(left[0] - face_w*0.60)); x2 = min(w, int(right[0] + face_w*0.60))
-    y1 = max(0, int(top[1] - face_h*0.80)); y2 = min(h, int(top[1] + face_h*0.35))
-    cv2.rectangle(hair_region, (x1,y1), (x2,y2), 255, -1)
-
-    # 3) yüzle birleşim – 12px güvenlik payı
-    face_mask = _build_face_mask(h,w,landmarks)
-    face_safe = cv2.dilate(face_mask, np.ones((25,25),np.uint8), 1)
-    face_soft = cv2.GaussianBlur(face_mask, (41,41), 0).astype(np.float32)/255.0
-
-    hair_mask = cv2.bitwise_and(hair_color, hair_region)
-    hair_mask = cv2.bitwise_and(hair_mask, cv2.bitwise_not(face_safe))
-    hair_mask = cv2.GaussianBlur(hair_mask, (13,13), 0).astype(np.float32)/255.0
-
-    # deri koruması – açık teni hiç beyazlatma
-    skin_guard = (V_orig < 175).astype(np.float32)
-    hair_mask = hair_mask * np.power(1.0 - face_soft, 3.0) * skin_guard
-
-    # 4) kök-uç gradienti
-    scalp_y = top[1] - face_h*0.03
-    yy = np.arange(h, dtype=np.float32)[:,None]
-    dist = np.clip((yy - scalp_y) / (face_h*0.85), 0, 1)
-    root = 1.0 - dist
-
-    # 5) hızlı slider
-    t_fast = np.clip(intensity * 1.7, 0, 1.0)
-    factor_hair = hair_mask * t_fast * (0.70 + 0.30*root)
-    S = S * (1.0 - factor_hair*0.75)
-    V = V + (255.0 - V) * factor_hair * 0.42
-
-    # 6) kaşlar
-    brow_mask = np.zeros((h,w), np.uint8)
-    left_brow = [_lm(landmarks,i) for i in [70,63,105,66,107]]
-    right_brow = [_lm(landmarks,i) for i in [336,296,334,293,300]]
-    cv2.fillPoly(brow_mask, [np.array(left_brow,np.int32)], 255)
-    cv2.fillPoly(brow_mask, [np.array(right_brow,np.int32)], 255)
-    brow_hair = cv2.bitwise_and(brow_mask, cv2.inRange(V_orig,0,170))
-    brow_hair = cv2.GaussianBlur(brow_hair, (9,9), 0).astype(np.float32)/255.0
-    factor_brow = brow_hair * t_fast * 0.85
-    S = S * (1.0 - factor_brow*0.5)
-    V = V + (255.0 - V) * factor_brow * 0.35
-
-    H = np.clip(H, 0, 179).astype(np.uint8)
-    S = np.clip(S, 0, 255).astype(np.uint8)
-    V = np.clip(V, 0, 255).astype(np.uint8)
-    hsv_new = cv2.merge([H, S, V])
-    return cv2.cvtColor(hsv_new, cv2.COLOR_HSV2BGR)
+    # kaş
+    brow = np.zeros((h,w),np.uint8)
+    for p in [[70,63,105,66,107],[336,296,334,293,300]]:
+        cv2.fillPoly(brow,[np.array([_lm(landmarks,i) for i in p],np.int32)],255)
+    brow = cv2.GaussianBlur(brow,(7,7),0).astype(np.float32)/255*np.clip(t*0.7,0,1)
+    hb = cv2.cvtColor(out,cv2.COLOR_BGR2HSV).astype(np.float32)
+    Hb,Sb,Vb = cv2.split(hb); Sb*=(1-brow*0.42); Vb+=(255-Vb)*brow*0.22
+    out = cv2.cvtColor(np.dstack([Hb,np.clip(Sb,0,255),np.clip(Vb,0,255)]).astype(np.uint8),cv2.COLOR_HSV2BGR)
+    return out
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
