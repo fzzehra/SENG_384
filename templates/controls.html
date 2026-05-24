@@ -563,10 +563,26 @@
           <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0">
         </div>
 
-        <div class="sec-title">Fine Tuning (Optional)</div>
-        <div style="font-size:11px;color:#8888bb;margin-bottom:8px;padding:0 4px;">
-            Peruk otomatik olarak yüzüne göre yerleştirildi. Aşağıdaki ayarlar sadece ince düzeltme için — gerekmedikçe dokunmana gerek yok.
-        </div>
+        <div id="fine-tuning-panel" style="display:none;">
+    <div class="sec-title">Fine Tuning (Optional)</div>
+    <div style="font-size:11px;color:#8888bb;margin-bottom:8px;padding:0 4px;">
+        Peruk otomatik olarak yüzüne göre yerleştirildi. Aşağıdaki ayarlar sadece ince düzeltme için — gerekmedikçe dokunmana gerek yok.
+    </div>
+    <div class="ctrl-card" style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <div class="pos-label"><span>Vertical (Up / Down)</span><span id="hair-y-val">0</span></div>
+        <input type="range" id="hairYSlider" min="-200" max="150" value="0">
+      </div>
+      <div>
+        <div class="pos-label"><span>Horizontal (Left / Right)</span><span id="hair-x-val">0</span></div>
+        <input type="range" id="hairXSlider" min="-100" max="100" value="0">
+      </div>
+      <div>
+        <div class="pos-label"><span>Scale</span><span id="hair-scale-val">100%</span></div>
+        <input type="range" id="hairScaleSlider" min="50" max="300" value="100">
+      </div>
+    </div>
+</div>
         <div class="ctrl-card" style="display:flex;flex-direction:column;gap:14px;">
           <div>
             <div class="pos-label"><span>Vertical (Up / Down)</span><span id="hair-y-val">0</span></div>
