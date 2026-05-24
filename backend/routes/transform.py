@@ -526,7 +526,8 @@ def transform_image():
                         x_offset=x_offset,
                         y_offset=y_offset,
                         wig_color=wig_color,
-                        wig_color_intensity=wig_color_intensity
+                        wig_color_intensity=wig_color_intensity,
+                        auto=params.get("auto", True)
                     )
                     results_meta.append("hair_overlay")
                     print(f"APPLIED: hair_overlay ({overlay_name}, scale={scale_factor})")

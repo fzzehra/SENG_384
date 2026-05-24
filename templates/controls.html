@@ -887,6 +887,8 @@ function loadAccFetch(category, listId, key) {
 function clearHairstyle() {
   overlay = null;
   document.querySelectorAll('#hairstyleList .hs-card').forEach(c => c.classList.remove('active'));
+  const ftPanel = document.getElementById('fine-tuning-panel');
+  if (ftPanel) ftPanel.style.display = 'none';
   trigger();
 }
 function loadHairstyles() {
@@ -898,8 +900,18 @@ function loadHairstyles() {
       const card = document.createElement('div'); card.className = 'hs-card';
       card.innerHTML = `<img src="/static/hairstyles/${file}" title="${file.replace('.png','')}">`;
       card.addEventListener('click', () => {
-        if (overlay === file) { overlay = null; card.classList.remove('active'); }
-        else { el.querySelectorAll('.hs-card').forEach(c => c.classList.remove('active')); overlay = file; card.classList.add('active'); }
+        if (overlay === file) {
+          overlay = null;
+          card.classList.remove('active');
+        } else {
+          el.querySelectorAll('.hs-card').forEach(c => c.classList.remove('active'));
+          overlay = file;
+          card.classList.add('active');
+        }
+        // Fine tuning panelini sadece saç seçiliyken göster
+        const ftPanel = document.getElementById('fine-tuning-panel');
+        if (ftPanel) ftPanel.style.display = overlay ? 'block' : 'none';
+        
         trigger();
       });
       el.appendChild(card);
