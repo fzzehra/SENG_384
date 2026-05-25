@@ -70,6 +70,17 @@ def generate_extended_landmarks(
     face_h = abs(chin[1] - top[1])
     cx = (left_face[0] + right_face[0]) // 2
 
+    # Saç sınırı için tahmini noktalar
+    hair_top_y = max(0, int(top[1] - face_h * 0.48))
+    hair_front_y = max(0, int(top[1] - face_h * 0.03))
+    hair_side_y = int(top[1] + face_h * 0.22)
+
+    hair_outer_left_x = max(0, int(left_face[0] - face_w * 0.42))
+    hair_outer_right_x = min(w - 1, int(right_face[0] + face_w * 0.42))
+
+    hair_inner_left_x = max(0, int(left_face[0] + face_w * 0.12))
+    hair_inner_right_x = min(w - 1, int(right_face[0] - face_w * 0.12))
+
     extended = {
        # kafa / saç sınırı tahmini
         "head_top": (
@@ -85,6 +96,49 @@ def generate_extended_landmarks(
         "hairline_right": (
             min(w - 1, int(right_face[0] + face_w * 0.30)),
             int(top[1] + face_h * 0.02)
+        ),
+                # daha detaylı saç dış sınırı
+        "hair_outer_left": (
+            hair_outer_left_x,
+            hair_side_y
+        ),
+        "hair_outer_left_top": (
+            max(0, int(cx - face_w * 0.50)),
+            max(0, int(top[1] - face_h * 0.20))
+        ),
+        "hair_outer_top": (
+            cx,
+            hair_top_y
+        ),
+        "hair_outer_right_top": (
+            min(w - 1, int(cx + face_w * 0.50)),
+            max(0, int(top[1] - face_h * 0.20))
+        ),
+        "hair_outer_right": (
+            hair_outer_right_x,
+            hair_side_y
+        ),
+
+        # yüze yakın ön saç çizgisi
+        "hair_inner_left": (
+            hair_inner_left_x,
+            hair_front_y
+        ),
+        "hair_inner_mid_left": (
+            max(0, int(cx - face_w * 0.22)),
+            max(0, int(top[1] - face_h * 0.02))
+        ),
+        "hair_inner_center": (
+            cx,
+            max(0, int(top[1] - face_h * 0.04))
+        ),
+        "hair_inner_mid_right": (
+            min(w - 1, int(cx + face_w * 0.22)),
+            max(0, int(top[1] - face_h * 0.02))
+        ),
+        "hair_inner_right": (
+            hair_inner_right_x,
+            hair_front_y
         ),
         # kulak tahmini
         "left_ear": (
@@ -186,8 +240,29 @@ def draw_landmarks(
         cv2.line(output, extended["neck_bottom_right"], extended["right_shoulder"], (255, 0, 180), 2)
 
         # kafa / saç sınırı
-        cv2.line(output, extended["hairline_left"], extended["head_top"], (255, 180, 0), 2)
-        cv2.line(output, extended["head_top"], extended["hairline_right"], (255, 180, 0), 2)
+        # detaylı saç dış sınırı
+        hair_outer = [
+            extended["hair_outer_left"],
+            extended["hair_outer_left_top"],
+            extended["hair_outer_top"],
+            extended["hair_outer_right_top"],
+            extended["hair_outer_right"]
+        ]
+
+        for i in range(len(hair_outer) - 1):
+            cv2.line(output, hair_outer[i], hair_outer[i + 1], (255, 180, 0), 2)
+
+        # yüze yakın ön saç çizgisi
+        hair_inner = [
+            extended["hair_inner_left"],
+            extended["hair_inner_mid_left"],
+            extended["hair_inner_center"],
+            extended["hair_inner_mid_right"],
+            extended["hair_inner_right"]
+        ]
+
+        for i in range(len(hair_inner) - 1):
+         cv2.line(output, hair_inner[i], hair_inner[i + 1], (0, 180, 255), 2)
 
         # kulak
         cv2.circle(output, extended["left_ear"], 5, (255, 120, 0), 2)

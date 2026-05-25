@@ -94,7 +94,7 @@ def _make_wrinkle_heightfield(h, w, landmarks, face_scale, seed=42):
 
     w_px = max(0.8, 1.2*S)
 
-    # ── 1. ALIN — DÜZELTİLDİ ───────────────────────────────────────────────
+    # ── 1. ALIN
     n_f_lines = rng.integers(4, 7)
     forehead_top = top[1] + face_h * 0.04
     forehead_bot = top[1] + face_h * 0.22
@@ -102,7 +102,7 @@ def _make_wrinkle_heightfield(h, w, landmarks, face_scale, seed=42):
         cy = int(forehead_top + (i+0.5)*(forehead_bot-forehead_top)/n_f_lines)
         for _ in range(rng.integers(2,4)):
             seg_w = face_w * rng.uniform(0.22, 0.38)
-            cx_ = left[0] + face_w*0.5 + rng.uniform(-face_w*0.18, face_w*0.18) # cx ezilmesin
+            cx_ = left[0] + face_w*0.5 + rng.uniform(-face_w*0.18, face_w*0.18)
             sx = int(cx_ - seg_w/2 + rng.uniform(-4,4))
             ex = int(cx_ + seg_w/2 + rng.uniform(-4,4))
             sy = cy + rng.integers(-int(face_h*0.012), int(face_h*0.012))
@@ -112,10 +112,9 @@ def _make_wrinkle_heightfield(h, w, landmarks, face_scale, seed=42):
             _ridge((sx, sy), (ex, ey), hw, h_seg,
                    jitter=face_w * rng.uniform(0.012, 0.02),
                    fade_left=0.15, fade_right=0.85)
-    # fazladan uzun çizgi silindi
 
     # Glabella
-    brow_mid_y = int(top[1] + face_h * 0.18) # forehead_band hatası düzeltildi
+    brow_mid_y = int(top[1] + face_h * 0.18)
     for k in range(rng.integers(2, 4)):
         offset = rng.integers(-int(face_w*0.05), int(face_w*0.05))
         bx_ = cx + offset
@@ -129,7 +128,7 @@ def _make_wrinkle_heightfield(h, w, landmarks, face_scale, seed=42):
                jitter=face_w * 0.003,
                fade_left=0.10, fade_right=rng.uniform(0.68, 0.88))
 
-    # ── 2. Göz çevresi ───────────────────────────────────────────────────────
+    # ── 2. Göz çevresi
     for eye_idx, sign in [(33,-1),(263,1)]:
         ex, ey = _lm(landmarks, eye_idx)
         for k in range(6):
@@ -149,7 +148,7 @@ def _make_wrinkle_heightfield(h, w, landmarks, face_scale, seed=42):
             _ridge(bc, (int(bc[0]+np.cos(ang)*l), int(bc[1]+np.sin(ang)*l*0.4)),
                    w_px*0.65, rng.uniform(0.16, 0.28), jitter=face_w*0.003)
 
-    # ── 3. Nasolabial ────────────────────────────────────────────────────────
+    # ── 3. Nasolabial
     nose_l = _lm(landmarks, 102); nose_r = _lm(landmarks, 331)
     mouth_l = _lm(landmarks, 61); mouth_r = _lm(landmarks, 291)
     for (np_pt, mp_pt), fold_sign in [((nose_l, mouth_l), -1), ((nose_r, mouth_r), 1)]:
@@ -166,14 +165,14 @@ def _make_wrinkle_heightfield(h, w, landmarks, face_scale, seed=42):
             _ridge((bx_, by_), (end_x, end_y), w_px * rng.uniform(0.6, 1.0), rng.uniform(0.25, 0.45),
                    jitter=face_w * 0.003, fade_left=0.05, fade_right=rng.uniform(0.55, 0.80))
 
-    # ── 4. Marionette ────────────────────────────────────────────────────────
+    # ── 4. Marionette
     chin_pt = _lm(landmarks, 152)
     for m_idx in [61, 291]:
         mouth = _lm(landmarks, m_idx)
         p2 = (mouth[0]+rng.integers(-4,4), int(mouth[1]+(chin_pt[1]-mouth[1])*0.88))
         _ridge(mouth, p2, w_px*4.0, rng.uniform(0.08, 0.14), jitter=face_w*0.004)
 
-    # ── 5. Yanak ─────────────────────────────────────────────────────────────
+    # ── 5. Yanak
     for side, sign in [(-1, -1), (1, 1)]:
         cheek_cx = int(cx + sign * face_w * 0.30)
         cheek_cy = int(top[1] + face_h * 0.40)
@@ -204,7 +203,7 @@ def _make_wrinkle_heightfield(h, w, landmarks, face_scale, seed=42):
             _ridge(start, end, w_px * rng.uniform(0.8, 1.2), rng.uniform(0.30, 0.50), jitter=face_w * 0.005,
                    fade_left=rng.uniform(0.08, 0.18), fade_right=rng.uniform(0.65, 0.90))
 
-    # ── 6. Boyun ─────────────────────────────────────────────────────────────
+    # ── 6. Boyun
     neck_top_y = int(chin_pt[1] + face_h * 0.08); neck_w_half = int(face_w * 0.30)
     n_neck = rng.integers(4, 6)
     for i in range(n_neck):
@@ -220,8 +219,8 @@ def _make_wrinkle_heightfield(h, w, landmarks, face_scale, seed=42):
             sxn = int(lx_ + s_s * total_w_n); exn = int(lx_ + s_e * total_w_n)
             syn = ly_ + rng.integers(-4, 4); eyn = ry_ + rng.integers(-4, 4)
             _ridge((sxn, syn), (exn, eyn),
-            w_px * rng.uniform(2.8, 3.4), # daha geniş = yumuşak
-            rng.uniform(0.21, 0.31), 
+            w_px * rng.uniform(2.8, 3.4),
+            rng.uniform(0.21, 0.31),
                    jitter=face_w * 0.012, fade_left=rng.uniform(0.08, 0.18), fade_right=rng.uniform(0.72, 0.94))
         n_rays = rng.integers(3, 5)
         for _ in range(n_rays):
@@ -236,7 +235,7 @@ def _make_wrinkle_heightfield(h, w, landmarks, face_scale, seed=42):
     return hmap
 
 # ---------------------------------------------------------------------------
-# Nasolabial fold gölgesi — ince gradyan, ağız korumalı
+# Nasolabial fold gölgesi
 # ---------------------------------------------------------------------------
 def _apply_nasolabial_fold(image, landmarks, t, face_w, face_h):
     h, w = image.shape[:2]
@@ -256,8 +255,13 @@ def _apply_nasolabial_fold(image, landmarks, t, face_w, face_h):
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
     lab[:,:,0] -= shadow_fold * _scale(t, 0.0, 4.0)
     return cv2.cvtColor(np.clip(lab, 0, 255).astype(np.uint8), cv2.COLOR_LAB2BGR)
+
 # ---------------------------------------------------------------------------
 # Wrinkle application
+# FIX: Alındaki beyaz nokta artefaktları kaldırıldı
+#      → highlight_map alın üst bölgesinde (saç sınırı yakını) maskeleniyor
+#      → highlight şiddeti düşürüldü (28 → 18)
+#      → shadow/highlight blur yarıçapı artırıldı (daha yumuşak geçiş)
 # ---------------------------------------------------------------------------
 def _apply_wrinkles(image, face_mask, intensity_raw, landmarks):
     t = _remap_intensity(intensity_raw)
@@ -277,6 +281,19 @@ def _apply_wrinkles(image, face_mask, intensity_raw, landmarks):
     neck_mask = cv2.GaussianBlur(neck_mask, (41, 41), 0)
     H_full = _make_wrinkle_heightfield(h, w, landmarks, face_scale)
     H = H_full * face_soft + H_full * neck_mask * 0.70
+
+    # FIX 1: Alın üst bölgesi highlight maskesi
+    # Saç sınırına yakın alan (alın üstü %20'si) highlight'tan çıkarılır
+    forehead_highlight_mask = np.ones((h, w), dtype=np.float32)
+    # Saç çizgisi yakını: top[1] - face_h*0.05  →  top[1] + face_h*0.08 arasını koru
+    # ama top[1] üstünü (saça yakın) sıfırla
+    hair_boundary_y = int(top[1] + face_h * 0.04)   # saç–alın geçişi
+    fade_zone = int(face_h * 0.08)                    # yumuşak geçiş bölgesi
+    for row in range(max(0, hair_boundary_y - fade_zone), min(h, hair_boundary_y)):
+        alpha = (row - (hair_boundary_y - fade_zone)) / float(fade_zone + 1e-6)
+        forehead_highlight_mask[row, :] = alpha
+    forehead_highlight_mask[:max(0, hair_boundary_y - fade_zone), :] = 0.0
+
     gz_val = _scale(t, 0.55, 0.15)
     gx = cv2.Sobel(H, cv2.CV_32F, 1, 0, ksize=5); gy = cv2.Sobel(H, cv2.CV_32F, 0, 1, ksize=5)
     gz = np.ones_like(H) * gz_val
@@ -286,24 +303,29 @@ def _apply_wrinkles(image, face_mask, intensity_raw, landmarks):
     shading = nx_*lx + ny_*ly + nz_*lz
     presence_thresh = _scale(t, 0.12, 0.008)
     presence = np.clip((H - presence_thresh) * 6.0, 0, 1)
+
     shadow_map = cv2.GaussianBlur(np.clip(-shading, 0, 1) * presence, (9, 9), 2.0)
     highlight_map = cv2.GaussianBlur(np.clip(shading, 0, 1) * presence, (9, 9), 2.0)
 
-    # --- EKLENDİ: gölgeyi uygula ---
+    # FIX 2: Highlight'a alın üst maskesini uygula (beyaz nokta gider)
+    highlight_map = highlight_map * forehead_highlight_mask
+
     w_px = max(1.0, face_w / 180.0)
-    shadow_soft = cv2.GaussianBlur(shadow_map, (0,0), sigmaX=w_px*0.9)
-    highlight_soft = cv2.GaussianBlur(highlight_map, (0,0), sigmaX=w_px*0.7)
+    # FIX 3: Daha geniş blur → daha yumuşak, artefakt önler
+    shadow_soft    = cv2.GaussianBlur(shadow_map,    (0,0), sigmaX=w_px*1.4)
+    highlight_soft = cv2.GaussianBlur(highlight_map, (0,0), sigmaX=w_px*1.1)
+
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
-    lab[:,:,0] -= shadow_soft * _scale(t, 6.0, 78.0)
-    lab[:,:,0] += highlight_soft * _scale(t, 3, 28.0)
+    lab[:,:,0] -= shadow_soft    * _scale(t, 6.0, 78.0)
+    # FIX 4: Highlight miktarı düşürüldü (28 → 18) → aşırı parlama yok
+    lab[:,:,0] += highlight_soft * _scale(t, 3, 18.0)
 
     result = cv2.cvtColor(np.clip(lab, 0, 255).astype(np.uint8), cv2.COLOR_LAB2BGR)
     result = _apply_nasolabial_fold(result, landmarks, t, face_w, face_h)
     return result
 
 # ---------------------------------------------------------------------------
-# Sagging — warp korundu, ton minimize edildi
-# YENİ: yanak lateral sarkma warp + boyun yatay sarkma dalgası
+# Sagging
 # ---------------------------------------------------------------------------
 def _apply_sagging(image, landmarks, intensity_raw):
     if landmarks is None or len(landmarks) < 468:
@@ -325,7 +347,7 @@ def _apply_sagging(image, landmarks, intensity_raw):
     f_mask    = _build_face_mask(h, w, landmarks)
     face_soft = cv2.GaussianBlur(f_mask.astype(np.float32)/255.0, (31,31), 0)
 
-    # ── 1. Jowl sarkması ─────────────────────────────────────────────────────
+    # ── 1. Jowl sarkması
     jowl_mask = np.zeros((h,w),dtype=np.float32)
     jowl_cy   = int(nose_pt[1]+face_h*0.55)
     cv2.ellipse(jowl_mask,(cx,jowl_cy),
@@ -345,11 +367,10 @@ def _apply_sagging(image, landmarks, intensity_raw):
                         interpolation=cv2.INTER_LINEAR,
                         borderMode=cv2.BORDER_REFLECT)
 
-    # ── 2. Yanak deflasyon + YENİ lateral sarkma ─────────────────────────────
+    # ── 2. Yanak deflasyon + lateral sarkma
     deflate_x = np.zeros((h,w),dtype=np.float32)
     deflate_y = np.zeros((h,w),dtype=np.float32)
 
-    # Üst yanak içe-aşağı çökme (mevcut)
     for side, cx_off in [(-1, int(cx - face_w*0.25)), (1, int(cx + face_w*0.25))]:
         cheek_cy = int(nose_pt[1] + face_h*0.26)
         em = np.zeros((h,w),dtype=np.float32)
@@ -359,7 +380,6 @@ def _apply_sagging(image, landmarks, intensity_raw):
         deflate_x += em * (-side) * _scale(t, 0.0, 3.5)
         deflate_y += em * _scale(t, 0.0, 4.2)
 
-    # Alt yanak lateral sarkma — dışa ve aşağı (mevcut)
     for side, cx_off in [(-1, int(cx - face_w*0.38)), (1, int(cx + face_w*0.38))]:
         lat_cy = int(nose_pt[1] + face_h*0.52)
         em2    = np.zeros((h,w),dtype=np.float32)
@@ -369,14 +389,13 @@ def _apply_sagging(image, landmarks, intensity_raw):
         deflate_x += em2 * side  * _scale(t, 0.0, 3)
         deflate_y += em2          * _scale(t, 0.0,3.5)
 
-    # YENİ: yanak orta-alt bölge ek aşağı sarkma — kırışıklıkları daha görünür yapar
     for side, cx_off in [(-1, int(cx - face_w*0.28)), (1, int(cx + face_w*0.28))]:
         sag_cy = int(nose_pt[1] + face_h*0.44)
         em3    = np.zeros((h,w),dtype=np.float32)
         cv2.ellipse(em3, (cx_off, sag_cy),
                     (int(face_w*0.20), int(face_h*0.22)), 0, 0, 360, 1.0, -1)
         em3 = cv2.GaussianBlur(em3, (45,45), 0) * face_soft
-        deflate_y += em3 * _scale(t, 0.0, 3.5)   # sadece aşağı, yatay değil
+        deflate_y += em3 * _scale(t, 0.0, 3.5)
 
     map_x_c = xx - deflate_x
     map_y_c = yy - deflate_y
@@ -384,7 +403,7 @@ def _apply_sagging(image, landmarks, intensity_raw):
                         interpolation=cv2.INTER_LINEAR,
                         borderMode=cv2.BORDER_REFLECT)
 
-    # ── 3. Boyun sarkması + YENİ yatay kırışıklık dalgası ────────────────────
+    # ── 3. Boyun sarkması + yatay kırışıklık dalgası
     chin_pt  = chin
     neck_sag = np.zeros((h,w),dtype=np.float32)
     neck_cy  = int(chin_pt[1] + face_h * 0.10)
@@ -393,15 +412,12 @@ def _apply_sagging(image, landmarks, intensity_raw):
     neck_sag[:int(chin_pt[1] - face_h*0.02), :] = 0
     neck_sag = cv2.GaussianBlur(neck_sag, (51, 51), 0)
 
-    # Boyun kırışıklık dalgası: yatay sarkma periyodik olarak dalgalanır
-    # → düzgün uniform sarkma yerine doğal kırışıklık şekli oluşur
     neck_wave_y = np.zeros((h,w),dtype=np.float32)
     neck_band_y = int(chin_pt[1] + face_h * 0.06)
     for row in range(neck_band_y, min(h, neck_band_y + int(face_h * 0.38))):
         row_weight = neck_sag[row, :]
         if row_weight.max() < 0.01:
             continue
-        # Her satır için sinüzoidal x-offset → boyun kırışıklık dalgası
         freq   = 3.5 + (row - neck_band_y) / (face_h * 0.38) * 2.0
         phase  = (row - neck_band_y) * 0.18
         wave_x = np.sin(np.linspace(0, freq * np.pi, w) + phase)
@@ -412,7 +428,7 @@ def _apply_sagging(image, landmarks, intensity_raw):
                         interpolation=cv2.INTER_LINEAR,
                         borderMode=cv2.BORDER_REFLECT)
 
-    # ── 4. Ton ayarları — minimal ─────────────────────────────────────────────
+    # ── 4. Ton ayarları
     lab = cv2.cvtColor(result, cv2.COLOR_BGR2LAB).astype(np.float32)
 
     cheek_shadow = np.zeros((h,w),dtype=np.float32)
@@ -422,7 +438,6 @@ def _apply_sagging(image, landmarks, intensity_raw):
     cheek_shadow = cv2.GaussianBlur(cheek_shadow,(51,51),0) * face_soft
     lab[:,:,0] -= cheek_shadow * _scale(t, 0.0, 3.5)
 
-    # Gıdı hafif shading
     dc_bright = np.zeros((h,w),dtype=np.float32)
     cv2.ellipse(dc_bright,(cx, int(chin_pt[1]+face_h*0.10)),
                 (int(face_w*0.28),int(face_h*0.12)),0,0,360,1.0,-1)
@@ -448,7 +463,7 @@ def _apply_eye_bags(image, landmarks, intensity_raw):
     
     result = image.copy()
     yy, xx = np.indices((h,w), dtype=np.float32)
-    noise = _perlin(h, w, scale=0.8, seed=7) # dağınıklık için
+    noise = _perlin(h, w, scale=0.8, seed=7)
     
     for eye_idx in [33, 263]:
         ex, ey = _lm(landmarks, eye_idx)
@@ -456,22 +471,21 @@ def _apply_eye_bags(image, landmarks, intensity_raw):
         cv2.ellipse(bag, (ex, int(ey + face_h*0.058)),
                     (int(face_w*0.128), int(face_h*0.038)), 0,0,360,1.0,-1)
         bag = cv2.GaussianBlur(bag, (27,27), 0)
-        bag = bag * (0.65 + 0.35*noise) # tek renk olmasın
+        bag = bag * (0.65 + 0.35*noise)
         
-        # şişkinlik azaltıldı
         map_y = yy + bag * _scale(t, 0.0, 3.2)
         result = cv2.remap(result, xx, map_y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
         
         lab = cv2.cvtColor(result, cv2.COLOR_BGR2LAB).astype(np.float32)
-        lab[:,:,0] -= bag * _scale(t, 0.0, 10.0)  # 15 → 10
-        lab[:,:,1] += bag * _scale(t, 0.0, 2.2)   # hafif kızıllık (mor yerine)
-        lab[:,:,2] -= bag * _scale(t, 0.0, 2.5)   # 7 → 2.5 (mavilik az)
+        lab[:,:,0] -= bag * _scale(t, 0.0, 10.0)
+        lab[:,:,1] += bag * _scale(t, 0.0, 2.2)
+        lab[:,:,2] -= bag * _scale(t, 0.0, 2.5)
         result = cv2.cvtColor(np.clip(lab,0,255).astype(np.uint8), cv2.COLOR_LAB2BGR)
     return result
 
 def _apply_age_spots(image, landmarks, intensity_raw):
     t = _remap_intensity(intensity_raw)
-    if t < 0.30: # gençte yok
+    if t < 0.30:
         return image
     h, w = image.shape[:2]
     top = _lm(landmarks,10); bottom = _lm(landmarks,152)
@@ -480,77 +494,241 @@ def _apply_age_spots(image, landmarks, intensity_raw):
 
     rng = np.random.default_rng(77)
     spots = np.zeros((h,w), np.float32)
-    n_spots = int(_scale(t, 0, 20)) # 14 → 20, daha fazla
+    n_spots = int(_scale(t, 0, 20))
 
     for _ in range(n_spots):
-        # yanak, alın, şakak bölgesi
         x = rng.integers(int(left[0]+face_w*0.12), int(right[0]-face_w*0.12))
         y = rng.integers(int(top[1]+face_h*0.18), int(bottom[1]-face_h*0.22))
-        r = rng.integers(2, max(4, int(face_w*0.018))) # biraz daha büyük
+        r = rng.integers(2, max(4, int(face_w*0.018)))
         cv2.circle(spots, (x,y), r, 1.0, -1)
 
-    # kenarları yumuşat + dağınıklık
     spots = cv2.GaussianBlur(spots, (0,0), sigmaX=face_w*0.011)
     spots = spots * (0.7 + 0.3*_perlin(h,w,scale=1.2,seed=11))
 
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
-    # ten renginden biraz koyu, kahverengimsi
-    lab[:,:,0] -= spots * _scale(t, 0, 12) # 7 → 12 (koyulaşma)
-    lab[:,:,1] += spots * _scale(t, 0, 6) # 3 → 6 (kızıllık)
-    lab[:,:,2] += spots * _scale(t, 0, 11) # 4 → 11 (sarılık = kahve)
+    lab[:,:,0] -= spots * _scale(t, 0, 12)
+    lab[:,:,1] += spots * _scale(t, 0, 6)
+    lab[:,:,2] += spots * _scale(t, 0, 11)
 
     return cv2.cvtColor(np.clip(lab,0,255).astype(np.uint8), cv2.COLOR_LAB2BGR)
 
+# ---------------------------------------------------------------------------
+# Gray hair
+# FIX: Peruk görünümü giderildi
+#   1) GrabCut sonucu face_mask ile kesilmez; bunun yerine alın çizgisi yakını
+#      için aşağıdan yukarıya doğru yumuşak gradyan maskesi eklendi
+#   2) Yüz sınırı boyunca ekstra Gaussian blur (sigmaX büyük) ile geçiş
+#      yumuşatıldı
+#   3) Saç maskesi erozyon/dilatasyonla rötuşlandı
+# ---------------------------------------------------------------------------
 def _gray_hair(image, landmarks, intensity):
-    if landmarks is None: return image
+    if landmarks is None:
+        return image
+
     t = _remap_intensity(intensity)
     h, w = image.shape[:2]
-    top = _lm(landmarks,10); chin = _lm(landmarks,152)
-    left = _lm(landmarks,234); right = _lm(landmarks,454)
-    fw = _dist(left,right); fh = _dist(top,chin)
-    cx = (left[0]+right[0])//2
 
-    # 1) SAÇ MASKESİ – GrabCut
-    face = _build_face_mask(h,w,landmarks)
-    face_bg = cv2.dilate(face, np.ones((17,17),np.uint8), 1)
+    top = _lm(landmarks, 10)
+    chin = _lm(landmarks, 152)
+    left = _lm(landmarks, 234)
+    right = _lm(landmarks, 454)
 
-    mask = np.full((h,w), cv2.GC_PR_BGD, np.uint8)
-    mask[face_bg>0] = cv2.GC_BGD
+    fw = _dist(left, right)
+    fh = _dist(top, chin)
+    cx = (left[0] + right[0]) // 2
 
-    # saç tohumları – 3 nokta (tepe, sol, sağ)
-    pts = [
-        (cx, int(top[1] - fh*0.25)),
-        (int(left[0]+fw*0.08), int(top[1]+fh*0.05)),
-        (int(right[0]-fw*0.08), int(top[1]+fh*0.05))
+    # 1) Yüz maskesi
+    face = _build_face_mask(h, w, landmarks)
+
+    face_bg = cv2.erode(
+        face,
+        np.ones((5, 5), np.uint8),
+        iterations=2
+    )
+
+    mask = np.full((h, w), cv2.GC_PR_BGD, np.uint8)
+    mask[face_bg > 0] = cv2.GC_BGD
+
+    # 2) Saçın olabileceği geniş bölge
+    hair_prior = np.zeros((h, w), dtype=np.uint8)
+
+    # üst saç
+    cv2.ellipse(
+        hair_prior,
+        (cx, int(top[1] - fh * 0.03)),
+        (int(fw * 0.68), int(fh * 0.38)),
+        0,
+        180,
+        360,
+        255,
+        -1
+    )
+
+    # sol şakak / yan saç
+    cv2.ellipse(
+        hair_prior,
+        (int(left[0] - fw * 0.02), int(top[1] + fh * 0.12)),
+        (int(fw * 0.22), int(fh * 0.34)),
+        10,
+        0,
+        360,
+        255,
+        -1
+    )
+
+    # sağ şakak / yan saç
+    cv2.ellipse(
+        hair_prior,
+        (int(right[0] + fw * 0.02), int(top[1] + fh * 0.12)),
+        (int(fw * 0.22), int(fh * 0.34)),
+        -10,
+        0,
+        360,
+        255,
+        -1
+    )
+
+    hair_prior = cv2.GaussianBlur(hair_prior, (21, 21), 0)
+
+    # 3) Alına seed koyma: sadece koyu saç pikseli bulunursa seed koy
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    candidate_pts = [
+        (cx, int(top[1] - fh * 0.30)),
+        (cx, int(top[1] - fh * 0.12)),
+        (int(cx - fw * 0.22), int(top[1] - fh * 0.08)),
+        (int(cx + fw * 0.22), int(top[1] - fh * 0.08)),
+        (int(left[0] - fw * 0.02), int(top[1] + fh * 0.08)),
+        (int(right[0] + fw * 0.02), int(top[1] + fh * 0.08)),
     ]
-    for x,y in pts:
-        if 0<=y<h and 0<=x<w:
-            mask[max(0,y-6):y+6, max(0,x-6):x+6] = cv2.GC_FGD
 
-    bgd = np.zeros((1,65),np.float64); fgd = np.zeros((1,65),np.float64)
-    cv2.grabCut(image, mask, None, bgd, fgd, 5, cv2.GC_INIT_WITH_MASK)
-    hair = np.where((mask==cv2.GC_FGD)|(mask==cv2.GC_PR_FGD),1,0).astype(np.float32)
-    hair = cv2.GaussianBlur(hair,(9,9),0)
+    def find_dark_seed(x, y, search_radius=24):
+        best = None
+        best_val = 255
 
-    # 2) SAÇIN KENDİ RENGİNDEN
+        for yy in range(max(0, y - search_radius), min(h, y + search_radius + 1)):
+            for xx in range(max(0, x - search_radius), min(w, x + search_radius + 1)):
+                if hair_prior[yy, xx] < 20:
+                    continue
+
+                val = gray[yy, xx]
+
+                if val < best_val and val < 105:
+                    best_val = val
+                    best = (xx, yy)
+
+        return best
+
+    for x, y in candidate_pts:
+        seed = find_dark_seed(x, y)
+
+        if seed is not None:
+            sx, sy = seed
+            cv2.circle(mask, (sx, sy), 6, cv2.GC_FGD, -1)
+
+    # 4) GrabCut
+    bgd = np.zeros((1, 65), np.float64)
+    fgd = np.zeros((1, 65), np.float64)
+
+    cv2.grabCut(
+        image,
+        mask,
+        None,
+        bgd,
+        fgd,
+        5,
+        cv2.GC_INIT_WITH_MASK
+    )
+
+    hair = np.where(
+        (mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD),
+        1,
+        0
+    ).astype(np.float32)
+
+    # 5) Şakaklarda atlanan koyu saçları geri ekle
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV).astype(np.float32)
-    H,S,V = cv2.split(hsv)
-    g = np.clip(t*1.12,0,1); wht = np.clip((t-0.55)*2.6,0,1)
-    f = hair * (0.55*g + 0.62*wht)
-    S = S*(1-f*0.74); V = V + (255-V)*f*0.26
-    out = cv2.cvtColor(np.dstack([H,np.clip(S,0,255),np.clip(V,0,255)]).astype(np.uint8), cv2.COLOR_HSV2BGR)
+    H, S, V = cv2.split(hsv)
 
-    # kaş
-    brow = np.zeros((h,w),np.uint8)
-    for p in [[70,63,105,66,107],[336,296,334,293,300]]:
-        cv2.fillPoly(brow,[np.array([_lm(landmarks,i) for i in p],np.int32)],255)
-    brow = cv2.GaussianBlur(brow,(7,7),0).astype(np.float32)/255*np.clip(t*0.7,0,1)
-    hb = cv2.cvtColor(out,cv2.COLOR_BGR2HSV).astype(np.float32)
-    Hb,Sb,Vb = cv2.split(hb); Sb*=(1-brow*0.42); Vb+=(255-Vb)*brow*0.22
-    out = cv2.cvtColor(np.dstack([Hb,np.clip(Sb,0,255),np.clip(Vb,0,255)]).astype(np.uint8),cv2.COLOR_HSV2BGR)
+    dark_hair = cv2.inRange(V.astype(np.uint8), 0, 150)
+    sat_hair = cv2.inRange(S.astype(np.uint8), 15, 255)
+    color_hair = cv2.bitwise_and(dark_hair, sat_hair)
+
+    color_hair = cv2.bitwise_and(color_hair, hair_prior)
+    color_hair = color_hair.astype(np.float32) / 255.0
+
+    hair = np.maximum(hair, color_hair * 0.75)
+
+    # 6) Alın içine taşmayı yumuşak bastır
+    face_soft = cv2.GaussianBlur(
+        face.astype(np.float32) / 255.0,
+        (0, 0),
+        sigmaX=fw * 0.035
+    )
+
+    hair = hair * (1.0 - face_soft * 0.72)
+
+    # 7) Maske temizliği
+    hair = cv2.morphologyEx(
+        (hair * 255).astype(np.uint8),
+        cv2.MORPH_CLOSE,
+        np.ones((5, 5), np.uint8),
+        iterations=1
+    ).astype(np.float32) / 255.0
+
+    hair = cv2.GaussianBlur(hair, (21, 21), 0)
+    hair = np.clip(hair, 0, 1)
+
+    # 8) Gri/beyaz saç efekti
+    g = np.clip(t * 1.12, 0, 1)
+    wht = np.clip((t - 0.55) * 2.6, 0, 1)
+
+    f = hair * (0.55 * g + 0.62 * wht)
+
+    S = S * (1 - f * 0.74)
+    V = V + (255 - V) * f * 0.26
+
+    out = cv2.cvtColor(
+        np.dstack([
+            H,
+            np.clip(S, 0, 255),
+            np.clip(V, 0, 255)
+        ]).astype(np.uint8),
+        cv2.COLOR_HSV2BGR
+    )
+
+    # 9) Kaş grileştirme
+    brow = np.zeros((h, w), np.uint8)
+
+    for pts_list in [[70, 63, 105, 66, 107], [336, 296, 334, 293, 300]]:
+        cv2.fillPoly(
+            brow,
+            [np.array([_lm(landmarks, i) for i in pts_list], np.int32)],
+            255
+        )
+
+    brow = cv2.GaussianBlur(brow, (7, 7), 0).astype(np.float32) / 255
+    brow = brow * np.clip(t * 0.7, 0, 1)
+
+    hb = cv2.cvtColor(out, cv2.COLOR_BGR2HSV).astype(np.float32)
+    Hb, Sb, Vb = cv2.split(hb)
+
+    Sb *= (1 - brow * 0.42)
+    Vb += (255 - Vb) * brow * 0.22
+
+    out = cv2.cvtColor(
+        np.dstack([
+            Hb,
+            np.clip(Sb, 0, 255),
+            np.clip(Vb, 0, 255)
+        ]).astype(np.uint8),
+        cv2.COLOR_HSV2BGR
+    )
+
     return out
+
 # ---------------------------------------------------------------------------
-# Main
+# Double chin
 # ---------------------------------------------------------------------------
 def _apply_double_chin(image, landmarks, intensity_raw):
     t = _remap_intensity(intensity_raw)
@@ -562,7 +740,7 @@ def _apply_double_chin(image, landmarks, intensity_raw):
     yy, xx = np.indices((h,w), dtype=np.float32)
     chin_mask = np.zeros((h,w), dtype=np.float32)
     cy = int(chin[1] + face_h*0.16)
-    cv2.ellipse(chin_mask, (cx, cy), (int(face_w*0.28), int(face_h*0.16)), 0,0,360,1.0,-1) 
+    cv2.ellipse(chin_mask, (cx, cy), (int(face_w*0.28), int(face_h*0.16)), 0,0,360,1.0,-1)
     chin_mask = cv2.GaussianBlur(chin_mask, (51,51), 0)
     bulge_y = chin_mask * _scale(t, 0.0, 14.5)
     bulge_x = (xx - cx) / (face_w*0.5 + 1e-6)
@@ -576,15 +754,18 @@ def _apply_double_chin(image, landmarks, intensity_raw):
     lab[:,:,0] -= shadow * _scale(t, 0.0, 32.0)
     return cv2.cvtColor(np.clip(lab,0,255).astype(np.uint8), cv2.COLOR_LAB2BGR)
 
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 def apply_aging_effect(image, intensity=0.5, landmarks=None):
     if landmarks is None:
         return image
     img = image.copy()
     f_mask = _build_face_mask(image.shape[0], image.shape[1], landmarks)
     img = _apply_wrinkles(img, f_mask, intensity, landmarks)
-    img = _apply_eye_bags(img, landmarks, intensity)  
+    img = _apply_eye_bags(img, landmarks, intensity)
     img = _apply_age_spots(img, landmarks, intensity)
     img = _apply_sagging(img, landmarks, intensity)
-    img = _apply_double_chin(img, landmarks, intensity) # YENİ
+    img = _apply_double_chin(img, landmarks, intensity)
     img = _gray_hair(img, landmarks, intensity)
     return img
