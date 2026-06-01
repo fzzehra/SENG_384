@@ -191,7 +191,22 @@ def create_app():
     def ar_tryon():
      return render_template("ar_tryon.html")
 
+    @app.route("/glasses-test")
+    def glasses_test():
+        return render_template("glasses_3d_test.html")
+
+    @app.route('/gozluk-dosyasi/<path:filename>')
+    def ozel_gozluk_servisi(filename):
+        import os
+        from flask import send_from_directory
+        # app.py'ın olduğu klasörden bir üst klasöre (SENG_384'e) çıkıp oradaki static'e bağlanıyoruz
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        glasses_dir = os.path.join(root_dir, 'static', 'accessories', 'glasses')
+        return send_from_directory(glasses_dir, filename)
+    
+    
     return app
+
 
 
 app = create_app()

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Glasses Test</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; color: #fff; gap: 16px; }
+h2 { font-size: 20px; opacity: 0.8; }
+.wrap { position: relative; width: 640px; height: 480px; border-radius: 16px; overflow: hidden; }
+#webcam { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
+#overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#status { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 20px; font-size: 13px; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+button { padding: 8px 18px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: #fff; cursor: pointer; font-size: 13px; }
+button.active { border-color: #6060e5; background: rgba(96,96,229,0.3); }
+#startBtn { background: linear-gradient(135deg,#6060e5,#4646e5); border: none; font-size: 15px; padding: 12px 28px; }
+.info { font-size: 12px; opacity: 0.7; text-align: center; max-width: 640px; }
+</style>
+</head>
+<body>
+<h2>3D Glasses AR Test</h2>
+<div class="wrap">
+  <video id="webcam" autoplay playsinline muted></video>
+  <canvas id="overlay"></canvas>
+  <div id="status">Click Start</div>
+</div>
+<div class="controls">
+  <button id="startBtn" onclick="startCamera()">▶ Start Camera</button>
+</div>
+<div class="controls" id="glassesButtons" style="display:none">
+  <button onclick="loadModel('glasses-1-.glb', this)" class="active">Glasses 1</button>
+  <button onclick="loadModel('glasses-7.glb', this)">Glasses 2</button>
+  <button onclick="loadModel('glasses-10.glb', this)">Glasses 3</button>
+  <button onclick="loadModel('glasses-12.glb', this)">Glasses 4</button>
+  <button onclick="clearModel(this)">None</button>
+</div>
+<div class="info" id="debugInfo">--</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+
+const video   = document.getElementById('webcam');
+const canvas  = document.getElementById('overlay');
+const status  = document.getElementById('status');
+const debugEl = document.getElementById('debugInfo');
+
+// ── THREE.JS SETUP ────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(640, 480);
+renderer.setClearColor(0x000000, 0);
+
+const scene  = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(60, 640/480, 0.1, 2000);
+camera.position.set(0, 0, 0);
+camera.lookAt(0, 0, -1);
+
+scene.add(new THREE.AmbientLight(0xffffff, 2.2));
+const dLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dLight.position.set(0, 1, 1);
+scene.add(dLight);
+
+// Temizlenen modelGroup ve durum değişkenleri (Çift tanımlamalar kaldırıldı)
+const modelGroup = new THREE.Group();
+scene.add(modelGroup);
+window.modelGroup = modelGroup;
+
+const loader = new THREE.GLTFLoader();
+let model = null;
+let modelNormScale = 1;
+let modelReady = false;
+
+// ── MODEL MANAGEMENT ──────────────────────────────────────────────
+window.loadModel = function(file, btn) {
+  if(btn) {
+    document.querySelectorAll('#glassesButtons button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  
+  while(modelGroup.children.length > 0) { 
+    modelGroup.remove(modelGroup.children[0]); 
+  }
+  
+  modelReady = false;
+  model = null;
+  status.style.backgroundColor = "rgba(0,0,0,0.6)";
+  status.style.color = "#fff";
+  status.textContent = 'Loading model: ' + file;
+
+  const fullModelPath = '/static/accessories/glasses/' + file;
+
+  loader.load(fullModelPath, gltf => {
+    model = gltf.scene; 
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const pivotOffset = new THREE.Vector3(0, -0.05, 0); 
+    
+    // Modelin pozisyonunu merkezden pivotOffset kadar kaydırarak set ediyoruz
+    model.position.sub(center).add(pivotOffset);
+    modelGroup.add(model);
+
+    modelNormScale = 1.0 / size.x; 
+    modelReady = true;
+    
+    status.textContent = 'Model başarıyla yüklendi ✓';
+    status.style.color = '#49ff46';
+  }, undefined, error => {
+    console.error("Model yükleme hatası:", error);
+    status.textContent = 'Model yüklenemedi!';
+    status.style.color = '#ff4646';
+  });
+};
+
+window.clearModel = function(btn) {
+  document.querySelectorAll('#glassesButtons button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  while(window.modelGroup.children.length > 0) { 
+    window.modelGroup.remove(window.modelGroup.children[0]); 
+  }
+  model = null;
+  modelReady = false;
+};
+ 
+// ── MEDIAPIPE & CAMERA ────────────────────────────────────────────
+let faceLandmarker = null;
+let running = false;
+
+window.startCamera = async function() {
+  document.getElementById('startBtn').style.display = 'none';
+  status.textContent = 'Loading MediaPipe...';
+
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+  );
+
+  faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+      delegate: "GPU"
+    },
+    outputFaceBlendshapes: false,
+    outputFacialTransformationMatrixes: true,
+    runningMode: "VIDEO",
+    numFaces: 1
+  });
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'user', width: 640, height: 480 }
+  });
+  video.srcObject = stream;
+  await new Promise(r => video.onloadedmetadata = r);
+
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  renderer.setSize(video.videoWidth, video.videoHeight);
+  camera.aspect = video.videoWidth / video.videoHeight;
+  camera.updateProjectionMatrix();
+
+  document.getElementById('glassesButtons').style.display = 'flex';
+  const firstBtn = document.querySelector('#glassesButtons button');
+  window.loadModel('glasses-1-.glb', firstBtn);
+
+  running = true;
+  status.textContent = 'Detecting face...';
+  renderLoop();
+};
+
+let lastTime = -1;
+
+function renderLoop() {
+  if (!running) return;
+  requestAnimationFrame(renderLoop);
+
+  const now = performance.now();
+  if (video.readyState < 2 || now === lastTime) {
+    renderer.render(scene, camera);
+    return;
+  }
+  lastTime = now;
+
+  const result = faceLandmarker.detectForVideo(video, now);
+
+  // Parantez kilidi düzeltildi ve güvenli çıkış sağlandı
+  if (!result.facialTransformationMatrixes?.length || !model || !modelReady) {
+    renderer.render(scene, camera);
+    return;
+  }
+
+  // MediaPipe Matrisi → Three.js Matrisi dönüşümü
+ // MediaPipe Matrisi → Three.js Matrisi dönüşümü
+  const mp = result.facialTransformationMatrixes[0].data;
+  const m  = new THREE.Matrix4();
+  m.set(
+    mp[0], mp[4], mp[8],  mp[12],
+    mp[1], mp[5], mp[9],  mp[13],
+    mp[2], mp[6], mp[10], mp[14],
+    mp[3], mp[7], mp[11], mp[15]
+  );
+
+  const pos   = new THREE.Vector3();
+  const quat  = new THREE.Quaternion();
+  const scaleV = new THREE.Vector3();
+  m.decompose(pos, quat, scaleV);
+
+  // ── 🎯 168 NUMARALI BURUN KEMİĞİ NOKTASINA SABİTLEME ──────────────────
+  const lm = result.faceLandmarks[0];
+  const bridgeNose = lm[168]; // Tam iki gözün ortasındaki burun kökü noktası
+
+  // MediaPipe koordinatlarını (0 ile 1 arası) Three.js NDC sistemine (-1 ile +1 arası) çeviriyoruz
+  const ndcX = (bridgeNose.x * 2) - 1;
+  const ndcY = -(bridgeNose.y * 2) + 1;
+
+  // Kamera derinlik ve Frustum (görüş alanı) hesaplamaları
+  const depth = Math.abs(pos.z);
+  const fovRad = THREE.MathUtils.degToRad(30); // Perspektif açısı yarıçapı
+  const halfScreenWorldHeight = Math.tan(fovRad) * depth;
+  const halfScreenWorldWidth = halfScreenWorldHeight * camera.aspect;
+
+  // ── 🗺️ YENİ KOORDİNAT ATAMALARI (YUKARI-AŞAĞI KAYMAYI ÖNLER) 🗺️ ──────────
+  
+  // Yatay Aynalama (X ekseni)
+  pos.x = -(ndcX * halfScreenWorldWidth); 
+  
+  // Dikey Sabitleme (Y ekseni - Artık yüzünde aşağı yukarı zıplamayacak)
+  pos.y = (ndcY * halfScreenWorldHeight) - 0.05; 
+
+  // Gözlüğün kafanın içine kaçmasını engelleyen derinlik (Z offset) düzeltmesi
+  pos.z = -Math.abs(pos.z) + -0.2;
+
+  // Baş hareket ettikçe gözlüğün ters yöne dönmesini engelleyen rotasyon düzeltmesi
+  const qAynali = new THREE.Quaternion(quat.x, -quat.y, -quat.z, quat.w);
+
+  // ── 📏 GÖZ MESAFESİNDEN DİNAMİK ÖLÇEK HESABI 📏 ────────────────────────
+  const W = canvas.width;
+  const lEyePx = lm[33].x * W;
+  const rEyePx = lm[263].x * W;
+  const eyeDistPx = Math.abs(rEyePx - lEyePx);
+
+  const eyeDistWorld = (eyeDistPx / W) * halfScreenWorldWidth * 2;
+  const targetWidth = eyeDistWorld * 1.6;
+  const finalScale  = targetWidth * modelNormScale;
+
+  // ── 🚀 GRUBA UYGULAMA VE ÇİZİM 🚀 ─────────────────────────────────────
+  const Y_FIX = -0.100; 
+
+  window.modelGroup.position.set(pos.x, pos.y + Y_FIX, pos.z);
+  window.modelGroup.quaternion.copy(qAynali);
+  window.modelGroup.scale.setScalar(finalScale);
+
+  debugEl.textContent = `pos:(${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)}) eyeDist:${eyeDistPx.toFixed(0)}px scale:${finalScale.toFixed(3)}`;
+
+  renderer.render(scene, camera);
+}
+
+</script>
+</body>
+</html>

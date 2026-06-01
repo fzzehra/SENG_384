@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Glasses Test</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; color: #fff; gap: 16px; }
+h2 { font-size: 20px; opacity: 0.8; }
+.wrap { position: relative; width: 640px; height: 480px; border-radius: 16px; overflow: hidden; }
+#webcam { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
+#overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; transform: scaleX(-1); }
+#status { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 6px 14px; border-radius: 20px; font-size: 13px; z-index: 10; font-weight: bold; text-align: center; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+button { padding: 8px 18px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: #fff; cursor: pointer; font-size: 13px; font-weight: bold; }
+button.active { border-color: #6060e5; background: rgba(96,96,229,0.3); }
+#startBtn { background: linear-gradient(135deg,#6060e5,#4646e5); border: none; font-size: 15px; padding: 12px 28px; color: white; cursor: pointer; border-radius: 12px; }
+.info { font-size: 12px; opacity: 0.7; text-align: center; max-width: 640px; color: #ffbc42; }
+</style>
+</head>
+<body>
+<h2>3D Glasses AR Landmark Test</h2>
+<div class="wrap">
+  <video id="webcam" autoplay playsinline muted></video>
+  <canvas id="overlay"></canvas>
+  <div id="status">Click Start Camera</div>
+</div>
+<div class="controls">
+  <button id="startBtn" onclick="startCamera()">▶ Start Camera</button>
+</div>
+<div class="controls" id="glassesButtons" style="display:none">
+  <button onclick="loadModel('glasses-1-.glb', this)" class="active">Glasses 1</button>
+  <button onclick="loadModel('glasses-7.glb', this)">Glasses 2</button>
+  <button onclick="loadModel('glasses-10.glb', this)">Glasses 3</button>
+  <button onclick="loadModel('glasses-12.glb', this)">Glasses 4</button>
+  <button onclick="clearModel(this)">None</button>
+</div>
+<div class="info" id="debugInfo">--</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script type="module">
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+
+const video   = document.getElementById('webcam');
+const canvas  = document.getElementById('overlay');
+const status  = document.getElementById('status');
+const debugEl = document.getElementById('debugInfo');
+
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setClearColor(0x000000, 0);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(63, 640/480, 0.1, 1000);
+// Kamerayı merkeze koyup ileriye bakmasını sağlıyoruz
+camera.position.set(0, 0, 5);
+camera.lookAt(0, 0, 0);
+
+// Işıklandırma ayarları
+scene.add(new THREE.AmbientLight(0xffffff, 2.0));
+const dLight = new THREE.DirectionalLight(0xffffff, 1.5);
+dLight.position.set(0, 4, 6);
+scene.add(dLight);
+
+const loader = new GLTFLoader();
+let modelGroup = new THREE.Group();
+scene.add(modelGroup);
+
+let modelReady = false;
+let modelNormScale = 1;
+
+const staticPath = "/static/accessories/glasses/";
+
+// Dosya yüklenemezse devreye girecek 3D Gözlük Modeli Üretici Fonksiyonu
+function createProceduralGlasses() {
+  const glassesGroup = new THREE.Group();
+  
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2, metalness: 0.5 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x00aaff, transparent: true, opacity: 0.4, roughness: 0.1 });
+  
+  // Sol çerçeve
+  const leftFrameGeo = new THREE.TorusGeometry(0.16, 0.02, 16, 32);
+  const leftFrame = new THREE.Mesh(leftFrameGeo, frameMat);
+  leftFrame.position.x = -0.22;
+  glassesGroup.add(leftFrame);
+  
+  // Sol cam
+  const leftLensGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.01, 32);
+  leftLensGeo.rotateX(Math.PI / 2);
+  const leftLens = new THREE.Mesh(leftLensGeo, glassMat);
+  leftLens.position.x = -0.22;
+  glassesGroup.add(leftLens);
+  
+  // Sağ çerçeve
+  const rightFrameGeo = new THREE.TorusGeometry(0.16, 0.02, 16, 32);
+  const rightFrame = new THREE.Mesh(rightFrameGeo, frameMat);
+  rightFrame.position.x = 0.22;
+  glassesGroup.add(rightFrame);
+
+  // Sağ cam
+  const rightLensGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.01, 32);
+  rightLensGeo.rotateX(Math.PI / 2);
+  const rightLens = new THREE.Mesh(rightLensGeo, glassMat);
+  rightLens.position.x = 0.22;
+  glassesGroup.add(rightLens);
+  
+  // Burun köprüsü
+  const bridgeGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.12, 16);
+  bridgeGeo.rotateZ(Math.PI / 2);
+  const bridge = new THREE.Mesh(bridgeGeo, frameMat);
+  bridge.position.y = 0.02;
+  glassesGroup.add(bridge);
+  
+  return glassesGroup;
+}
+
+window.loadModel = function(file, btn) {
+  if(btn) {
+    document.querySelectorAll('#glassesButtons button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  
+  while(modelGroup.children.length > 0) { modelGroup.remove(modelGroup.children[0]); }
+  modelReady = false;
+  
+  status.style.backgroundColor = "rgba(0,0,0,0.6)";
+  status.style.color = "#fff";
+  status.textContent = 'Loading model: ' + file;
+
+  const fullModelPath = staticPath + file;
+
+  loader.load(fullModelPath, gltf => {
+    const loadedModel = gltf.scene;
+    setupModel(loadedModel, 'GLTF Dosyası Başarıyla Yüklendi ✓', "#49ff46");
+  }, null, err => {
+    console.warn("Yerel dosya okunamadı, dahili 3D model aktif ediliyor.");
+    const fallbackModel = createProceduralGlasses();
+    setupModel(fallbackModel, 'Dahili 3D Gözlük Aktif (Lokal Dosya Bulunamadı) ✓', "#ffbc42");
+  });
+};
+
+function setupModel(obj, msg, color) {
+  const box  = new THREE.Box3().setFromObject(obj);
+  const size = box.getSize(new THREE.Vector3());
+  const cent = box.getCenter(new THREE.Vector3());
+
+  obj.position.sub(cent); // Geometrik merkeze eşitleme
+  modelGroup.add(obj);
+
+  // Genişliğe göre (X ekseni) ölçek normu hesaplama
+  modelNormScale = 1.0 / size.x;
+  
+  modelReady = true;
+  status.style.color = color;
+  status.textContent = msg;
+}
+
+window.clearModel = function(btn) {
+  document.querySelectorAll('#glassesButtons button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  while(modelGroup.children.length > 0) { modelGroup.remove(modelGroup.children[0]); }
+  modelReady = false;
+  status.textContent = 'Model cleared';
+};
+
+let faceLandmarker = null;
+let running = false;
+
+window.startCamera = async function() {
+  document.getElementById('startBtn').style.display = 'none';
+  status.textContent = 'Loading MediaPipe...';
+
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+  );
+
+  faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+      delegate: "GPU"
+    },
+    outputFaceBlendshapes: false,
+    outputFacialTransformationMatrixes: false, // Hata veren matrisi tamamen kapattık
+    runningMode: "VIDEO",
+    numFaces: 1
+  });
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'user', width: 640, height: 480 }
+  });
+  video.srcObject = stream;
+  await new Promise(r => video.onloadedmetadata = r);
+
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  renderer.setSize(video.videoWidth, video.videoHeight);
+  camera.aspect = video.videoWidth / video.videoHeight;
+  camera.updateProjectionMatrix();
+
+  document.getElementById('glassesButtons').style.display = 'flex';
+  window.loadModel('glasses-1-.glb', document.querySelector('#glassesButtons button'));
+
+  running = true;
+  status.textContent = 'Detecting face...';
+  renderLoop();
+};
+
+function renderLoop() {
+  if (!running) return;
+  requestAnimationFrame(renderLoop);
+
+  if (video.readyState < 2) {
+    renderer.render(scene, camera);
+    return;
+  }
+
+  const result = faceLandmarker.detectForVideo(video, performance.now());
+
+  if (!result.faceLandmarks || result.faceLandmarks.length === 0 || !modelReady) {
+    modelGroup.visible = false;
+    renderer.render(scene, camera);
+    return;
+  }
+
+  modelGroup.visible = true;
+  const landmarks = result.faceLandmarks[0];
+
+  // 1. Koordinatları Ekrana İzdüşürme Ayarları
+  const targetDepth = 4.0; // Kameranın önündeki sabit çizim düzlemi derinliği
+  const fovRad = THREE.MathUtils.degToRad(camera.fov / 2);
+  const worldHeight = 2 * Math.tan(fovRad) * targetDepth;
+  const worldWidth = worldHeight * camera.aspect;
+
+  // 2. Noktaları Seçme
+  const n = landmarks[168]; // Tam burun kemiği noktası (Gözlüğün oturacağı yer)
+  const l = landmarks[127]; // Sol şakak
+  const r = landmarks[356]; // Sağ şakak
+
+  // 3. Dünya Koordinatlarına Dönüştürme
+  const posNose = new THREE.Vector3((n.x - 0.5) * worldWidth, (0.5 - n.y) * worldHeight, 5.0 - targetDepth - (n.z * worldWidth * 0.5));
+  const posLeft = new THREE.Vector3((l.x - 0.5) * worldWidth, (0.5 - l.y) * worldHeight, 5.0 - targetDepth - (l.z * worldWidth * 0.5));
+  const posRight = new THREE.Vector3((r.x - 0.5) * worldWidth, (0.5 - r.y) * worldHeight, 5.0 - targetDepth - (r.z * worldWidth * 0.5));
+
+  // 4. Pozisyonu ve Burun Merkezini Ayarlama
+  modelGroup.position.copy(posNose);
+  modelGroup.position.z += 0.05; // Burun kemiğinden hafifçe öne çıkarma payı
+
+  // 5. Ölçekleme (İki şakak arasındaki mesafeye tam uyum sağlama)
+  const faceWidth = posLeft.distanceTo(posRight);
+  const finalScale = faceWidth * 0.95 * modelNormScale; 
+  modelGroup.scale.setScalar(finalScale);
+
+  // 6. Rotasyon (Kafanın eğikliğini ve açısını yakalama)
+  const roll = Math.atan2(posRight.y - posLeft.y, posRight.x - posLeft.x);
+  const yaw  = Math.atan2(posLeft.z - posRight.z, posRight.x - posLeft.x);
+  modelGroup.rotation.set(0, yaw, roll);
+
+  debugEl.textContent = `Yüz Algılandı | Genişlik: ${faceWidth.toFixed(2)} | Ölçek: ${finalScale.toFixed(3)}`;
+  renderer.render(scene, camera);
+}
+</script>
+</body>
+</html>
