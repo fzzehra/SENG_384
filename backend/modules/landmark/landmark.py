@@ -179,6 +179,46 @@ def generate_extended_landmarks(
         ),
     }
 
+        # eyeliner için detaylı yardımcı noktalar
+    left_eye_outer = p(33)
+    left_eye_inner = p(133)
+    right_eye_outer = p(263)
+    right_eye_inner = p(362)
+
+    left_eye_w = abs(left_eye_inner[0] - left_eye_outer[0])
+    right_eye_w = abs(right_eye_outer[0] - right_eye_inner[0])
+
+    extended["eyeliner"] = {
+        "left_upper_lid": [p(i) for i in [33, 246, 161, 160, 159, 158, 157, 173, 133]],
+        "right_upper_lid": [p(i) for i in [263, 466, 388, 387, 386, 385, 384, 398, 362]],
+
+        # dış köşe / wing başlangıçları
+        "left_outer": left_eye_outer,
+        "right_outer": right_eye_outer,
+
+        # cat-eye wing bitişleri
+        "left_wing_end": (
+            max(0, int(left_eye_outer[0] - left_eye_w * 0.33)),
+            max(0, int(left_eye_outer[1] - left_eye_w * 0.18))
+        ),
+        "right_wing_end": (
+            min(w - 1, int(right_eye_outer[0] + right_eye_w * 0.33)),
+            max(0, int(right_eye_outer[1] - right_eye_w * 0.18))
+        ),
+
+        # kalınlaştırma için üst kapak alanı
+        "left_liner_fill": [
+            p(33), p(246), p(161), p(160), p(159), p(158), p(157), p(173), p(133),
+            (left_eye_inner[0], left_eye_inner[1] + int(left_eye_w * 0.05)),
+            (left_eye_outer[0], left_eye_outer[1] + int(left_eye_w * 0.05))
+        ],
+
+        "right_liner_fill": [
+            p(263), p(466), p(388), p(387), p(386), p(385), p(384), p(398), p(362),
+            (right_eye_inner[0], right_eye_inner[1] + int(right_eye_w * 0.05)),
+            (right_eye_outer[0], right_eye_outer[1] + int(right_eye_w * 0.05))
+        ]
+    }
     return extended
 
 def draw_landmarks(
@@ -268,9 +308,54 @@ def draw_landmarks(
         cv2.circle(output, extended["left_ear"], 5, (255, 120, 0), 2)
         cv2.circle(output, extended["right_ear"], 5, (255, 120, 0), 2)
 
-        # noktaları göster
-        for name, point in extended.items():
-            cv2.circle(output, point, radius + 2, (255, 0, 255), -1)
+    # noktaları göster
+    for name, point in extended.items():
+        if name == "eyeliner":
+            continue
+
+        if not isinstance(point, tuple):
+            continue
+
+        if len(point) != 2:
+            continue
+
+        cv2.circle(
+            output,
+            (int(point[0]), int(point[1])),
+            radius + 2,
+            (255, 0, 255),
+            -1
+        )
+
+    # eyeliner yardımcı çizgileri
+    if "eyeliner" in extended:
+        eyeliner = extended["eyeliner"]
+
+        for pts in [eyeliner["left_upper_lid"], eyeliner["right_upper_lid"]]:
+            for i in range(len(pts) - 1):
+                cv2.line(
+                    output,
+                    tuple(pts[i]),
+                    tuple(pts[i + 1]),
+                    (0, 0, 255),
+                    2
+                )
+
+        cv2.line(
+            output,
+            tuple(eyeliner["left_outer"]),
+            tuple(eyeliner["left_wing_end"]),
+            (0, 0, 255),
+            2
+        )
+
+        cv2.line(
+            output,
+            tuple(eyeliner["right_outer"]),
+            tuple(eyeliner["right_wing_end"]),
+            (0, 0, 255),
+            2
+        )
     return output
 
 

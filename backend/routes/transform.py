@@ -20,6 +20,7 @@ from backend.modules.hair.hat import place_hat
 from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay, apply_eyebrow_color
 from backend.modules.beard.beard import apply_beard_effect
 from backend.modules.moustache.moustache import apply_moustache
+from backend.modules.makeup.makeup import apply_makeup_pipeline
 
 pose_model = YOLO("yolov8n-pose.pt")
 transform_bp = Blueprint("transform", __name__)
@@ -311,7 +312,7 @@ def transform_image():
             "type": data.get("transform_type"),
             "intensity": data.get("intensity", 0.5)
         }]
-
+   
     if not image_path:
         return error_response("image_path is required.", 400)
     
@@ -622,6 +623,33 @@ def transform_image():
                     results_meta.append("eye_color")
                 else:
                     print("Landmark detection failed for eye_color.")
+            
+            elif t_type == "eyeliner":
+                landmark_result = process_landmark_pipeline(output_image)
+
+                if landmark_result.get("success"):
+                    params = transform.get("params", {})
+                    wing = params.get("wing", True)
+
+                    makeup_type = (
+                        "eyeliner"
+                        if wing
+                        else "eyeliner_no_wing"
+                    )
+
+                    output_image = apply_makeup_pipeline(
+                        image=output_image,
+                        landmarks=landmark_result["landmarks"],
+                        makeup_type=makeup_type,
+                        color_hex=color,
+                        intensity=t_intensity
+                    )
+
+                    results_meta.append("eyeliner")
+                    print("APPLIED: eyeliner")
+                else:
+                    print("Landmark detection failed for eyeliner.")
+
             elif t_type in ["earring", "necklace"]:
                 params = transform.get("params", {})
                 item_name = params.get("item", "")

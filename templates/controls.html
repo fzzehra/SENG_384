@@ -539,6 +539,26 @@
           <input type="range" id="browInt" min="0" max="100" value="60">
         </div>
 
+        <!-- EYELİNER -->
+<div class="cosmetic-shelf">
+  <div class="shelf-label">Eyeliner</div>
+  <div class="shelf-row" id="eyelinerRow"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+    <div class="color-row" style="margin:0">
+      <label>Custom</label>
+      <input type="color" id="eyelinerCustom" value="#1a1a1a">
+    </div>
+    <button class="sm-btn" onclick="clearMakeup('eyeliner')">Remove</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+    <label style="font-size:12px;color:#8888bb;font-weight:500;">Wing</label>
+    <input type="checkbox" id="eyelinerWing" checked style="width:16px;height:16px;cursor:pointer;">
+  </div>
+  <div class="int-row">
+    <span class="int-lbl">Intensity</span><span class="int-val" id="eyeliner-iv">85%</span>
+  </div>
+  <input type="range" id="eyelinerInt" min="0" max="100" value="85">
+</div>
       </div><!-- /panel-makeup -->
 
       <!-- ════════ HAIR ════════ -->
@@ -693,6 +713,7 @@ function togglePal(id, btn) {
   ['esInt',    'es-iv',    'eyeshadow'],
   ['lensInt',  'lens-iv',  'eye_color'],
   ['browInt',  'brow-iv',  'eyebrow_color'],
+  ['eyelinerInt', 'eyeliner-iv', 'eyeliner'],
 ].forEach(([id, lblId, type]) => {
   document.getElementById(id)?.addEventListener('input', e => {
     document.getElementById(lblId).textContent = e.target.value + '%';
@@ -709,6 +730,12 @@ document.getElementById('lensCustom')?.addEventListener('input', e =>
   applyMakeup('eye_color', e.target.value, getIntPct('lensInt')));
 document.getElementById('browCustom')?.addEventListener('input', e =>
   applyMakeup('eyebrow_color', e.target.value, getIntPct('browInt')));
+  document.getElementById('eyelinerCustom')?.addEventListener('input', e =>
+  applyEyeliner(e.target.value));
+
+document.getElementById('eyelinerWing')?.addEventListener('change', () => {
+  if (makeup['eyeliner']) applyEyeliner(makeup['eyeliner'].color);
+});
 
 // ─── BUILD COSMETIC ITEMS ────────────────────
 const LIP_COLORS   = ['#c9184a','#ff4d6d','#9d0208','#e5989b','#b5179e','#7b2cbf','#a44a3f','#6a040f'];
@@ -716,6 +743,7 @@ const BLUSH_COLORS = ['#ffb3b3','#ffcc99','#e6a8d7','#cd853f','#f4a460','#e9967a
 const ES_COLORS    = ['#8b4513','#6a0dad','#ffd700','#333333','#1f618d','#117864','#cb4335','#f39c12'];
 const LENS_COLORS  = ['#4a90e2','#50C878','#C9A86A','#9b59b6','#00bcd4','#ff7043','#795548','#607d8b'];
 const BROW_COLORS  = ['#4a2c1a','#1a1a1a','#8b4513','#c4a484','#5d3a24','#704214','#3b1f0a','#2b1a12'];
+const EYELINER_COLORS = ['#1a1a1a','#000000','#2c2c54','#1b4f72','#4a235a','#784212','#1d8348','#922b21'];
 const HAIR_COLORS  = ['#000000','#2b1a12','#3b1f0a','#8b4513','#cd853f','#deb887','#c4a484','#ffd700',
                       '#800000','#a52a2a','#c71585','#4b0082','#0000ff','#27ae60','#ff6347','#708090'];
 const ALL_PALETTE  = ['#ff0000','#cc0000','#990000','#ff4d4d','#ffb3b3','#ff3399','#ff99cc','#ff007f',
@@ -793,6 +821,32 @@ function buildBrow(color, container) {
   return btn;
 }
 
+function buildEyeliner(color, container) {
+  const btn = document.createElement('button');
+  btn.className = 'eyebrow-item'; 
+  btn.style.setProperty('--ewc', color); 
+  btn.dataset.mk = 'eyeliner';
+  btn.innerHTML = `<div class="p-cap"></div><div class="p-eraser"></div>
+    <div class="p-ring"></div><div class="p-body"></div>
+    <div class="p-shave"></div><div class="p-tip"></div>`;
+  btn.addEventListener('click', () => {
+    selectItem('eyeliner', color, btn, container);
+    document.getElementById('eyelinerCustom').value = color;
+    applyEyeliner(color);
+  });
+  return btn;
+}
+
+function applyEyeliner(color) {
+  const wing = document.getElementById('eyelinerWing').checked;
+  makeup['eyeliner'] = { 
+    color, 
+    intensity: getIntPct('eyelinerInt') / 100,
+    params: { wing }
+  };
+  trigger();
+}
+
 function buildAllSwatches() {
   const lipRow   = document.getElementById('lipRow');
   const blushRow = document.getElementById('blushRow');
@@ -830,6 +884,8 @@ function buildAllSwatches() {
     });
     chipRow.appendChild(d);
   });
+  const eyelinerRow = document.getElementById('eyelinerRow');
+  EYELINER_COLORS.forEach(c => eyelinerRow.appendChild(buildEyeliner(c, eyelinerRow)));
 }
 
 // ─── ACCESSORIES ─────────────────────────────
@@ -928,9 +984,10 @@ document.getElementById('hairColorPicker')?.addEventListener('input', () => trig
 // ─── TRANSFORM BUILDER ───────────────────────
 function buildTransforms() {
   const t = [];
-  Object.entries(makeup).forEach(([type, { color, intensity }]) => {
-    t.push({ type, color, intensity, params: type === 'eyebrow_color' ? { color } : undefined });
-  });
+  Object.entries(makeup).forEach(([type, { color, intensity, params }]) => {
+    const finalParams = params ?? (type === 'eyebrow_color' ? { color } : undefined);
+    t.push({ type, color, intensity, params: finalParams });
+});
   document.querySelectorAll('.refine-slider').forEach(s => {
     if (s.dataset.type === 'hair_color') return;
     const v = parseInt(s.value);
