@@ -171,120 +171,88 @@ def apply_eyeshadow(image, landmarks, color_hex="#b565a7", intensity=0.35):
 
     return blend_mask(image, mask, hex_to_bgr(color_hex), intensity)
 
-def apply_eyeliner(image, landmarks, color_hex="#1a1a1a", intensity=0.85, wing=True, thickness=0.5):
+def apply_eyeliner(image, landmarks, color_hex="#0a9e5c", intensity=0.85, wing=True, thickness=0.5):
+    import numpy as np
+    import cv2
+
     h, w = image.shape[:2]
     mask = np.zeros((h, w), dtype=np.uint8)
 
     def pt(i):
         return np.array(get_point_xy(landmarks, i, w, h), dtype=np.float32)
 
-    base_thick = 1 + thickness * 1
-    tip_thick  = 3 + thickness * 4
+    # --- RESİMDEKİ İNCELİK ---
+    base_px = 1 + thickness * 0.6 # iç kısım ~1.3px
+    max_px = 2 + thickness * 1.2 # dış kısım ~2.6px
 
-    left_lash_idx  = [133, 173, 157, 158, 159, 160, 161, 246, 33]
+    left_lash_idx = [133, 173, 157, 158, 159, 160, 161, 246, 33]
     right_lash_idx = [362, 398, 384, 385, 386, 387, 388, 466, 263]
 
     def draw_eye_liner(lash_idx):
-        pts = np.array([pt(i) for i in lash_idx])
+        pts = np.array([pt(i) for i in lash_idx], dtype=np.float32)
+        # iç köşenin %20'sini atla - resimdeki gibi
+        start = int(len(pts) * 0.22)
+        pts = pts[start:]
+        # kirpik dibinin 1px üstüne al
+        pts[:, 1] -= h * 0.0022
+
         n = len(pts)
-        taper_start = 0.72
-
         for i in range(n - 1):
-            progress  = i / (n - 1)
-            raw_thick = base_thick + progress * (h * 0.008 * (0.5 + tip_thick / 7))
-
-            # Sadece wing kapalıyken son kısımda sivrileş
-            if not wing and progress >= taper_start:
-                taper_ratio = 1.0 - (progress - taper_start) / (1.0 - taper_start)
-                taper_ratio = taper_ratio ** 0.6
-                raw_thick   = raw_thick * taper_ratio
-
-            thickness_px = max(1, int(raw_thick))
+            prog = i / (n - 1)
+            thick = int(np.clip(base_px + prog * (max_px - base_px), 1, 4))
             p1 = pts[i].astype(np.int32)
-            p2 = pts[i + 1].astype(np.int32)
-            p1[1] += max(0, int(h * 0.0005))
-            p2[1] += max(0, int(h * 0.0005))
-            cv2.line(mask, tuple(p1), tuple(p2), 255, thickness_px)
-
+            p2 = pts[i+1].astype(np.int32)
+            cv2.line(mask, tuple(p1), tuple(p2), 255, thick, cv2.LINE_AA)
         return pts
 
-    left_pts  = draw_eye_liner(left_lash_idx)
+    left_pts = draw_eye_liner(left_lash_idx)
     right_pts = draw_eye_liner(right_lash_idx)
 
     if wing:
         def draw_wing(pts):
-            # Dış köşe noktası (son nokta)
-            outer = pts[-1].astype(np.float32)
-            # Kanattan 2 nokta öncesini al — doğal göz açısını hesapla
-            ref   = pts[-3].astype(np.float32)
+            outer = pts[-1]
+            ref = pts[-3]
+            eye_w = np.linalg.norm(pts[-1] - pts[0])
+            wing_len = eye_w * 0.38 # resimdeki uzunluk
 
-            eye_width = np.linalg.norm(pts[-1] - pts[0])
-            wing_len  = eye_width * 0.28
+            dir_vec = (outer - ref) / (np.linalg.norm(outer - ref) + 1e-6)
+            lift = np.array([0, -eye_w * 0.26]) # yukarı kalkış
+            tip = outer + dir_vec * wing_len + lift
 
-            direction = outer - ref
-            direction = direction / (np.linalg.norm(direction) + 1e-6)
-
-            lift     = np.array([0, -eye_width * 0.18])
-            wing_tip = outer + direction * wing_len + lift
-
-            # Kanat: dış köşeden uca doğru incelir (4px → 1px)
-            steps = 8
+            # tek çizgi, 3px -> 1px incelen
+            steps = 14
             for i in range(steps):
                 t0 = i / steps
-                t1 = (i + 1) / steps
-                p1 = (outer + (wing_tip - outer) * t0).astype(np.int32)
-                p2 = (outer + (wing_tip - outer) * t1).astype(np.int32)
-                thick = max(1, int(4 * (1 - t1)))
-                cv2.line(mask, tuple(p1), tuple(p2), 255, thick)
-
-            # Kanat altını kapat — dolu üçgen görünümü
-            mid = (outer + wing_tip) / 2 + np.array([0, eye_width * 0.04])
-            tri = np.array([outer, wing_tip, mid], dtype=np.int32)
-            cv2.fillPoly(mask, [tri], 255)
+                t1 = (i+1) / steps
+                p1 = outer + (tip - outer) * t0
+                p2 = outer + (tip - outer) * t1
+                thick = max(1, int(3.2 * (1 - t1) + 0.8))
+                cv2.line(mask, tuple(p1.astype(int)), tuple(p2.astype(int)), 255, thick, cv2.LINE_AA)
 
         draw_wing(left_pts)
         draw_wing(right_pts)
 
-    # Göz açıklığı — taşmayı engelle
-    left_eye_open_idx  = [33, 246, 161, 160, 159, 158, 157, 173, 133,
-                          155, 154, 153, 145, 144, 163, 7]
-    right_eye_open_idx = [263, 466, 388, 387, 386, 385, 384, 398, 362,
-                          382, 381, 380, 374, 373, 390, 249]
+    # göz içine taşmayı kes
+    left_eye_open_idx = [33,246,161,160,159,158,157,173,133,155,154,153,145,144,163,7]
+    right_eye_open_idx = [263,466,388,387,386,385,384,398,362,382,381,380,374,373,390,249]
+    eye_open = np.zeros((h,w), np.uint8)
+    cv2.fillPoly(eye_open, [np.array([pt(i) for i in left_eye_open_idx], np.int32)], 255)
+    cv2.fillPoly(eye_open, [np.array([pt(i) for i in right_eye_open_idx], np.int32)], 255)
+    mask = cv2.bitwise_and(mask, cv2.bitwise_not(eye_open))
 
-    left_eye_poly  = np.array([pt(i).astype(np.int32) for i in left_eye_open_idx],  dtype=np.int32)
-    right_eye_poly = np.array([pt(i).astype(np.int32) for i in right_eye_open_idx], dtype=np.int32)
+    # SADECE anti-alias için minik blur (senin kodda 2 büyük blur vardı)
+    mask = cv2.GaussianBlur(mask, (3,3), 0)
 
-    eye_open_mask = np.zeros((h, w), dtype=np.uint8)
-    cv2.fillPoly(eye_open_mask, [left_eye_poly],  255)
-    cv2.fillPoly(eye_open_mask, [right_eye_poly], 255)
-    mask = cv2.bitwise_and(mask, cv2.bitwise_not(eye_open_mask))
+    # blend
+    mask_f = mask.astype(np.float32) / 255.0
+    color_bgr = hex_to_bgr(color_hex)
+    intensity = np.clip(float(intensity), 0, 1)
 
-    # Doğal kenar
-    blur1 = max(3, int(min(h, w) * 0.003))
-    if blur1 % 2 == 0:
-        blur1 += 1
-    mask = cv2.GaussianBlur(mask, (blur1, blur1), 0)
-
-    mask_f       = mask.astype(np.float32) / 255.0
-    feather_size = max(5, int(min(h, w) * 0.008))
-    if feather_size % 2 == 0:
-        feather_size += 1
-    mask_soft    = cv2.GaussianBlur(mask_f, (feather_size, feather_size), 0)
-
-    kernel     = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    core       = cv2.erode(mask, kernel, iterations=1).astype(np.float32) / 255.0
-    final_mask = core * mask_f + (1 - core) * mask_soft
-
-    color_bgr   = hex_to_bgr(color_hex)
-    intensity   = max(0.0, min(1.0, float(intensity)))
-    output      = image.copy().astype(np.float32)
-    color_layer = np.full_like(output, color_bgr, dtype=np.float32)
-    alpha       = final_mask * intensity
-
+    out = image.astype(np.float32)
     for c in range(3):
-        output[:, :, c] = output[:, :, c] * (1 - alpha) + color_layer[:, :, c] * alpha
+        out[:,:,c] = out[:,:,c]*(1 - mask_f*intensity) + color_bgr[c]*mask_f*intensity
 
-    return np.clip(output, 0, 255).astype(np.uint8)
+    return np.clip(out, 0, 255).astype(np.uint8)
 
 def apply_eye_color(image, landmarks, color_hex="#4a90e2", intensity=0.5):
     h, w = image.shape[:2]
