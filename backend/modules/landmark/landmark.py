@@ -188,6 +188,17 @@ def generate_extended_landmarks(
     left_eye_w = abs(left_eye_inner[0] - left_eye_outer[0])
     right_eye_w = abs(right_eye_outer[0] - right_eye_inner[0])
 
+    extended["blush"] = {
+
+    "left_front": p(116),
+    "left_mid": p(123),
+    "left_back": p(50),
+
+    "right_front": p(345),
+    "right_mid": p(352),
+    "right_back": p(280),
+
+}
     extended["eyeliner"] = {
         "left_upper_lid": [p(i) for i in [33, 246, 161, 160, 159, 158, 157, 173, 133]],
         "right_upper_lid": [p(i) for i in [263, 466, 388, 387, 386, 385, 384, 398, 362]],

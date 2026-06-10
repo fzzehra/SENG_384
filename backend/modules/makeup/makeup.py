@@ -67,58 +67,81 @@ def apply_lip_color(image, landmarks, color_hex="#d96b86", intensity=0.5):
 
     return blend_mask(image, mask, hex_to_bgr(color_hex), intensity)
 
+def apply_blush(image, landmarks, color_hex="#f35c7a", intensity=0.32):
+    import numpy as np
+    import cv2
 
-def apply_blush(image, landmarks, color_hex="#f4a7b9", intensity=0.35):
     h, w = image.shape[:2]
-    mask = np.zeros((h, w), dtype=np.uint8)
+    def p(idx): return np.array(get_point_xy(landmarks, idx, w, h), dtype=np.float32)
 
-    def p(idx):
-        return np.array(get_point_xy(landmarks, idx, w, h), dtype=np.float32)
+    face_width = np.linalg.norm(p(454) - p(234))
+    face_height = np.linalg.norm(p(10) - p(152))
 
-    nose = p(1)
-    left_anchor = p(50)
-    right_anchor = p(280)
-    left_face_edge = p(234)
-    right_face_edge = p(454)
+    # --- 1. MERKEZ: TAM ELMACIK (yukarı + içe) ---
+    # sol yanak (izleyicinin sağı): 123 = göz altı, 101 = buruna yakın iç yanak
+    left_center = p(123)*0.50 + p(101)*0.25 + p(50)*0.15 + p(205)*0.10
+    right_center = p(352)*0.50 + p(330)*0.25 + p(280)*0.15 + p(425)*0.10
 
-    left_center = (left_anchor * 0.88 + nose * 0.12).astype(np.int32)
-    right_center = (right_anchor * 0.88 + nose * 0.12).astype(np.int32)
+    # gözün hemen altına otursun (eskiden fazla aşağı itiyorduk)
+    left_eye_bottom = p(145)[1]
+    right_eye_bottom = p(374)[1]
+    left_center[1] = max(left_center[1], left_eye_bottom + face_height*0.035)
+    right_center[1] = max(right_center[1], right_eye_bottom + face_height*0.035)
 
-    shift_down = int(h * 0.015)
-    left_center[1] += shift_down
-    right_center[1] += shift_down
+    def build_round(center):
+        mask = np.zeros((h, w), dtype=np.float32)
+        r = face_width * 0.125 # kontur için küçülttük
 
-    face_width = np.linalg.norm(right_face_edge - left_face_edge)
-    axis_x = max(24, int(face_width * 0.095))
-    axis_y = max(16, int(face_width * 0.070))
+        cv2.circle(mask, (int(center[0]), int(center[1])), int(r), 1.0, -1)
+        mask = cv2.GaussianBlur(mask, (0,0), sigmaX=r*0.55, sigmaY=r*0.5)
+        return mask
 
-    cv2.ellipse(mask, tuple(left_center), (axis_x, axis_y), -18, 0, 360, 255, -1)
-    cv2.ellipse(mask, tuple(right_center), (axis_x, axis_y), 18, 0, 360, 255, -1)
+    left_mask = build_round(left_center)
+    right_mask = build_round(right_center)
+    combined = np.clip(left_mask + right_mask, 0, 1)
 
-    face_outline_idx = [
-        10, 338, 297, 332, 284, 251, 389, 356, 454,
-        323, 361, 288, 397, 365, 379, 378, 400, 377,
-        152, 148, 176, 149, 150, 136, 172, 58, 132,
-        93, 234, 127, 162, 21, 54, 103, 67, 109
-    ]
+    # --- 2. GÖZ KALKANI ---
+    left_eye_c = (p(33) + p(133)) * 0.5
+    right_eye_c = (p(362) + p(263)) * 0.5
+    eye_mask = np.zeros((h,w), np.uint8)
+    eye_r = int(face_width * 0.12)
+    cv2.circle(eye_mask, (int(left_eye_c[0]), int(left_eye_c[1])), eye_r, 255, -1)
+    cv2.circle(eye_mask, (int(right_eye_c[0]), int(right_eye_c[1])), eye_r, 255, -1)
+    eye_f = cv2.GaussianBlur(eye_mask, (0,0), sigmaX=eye_r*0.5).astype(np.float32)/255.0
+    combined *= (1.0 - eye_f * 0.95)
 
+    # --- 3. BURUN + AĞIZ ---
+    nose_center = p(1)
+    nose_shield = np.zeros((h,w), np.uint8)
+    cv2.ellipse(nose_shield, (int(nose_center[0]), int(nose_center[1])),
+                (int(face_width*0.09), int(face_height*0.11)), 0,0,360,255,-1)
+    nose_f = cv2.GaussianBlur(nose_shield, (0,0), sigmaX=face_width*0.06).astype(np.float32)/255.0
+    combined *= (1.0 - nose_f*0.7)
+
+    # --- 4. YÜZ SINIRI ---
+    face_outline_idx = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109]
     face_poly = get_points(landmarks, face_outline_idx, w, h)
-
-    face_mask = np.zeros((h, w), dtype=np.uint8)
+    face_mask = np.zeros((h,w), np.uint8)
     cv2.fillPoly(face_mask, [face_poly], 255)
+    face_eroded = cv2.erode(face_mask, np.ones((7,7), np.uint8), iterations=2)
+    face_soft = cv2.GaussianBlur(face_eroded, (0,0), sigmaX=face_width*0.025).astype(np.float32)/255.0
+    combined *= face_soft
 
-    mask = cv2.bitwise_and(mask, face_mask)
+    combined = cv2.GaussianBlur(combined, (0,0), sigmaX=face_width*0.02)
+    combined = np.power(combined, 0.95)
 
-    blur_size = max(41, int(min(h, w) * 0.08))
-    if blur_size % 2 == 0:
-        blur_size += 1
+    mask_uint8 = (np.clip(combined,0,1) * 255).astype(np.uint8)
 
-    mask = cv2.GaussianBlur(mask, (blur_size, blur_size), 0)
-
-    final_intensity = max(0.0, min(1.0, intensity)) * 0.75
-
-    return blend_mask(image, mask, hex_to_bgr(color_hex), final_intensity)
-
+    if intensity > 1.5:  # 0-100 aralığı
+            slider_norm = intensity / 100.0
+    else:                # 0-1 aralığı
+            slider_norm = intensity
+        
+    slider_norm = np.clip(slider_norm, 0, 1)
+    # 1.7 kuvvet = başta çok yumuşak, sonda yavaş artar
+    # 0.58 = maksimum opaklık (100 bile %58)
+    final_intensity = (slider_norm ** 1.7) * 0.58
+    return blend_mask(image, mask_uint8, hex_to_bgr(color_hex), np.clip(intensity,0,1))
 
 def apply_eyeshadow(image, landmarks, color_hex="#b565a7", intensity=0.35):
     h, w = image.shape[:2]
