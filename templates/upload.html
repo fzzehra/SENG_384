@@ -363,38 +363,42 @@
 
   <div class="card">
     <div class="upload-zone" id="uploadZone">
-      <img id="previewImage" alt="Preview image">
-      
-      <!-- Kamera Önizleme -->
-      <video id="video" style="display:none; width:100%; max-height: 360px; border-radius:16px; object-fit: cover;" autoplay></video>
-      <canvas id="canvas" style="display:none;"></canvas>
+  <img id="previewImage" alt="Preview image">
+  <video id="video" style="display:none; width:100%; max-height: 360px; border-radius:16px; object-fit: cover;" autoplay></video>
+  <canvas id="canvas" style="display:none;"></canvas>
 
-      <div class="upload-placeholder" id="uploadPlaceholder">
-        <div class="upload-icon">
-          <svg viewBox="0 0 24 24" stroke-width="1.8">
-            <polyline points="16 16 12 12 8 16"></polyline>
-            <line x1="12" y1="12" x2="12" y2="21"></line>
-            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
-          </svg>
-        </div>
-        <h3>Drop your image here</h3>
-        <p>or click to browse · JPG, PNG, WEBP</p>
-        
-        <button type="button" id="startCamBtn" onclick="event.stopPropagation(); startCamera()" style="position: relative; z-index: 10; margin-top: 15px; background: rgba(70, 70, 229, 0.1); color: #4646e5; border: 1px solid #4646e5; padding: 8px 20px; border-radius: 10px; cursor: pointer; font-weight: 500; font-family: inherit; transition: all 0.3s;">
-          Open Camera
-        </button>
+  <div class="upload-placeholder" id="uploadPlaceholder">
+    <div class="upload-icon">...</div>
+    <h3>Drop your image here</h3>
+    <p>or click to browse · JPG, PNG, WEBP</p>
+    
+    <button type="button" id="startCamBtn" onclick="event.stopPropagation(); startCamera()" 
+            style="margin-top:15px; background: rgba(70, 70, 229, 0.1); color: #4646e5; border: 1px solid #4646e5; padding: 8px 20px; border-radius: 10px; cursor: pointer; font-weight: 500; font-family: inherit; pointer-events:auto;">
+      Open Camera
+    </button>
+    <div class="file-name" id="fileName"></div>
+  </div>
 
-        <div class="file-name" id="fileName"></div>
-      </div>
+  <button type="button" id="captureBtn" onclick="event.stopPropagation(); takeSnapshot()" style="display:none; position: absolute; bottom: 20px; z-index: 10; background: #4646e5; color: white; border: none; padding: 10px 24px; border-radius: 12px; cursor: pointer; font-weight: 600;">
+    Capture Photo
+  </button>
 
-      <button type="button" id="captureBtn" onclick="event.stopPropagation(); takeSnapshot()" style="display:none; position: absolute; bottom: 20px; z-index: 10; background: #4646e5; color: white; border: none; padding: 10px 24px; border-radius: 12px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(70,70,229,0.4);">
-        Capture Photo
-      </button>
+  <input type="file" accept="image/*" id="fileInput" onchange="handleFile(event)">
+</div>
 
-      <input type="file" accept="image/*" id="fileInput" onchange="handleFile(event)">
-    </div>
+<!-- LIVE VIDEO - KUTUN DIŞINDA -->
+<div style="text-align:center; margin-bottom:28px;">
+  <button type="button" onclick="window.location.href='/ar-tryon'"
+          style="background: linear-gradient(135deg, #6060e5, #4646e5); color:white; border:none; padding:12px 26px; border-radius:14px; cursor:pointer; font-weight:600; font-family:'DM Sans',sans-serif; display:inline-flex; align-items:center; gap:8px; box-shadow:0 6px 20px rgba(70,70,229,0.3);">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+    </svg>
+    Try Live Video AR
+  </button>
+</div>
 
-    <span class="field-label">Click to show landmarks</span>
+<span class="field-label">Click to show landmarks</span>
+    
 
 
       <div class="transform-option" style="margin-bottom: 30px;">

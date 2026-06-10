@@ -58,6 +58,13 @@ def create_app():
             flash("Please log in to access this page.", "error")
             return redirect(url_for("auth.login"))
         return render_template("upload.html")
+    
+    @app.route("/ar-tryon")
+    def ar_tryon():
+        if not session.get("user_id"):
+            flash("Please log in to access this page.", "error")
+            return redirect(url_for("auth.login"))
+        return render_template("ar_tryon.html")
 
     @app.route("/controls-page")
     def controls_page():
@@ -187,9 +194,6 @@ def create_app():
             return redirect(url_for("auth.login"))
         return render_template("result.html")
     
-    @app.route("/ar-tryon")
-    def ar_tryon():
-     return render_template("ar_tryon.html")
 
     @app.route("/glasses-test")
     def glasses_test():
