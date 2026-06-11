@@ -154,6 +154,39 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
             <input type="range" id="blushIntensity" min="0" max="100" value="0" oninput="document.getElementById('blushIntVal').textContent=this.value+'%'">
           </div>
         </div>
+
+          <div class="divider"></div>
+            <div>
+              <div class="section-label">Eye Color</div>
+              <div class="color-row"><span class="color-label">Color</span><input type="color" id="eyeColor" value="#4a7c2e"></div>
+              <div class="slider-row">
+                <div class="slider-label"><span>Intensity</span><span id="eyeColorIntVal">0%</span></div>
+                <input type="range" id="eyeColorIntensity" min="0" max="100" value="0" oninput="document.getElementById('eyeColorIntVal').textContent=this.value+'%'">
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div>
+              <div class="section-label">Eyebrow</div>
+              <div class="color-row"><span class="color-label">Color</span><input type="color" id="browColor" value="#3b2f2f"></div>
+              <div class="slider-row">
+                <div class="slider-label"><span>Intensity</span><span id="browIntVal">0%</span></div>
+                <input type="range" id="browIntensity" min="0" max="100" value="0" oninput="document.getElementById('browIntVal').textContent=this.value+'%'">
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div>
+              <div class="section-label">Eyeliner</div>
+              <div class="color-row"><span class="color-label">Color</span><input type="color" id="linerColor" value="#000000"></div>
+              <div class="slider-row">
+                <div class="slider-label"><span>Intensity</span><span id="linerIntVal">0%</span></div>
+                <input type="range" id="linerIntensity" min="0" max="100" value="0" oninput="document.getElementById('linerIntVal').textContent=this.value+'%'">
+              </div>
+              <div style="margin-top:6px;font-size:11px;color:#6060aa;">
+                <label><input type="checkbox" id="linerWing" checked style="margin-right:4px;">Wing</label>
+                <div class="divider"></div>
+            
       </div>
 
       <!-- ADJUST -->
@@ -449,6 +482,16 @@ function onResults(results) {
   const blushInt = parseInt(document.getElementById('blushIntensity').value) / 100;
   if (blushInt > 0) drawBlush(pt, H, blushInt);
 
+const eyeCInt = parseInt(document.getElementById('eyeColorIntensity').value)/100;
+if(eyeCInt>0) applyEyeColor(pt, eyeCInt);
+
+const browInt = parseInt(document.getElementById('browIntensity').value)/100;
+if(browInt>0) applyEyebrowColor(pt, browInt);
+
+const linerInt = parseInt(document.getElementById('linerIntensity').value)/100;
+if(linerInt>0) applyEyeliner(pt, linerInt, document.getElementById('linerWing').checked);
+
+
   // PNG aksesuarlar (gözlük PNG ise burada çiz, GLB ise Three.js halleder)
   if (selected.necklace && pngImages[selected.necklace]) drawNecklace(pt);
   if (selected.earring  && pngImages[selected.earring])  drawEarring(pt, H);
@@ -523,50 +566,170 @@ function hexToRgb(hex) {
 
 function drawLipColor(pt, intensity) {
   const {r,g,b} = hexToRgb(document.getElementById('lipColor').value);
-  const upper = [61,185,40,39,37,0,267,269,270,409,291];
-  const lower = [61,146,91,181,84,17,314,405,321,375,291];
+  const outer = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
+  const inner = [78,95,88,178,87,14,317,402,318,324,308,415,310,311,312,13,82,81,80,191];
+  
   ctx.save();
-  ctx.globalCompositeOperation = 'multiply';
-  ctx.globalAlpha = intensity * 0.7;
-  ctx.fillStyle = `rgb(${r},${g},${b})`;
-  [upper,lower].forEach(pts => {
+  ctx.beginPath();
+  outer.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+  ctx.closePath();
+  inner.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+  ctx.closePath();
+  
+  // DÜZELTME: source-over + rgba alpha
+  ctx.fillStyle = `rgba(${r},${g},${b},${0.35 + intensity*0.5})`;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.filter = 'blur(1.5px)';
+  ctx.fill('evenodd'); // dişleri hariç tutar
+  ctx.restore();
+}
+
+function drawBlush(pt, H, intensity) {
+  const {r,g,b} = hexToRgb(document.getElementById('blushColor').value);
+  const lC = pt(123), rC = pt(352);
+  const faceW = Math.hypot(pt(454).x-pt(234).x, pt(454).y-pt(234).y);
+  const radius = faceW * 0.21 * intensity; // daha geniş
+
+  ctx.save();
+  ctx.filter = 'blur(3px)';
+  
+  [[lC,4],[rC,-4]].forEach(([p,dx])=>{
+    const x = p.x + dx;
+    const y = p.y - 2; // yukarı al (3.foto konumu)
+    const grad = ctx.createRadialGradient(x,y,0,x,y,radius);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${0.42*intensity})`); // 0.33→0.42
+    grad.addColorStop(0.6, `rgba(${r},${g},${b},${0.18*intensity})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
     ctx.beginPath();
-    pts.forEach((i,idx) => { const p = pt(i); idx===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y); });
+    ctx.arc(x,y,radius,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function applyEyebrowColor(pt, intensity) {
+  const {r,g,b} = hexToRgb(document.getElementById('browColor').value);
+  const leftTop = [70,63,105,66,107];
+  const leftBot = [107,55,65,52,53,46,70];
+  const rightTop = [300,293,334,296,336];
+  const rightBot = [336,285,295,282,283,276,300];
+
+  ctx.save();
+  ctx.fillStyle = `rgba(${r},${g},${b},${0.34*intensity})`;
+  ctx.filter = 'blur(2px)';
+  [[leftTop,leftBot],[rightTop,rightBot]].forEach(([top,bot])=>{
+    ctx.beginPath();
+    top.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y-1):ctx.lineTo(p.x,p.y-1);});
+    bot.slice().reverse().forEach(i=>{const p=pt(i); ctx.lineTo(p.x,p.y+1);});
     ctx.closePath(); ctx.fill();
+  });
+  ctx.restore();
+}
+function applyEyeColor(pt, intensity) {
+  if(intensity<=0) return;
+  const {r,g,b} = hexToRgb(document.getElementById('eyeColor').value);
+
+  ctx.save();
+
+  [468,473].forEach(idx=>{
+    const c = pt(idx);
+    const pts = idx===468 ? [469,470,471,472] : [474,475,476,477];
+    let rad = 0;
+    pts.forEach(i=>{ const p=pt(i); rad += Math.hypot(p.x-c.x, p.y-c.y); });
+    rad = rad/pts.length * 0.68; // irisi tam kaplama
+
+    // 1) doğal tint - multiply ile alttaki dokuyu koru
+    ctx.globalCompositeOperation = 'multiply';
+    const tint = ctx.createRadialGradient(c.x,c.y,rad*0.15, c.x,c.y,rad);
+    tint.addColorStop(0, `rgba(${r},${g},${b},${0.20*intensity})`);   // merkez açık
+    tint.addColorStop(0.6, `rgba(${r},${g},${b},${0.35*intensity})`); // orta
+    tint.addColorStop(1, `rgba(${r},${g},${b},${0.22*intensity})`);   // kenar
+    ctx.fillStyle = tint;
+    ctx.beginPath(); ctx.arc(c.x,c.y,rad,0,Math.PI*2); ctx.fill();
+
+    // 2) dış limbal ring - fotoğraftaki gibi koyu halka
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = `rgba(${Math.floor(r*0.5)},${Math.floor(g*0.5)},${Math.floor(b*0.5)},${0.40*intensity})`;
+    ctx.lineWidth = rad * 0.22;
+    ctx.beginPath(); ctx.arc(c.x,c.y,rad*0.90,0,Math.PI*2); ctx.stroke();
+
+    // 3) iç ışıltı - canlılık
+    const highlight = ctx.createRadialGradient(c.x-rad*0.2,c.y-rad*0.2,0, c.x,c.y,rad*0.4);
+    highlight.addColorStop(0, `rgba(255,255,255,${0.08*intensity})`);
+    highlight.addColorStop(1, `rgba(255,255,255,0)`);
+    ctx.fillStyle = highlight;
+    ctx.beginPath(); ctx.arc(c.x,c.y,rad*0.4,0,Math.PI*2); ctx.fill();
+  });
+
+  ctx.restore();
+}
+
+
+function applyEyeliner(pt, intensity, wing) {
+  if(intensity<=0) return;
+  const {r,g,b} = hexToRgb(document.getElementById('linerColor').value);
+
+  const lLid = [33,246,161,160,159,158,157,173,133];
+  const rLid = [263,466,388,387,386,385,384,398,362];
+
+  ctx.save();
+  ctx.strokeStyle = `rgba(${r},${g},${b},${0.96*intensity})`;
+  ctx.lineWidth = 1.8 * intensity;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const noseX = pt(1).x;
+
+  [[lLid,33],[rLid,263]].forEach(([lid, outerIdx])=>{
+    // kirpik hattı
+    ctx.beginPath();
+    lid.forEach((i,idx)=>{ const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); });
+    ctx.stroke();
+
+    if(wing){
+      const outer = pt(outerIdx);
+      const dir = outer.x < noseX ? -1 : 1;
+
+      // FOTOĞRAFTAKİ GİBİ: 13px dışa, 6px yukarı
+      const tipX = outer.x + dir*13*intensity;
+      const tipY = outer.y - 6*intensity;
+
+      ctx.beginPath();
+      ctx.moveTo(outer.x, outer.y);
+      ctx.lineTo(tipX, tipY);
+      ctx.stroke();
+
+      // keskin üçgen dolgu
+      ctx.beginPath();
+      ctx.moveTo(outer.x + dir*2, outer.y);
+      ctx.lineTo(tipX, tipY);
+      ctx.lineTo(outer.x + dir*8*intensity, outer.y - 1.5*intensity);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${r},${g},${b},${0.85*intensity})`;
+      ctx.fill();
+    }
   });
   ctx.restore();
 }
 
 function drawEyeshadow(pt, intensity) {
   const {r,g,b} = hexToRgb(document.getElementById('eyeshadowColor').value);
-  const lEye = [33,7,163,144,145,153,154,155,133,173,157,158,159,160,161,246];
-  const rEye = [263,249,390,373,374,380,381,382,362,398,384,385,386,387,388,466];
-  ctx.save();
-  ctx.globalCompositeOperation = 'multiply';
-  ctx.globalAlpha = intensity * 0.55;
-  ctx.fillStyle = `rgb(${r},${g},${b})`;
-  [lEye,rEye].forEach(eye => {
-    ctx.beginPath();
-    eye.forEach((i,idx) => { const p = pt(i); idx===0 ? ctx.moveTo(p.x,p.y-8) : ctx.lineTo(p.x,p.y-8); });
-    ctx.closePath(); ctx.fill();
-  });
-  ctx.restore();
-}
+  const lLid = [33,246,161,160,159,158,157,173,133];
+  const rLid = [263,466,388,387,386,385,384,398,362];
 
-function drawBlush(pt, H, intensity) {
-  const {r,g,b} = hexToRgb(document.getElementById('blushColor').value);
-  const lC = pt(116), rC = pt(345);
-  const chin = pt(152), fore = pt(10);
-  const radius = Math.abs(chin.y - fore.y) * 0.12;
   ctx.save();
-  ctx.globalCompositeOperation = 'multiply';
-  ctx.globalAlpha = intensity * 0.45;
-  [lC,rC].forEach(p => {
-    const grad = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,radius);
-    grad.addColorStop(0,`rgba(${r},${g},${b},1)`);
-    grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
-    ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(p.x,p.y,radius,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = `rgba(${r},${g},${b},${0.20 + intensity*0.35})`;
+  ctx.filter = 'blur(7px)'; // 3.foto gibi yumuşak
+
+  [lLid, rLid].forEach(lid => {
+    ctx.beginPath();
+    // alt: kirpik dibi
+    lid.forEach((i,idx)=>{ const p=pt(i); idx===0?ctx.moveTo(p.x,p.y+1):ctx.lineTo(p.x,p.y+1); });
+    // üst: sadece 14px yukarı (kaşa değil, kıvrıma kadar)
+    for(let i=lid.length-1;i>=0;i--){ const p=pt(lid[i]); ctx.lineTo(p.x, p.y - 14); }
+    ctx.closePath();
+    ctx.fill();
   });
   ctx.restore();
 }
