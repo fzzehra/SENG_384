@@ -809,23 +809,6 @@ def transform_image():
                 else:
                     print("Landmark detection failed for eyeliner.")
 
-            elif t_type in ["eyebrow_slit"]:
-                landmark_result = process_landmark_pipeline(output_image)
-
-                if landmark_result.get("success"):
-                    output_image = apply_makeup_pipeline(
-                        image=output_image,
-                        landmarks=landmark_result["landmarks"],
-                        makeup_type=t_type,
-                        color_hex=color,
-                        intensity=t_intensity
-                    )
-
-                    results_meta.append(t_type)
-                    print(f"APPLIED: {t_type}")
-                else:
-                    print(f"Landmark detection failed for {t_type}.")        
-
             elif t_type in ["earring", "necklace"]:
                 params = transform.get("params", {})
                 item_name = params.get("item", "")
