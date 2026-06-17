@@ -146,6 +146,20 @@ def analyze_images(original_path, transformed_path):
     original_energy = compute_energy(original_fft)
     transformed_energy = compute_energy(transformed_fft)
 
+    overall_energy_ratio = (
+        transformed_energy / original_energy
+        if original_energy != 0
+        else 0
+    )
+
+    energy_change_percent = (
+        (transformed_energy - original_energy)
+        / original_energy
+        * 100
+        if original_energy != 0
+        else 0
+    )
+
     original_low, original_high, original_ratio = compute_frequency_bands(original_fft)
     transformed_low, transformed_high, transformed_ratio = compute_frequency_bands(transformed_fft)
 
@@ -169,9 +183,13 @@ def analyze_images(original_path, transformed_path):
             "correlation": round(corr_value, 4)
         },
         "energy": {
-            "original": round(original_energy, 2),
-            "transformed": round(transformed_energy, 2),
-            "original_ratio": round(original_ratio, 4),
-            "transformed_ratio": round(transformed_ratio, 4)
-        }
+        "original": round(original_energy, 2),
+        "transformed": round(transformed_energy, 2),
+
+        "original_hf_lf_ratio": round(original_ratio, 8),
+        "transformed_hf_lf_ratio": round(transformed_ratio, 8),
+
+        "overall_ratio": round(overall_energy_ratio, 4),
+        "change_percent": round(energy_change_percent, 2)
+    }
     }

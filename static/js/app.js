@@ -36,12 +36,14 @@ if (analyzeBtn) {
                 <p><strong>Correlation:</strong> ${result.metrics.correlation}</p>
             `;
 
-            document.getElementById("energyResult").innerHTML = `
-                <p><strong>Original Energy:</strong> ${result.energy.original}</p>
-                <p><strong>Transformed Energy:</strong> ${result.energy.transformed}</p>
-                <p><strong>Original Ratio:</strong> ${result.energy.original_ratio}</p>
-                <p><strong>Transformed Ratio:</strong> ${result.energy.transformed_ratio}</p>
-            `;
+         document.getElementById("energyResult").innerHTML = `
+        <p><strong>Original Energy:</strong> ${result.energy.original}</p>
+        <p><strong>Transformed Energy:</strong> ${result.energy.transformed}</p>
+        <p><strong>Original HF/LF Ratio:</strong> ${result.energy.original_hf_lf_ratio}</p>
+        <p><strong>Transformed HF/LF Ratio:</strong> ${result.energy.transformed_hf_lf_ratio}</p>
+        <p><strong>Overall Energy Ratio:</strong> ${result.energy.overall_ratio}</p>
+        <p><strong>Energy Change:</strong> ${result.energy.change_percent}%</p>
+    `;
 
             // --- 2. SPEKTRUM GÖRSELLERİNİ GÜNCELLE ---
             document.getElementById("originalSpectrum").src =
@@ -102,8 +104,10 @@ if (analyzeBtn) {
                     doc.setTextColor(0);
                     doc.text(`- Original Energy: ${result.energy.original}`, 25, 135);
                     doc.text(`- Transformed Energy: ${result.energy.transformed}`, 25, 145);
-                    doc.text(`- Original Ratio: ${result.energy.original_ratio}`, 25, 155);
-                    doc.text(`- Transformed Ratio: ${result.energy.transformed_ratio}`, 25, 165);
+                    doc.text(`- Original HF/LF Ratio: ${result.energy.original_hf_lf_ratio}`, 25, 155);
+                    doc.text(`- Transformed HF/LF Ratio: ${result.energy.transformed_hf_lf_ratio}`, 25, 165);
+                    doc.text(`- Overall Energy Ratio: ${result.energy.overall_ratio}`, 25, 175);
+                    doc.text(`- Energy Change: ${result.energy.change_percent}%`, 25, 185);
 
                     doc.setFontSize(10);
                     doc.setTextColor(150);
