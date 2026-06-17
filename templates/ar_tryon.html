@@ -71,7 +71,10 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
     <canvas id="canvas3d"></canvas>
     <div class="fps-badge" id="fpsBadge">-- fps</div>
     <div class="status-bar" id="statusBar">Click Start to begin</div>
-    <button class="start-btn" id="startBtn" onclick="startCamera()">&#9654; Start Camera</button>
+    <button class="start-btn" id="startBtn" onclick="startCamera()">&#9654; Start Camera
+      
+    </button>
+    
   </div>
 
   <div class="panel">
@@ -143,6 +146,23 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
           <div class="slider-row">
             <div class="slider-label"><span>Intensity</span><span id="blushIntVal">0%</span></div>
             <input type="range" id="blushIntensity" min="0" max="100" value="0" oninput="document.getElementById('blushIntVal').textContent=this.value+'%'">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">Freckles</div>
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Intensity</span><span id="freckleIntVal">0%</span>
+            </div>
+            <input
+              type="range"
+              id="freckleIntensity"
+              min="0"
+              max="100"
+              value="0"
+              oninput="document.getElementById('freckleIntVal').textContent=this.value+'%'"
+            >
           </div>
         </div>
         <div class="divider"></div>
@@ -520,10 +540,14 @@ window.startCamera = async function() {
     statusBar.textContent = 'Detecting face...';
     renderLoop();
   } catch(e) {
-    console.error(e);
-    statusBar.textContent = 'Camera access denied.';
-    document.getElementById('startBtn').style.display = 'block';
-  }
+  console.error("CAMERA ERROR:", e);
+  alert(e.name + "\n" + e.message);
+
+  statusBar.textContent =
+    'Camera error: ' + e.name + ' - ' + e.message;
+
+  document.getElementById('startBtn').style.display = 'block';
+}
 };
 
 function renderLoop() {
@@ -644,6 +668,16 @@ function renderLoop() {
 
   const blushInt = parseInt(document.getElementById('blushIntensity').value) / 100;
   if (blushInt > 0) drawBlush(pt, blushInt);
+
+  const freckleSlider = document.getElementById('freckleIntensity');
+
+  if (freckleSlider) {
+    const freckleInt = parseInt(freckleSlider.value) / 100;
+
+    if (freckleInt > 0) {
+      applyFreckles(pt, freckleInt);
+    }
+  }
 
   const eyeCInt = parseInt(document.getElementById('eyeColorIntensity').value) / 100;
   if (eyeCInt > 0) applyEyeColor(pt, eyeCInt);
@@ -937,6 +971,96 @@ function applyEyeliner(pt, intensity, wing) {
       ctx.fill(); // İçi dolu üçgen
     }
   });
+  
+  ctx.restore();
+}
+
+function applyFreckles(pt, intensity, seed = 42) {
+  const freckleColor = {r: 155, g: 110, b: 92}; // aynı renk, kahverengi yapmıyoruz
+  
+  const noseCenter = [6, 197, 195, 5, 4, 1, 2, 94, 19, 97, 98];
+  const noseToLeftCheek = [2, 94, 125, 141, 35, 31, 228, 229, 230];
+  const noseToRightCheek = [2, 94, 354, 370, 265, 261, 448, 449, 450];
+  const leftCheekBone = [116, 117, 118, 101, 36, 205, 206, 50, 123];
+  const rightCheekBone = [345, 346, 347, 330, 266, 425, 426, 280, 352];
+  
+  ctx.save();
+  
+  let randSeed = seed;
+  function rand() {
+    randSeed = (randSeed * 9301 + 49297) % 233280;
+    return randSeed / 233280;
+  }
+  
+  const allZones = [
+    { pts: noseCenter, count: 50, weight: 1.0 },
+    { pts: noseToLeftCheek, count: 35, weight: 0.7 },
+    { pts: noseToRightCheek, count: 35, weight: 0.7 },
+    { pts: leftCheekBone, count: 70, weight: 1.0 },
+    { pts: rightCheekBone, count: 70, weight: 1.0 }
+  ];
+  
+  let allPoints = [];
+  allZones.forEach(zone => {
+    const zonePts = zone.pts.map(i => pt(i)).filter(p => p);
+    zonePts.forEach(p => allPoints.push({x: p.x, y: p.y, weight: zone.weight}));
+  });
+  
+  if (allPoints.length < 5) { ctx.restore(); return; }
+  
+  const minX = Math.min(...allPoints.map(p => p.x));
+  const maxX = Math.max(...allPoints.map(p => p.x));
+  const minY = Math.min(...allPoints.map(p => p.y));
+  const maxY = Math.max(...allPoints.map(p => p.y));
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const w = maxX - minX;
+  const h = maxY - minY;
+  
+  const totalCount = Math.floor(260 * intensity);
+  
+  for (let i = 0; i < totalCount; i++) {
+    const t = rand();
+    let x, y;
+    
+    if (t < 0.25) {
+      const nose = pt(6) || pt(4) || pt(1);
+      if (!nose) continue;
+      const angle = rand() * Math.PI * 2;
+      const dist = Math.pow(rand(), 0.6) * w * 0.15;
+      x = nose.x + Math.cos(angle) * dist;
+      y = nose.y + Math.sin(angle) * dist;
+    } else {
+      const angle = rand() * Math.PI * 2;
+      const dist = Math.pow(rand(), 0.9) * 0.5;
+      x = centerX + Math.cos(angle) * dist * w;
+      y = centerY + Math.sin(angle) * dist * h;
+    }
+    
+    // BOYUT AYNI - 0.4px ile 1.8px arası
+    const size = rand() < 0.9 
+      ? 0.4 + rand() * 0.7  // %90'ı 0.4-1.1px
+      : 1.1 + rand() * 0.7; // %10'u 1.1-1.8px
+    
+    const finalSize = size * intensity;
+    
+    // OPAKLIK ARTTI - daha görünür olsun
+    const opacity = 0.45 + rand() * 0.5; // %45-95 arası, eski %20-80'di
+    
+    // 1. SOFT GLOW - görünürlüğü artırır, boyutu büyütmez
+    ctx.globalAlpha = 0.35 * intensity;
+    ctx.fillStyle = `rgba(${freckleColor.r},${freckleColor.g},${freckleColor.b},${opacity * 0.6})`;
+    ctx.beginPath();
+    ctx.arc(x, y, finalSize * 2.2, 0, Math.PI * 2); // sadece glow büyük
+    ctx.fill();
+    
+    // 2. ANA ÇİL - keskin nokta
+    ctx.globalAlpha = 1.0;
+    ctx.fillStyle = `rgba(${freckleColor.r},${freckleColor.g},${freckleColor.b},${opacity})`;
+    ctx.beginPath();
+    ctx.arc(x, y, finalSize, 0, Math.PI * 2); // boyut aynı kaldı
+    ctx.fill();
+  }
   
   ctx.restore();
 }

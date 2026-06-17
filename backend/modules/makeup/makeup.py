@@ -325,6 +325,14 @@ def apply_makeup_pipeline(image, landmarks, makeup_type, color_hex="#d96b86", in
         print("MAKEUP: applying blush")
         return apply_blush(image, landmarks, color_hex=color_hex, intensity=intensity)
 
+    elif makeup_type == "freckles":
+        return apply_freckles(
+            image,
+            landmarks,
+            color_hex=color_hex,
+            intensity=intensity
+        )
+
     elif makeup_type == "eyeshadow":
         print("MAKEUP: applying eyeshadow")
         return apply_eyeshadow(image, landmarks, color_hex=color_hex, intensity=intensity)
@@ -361,6 +369,119 @@ def get_point_xy(landmarks, idx, w, h):
     if lx <= 1.0 and ly <= 1.0:
         return int(lx * w), int(ly * h)
     return int(lx), int(ly)
+
+def apply_freckles(image, landmarks, color_hex="#9b6e5c", intensity=0.7, seed=42):
+    h, w = image.shape[:2]
+    output = image.copy().astype(np.float32)
+
+    rng = np.random.default_rng(seed)
+    intensity = float(np.clip(intensity, 0.0, 1.0))
+
+    def pt(i):
+        return np.array(get_point_xy(landmarks, i, w, h), dtype=np.float32)
+
+    freckle_color = np.array(hex_to_bgr(color_hex), dtype=np.float32)
+
+    nose_center = [6, 197, 195, 5, 4, 1, 2, 94, 19, 97, 98]
+    nose_to_left_cheek = [2, 94, 125, 141, 35, 31, 228, 229, 230]
+    nose_to_right_cheek = [2, 94, 354, 370, 265, 261, 448, 449, 450]
+    left_cheek_bone = [116, 117, 118, 101, 36, 205, 206, 50, 123]
+    right_cheek_bone = [345, 346, 347, 330, 266, 425, 426, 280, 352]
+
+    zones = [
+        {"pts": nose_center, "weight": 1.0},
+        {"pts": nose_to_left_cheek, "weight": 0.7},
+        {"pts": nose_to_right_cheek, "weight": 0.7},
+        {"pts": left_cheek_bone, "weight": 1.0},
+        {"pts": right_cheek_bone, "weight": 1.0},
+    ]
+
+    all_points = []
+    for zone in zones:
+        for idx in zone["pts"]:
+            p = pt(idx)
+            all_points.append([p[0], p[1], zone["weight"]])
+
+    all_points = np.array(all_points, dtype=np.float32)
+
+    if len(all_points) < 5:
+        return image
+
+    min_x = np.min(all_points[:, 0])
+    max_x = np.max(all_points[:, 0])
+    min_y = np.min(all_points[:, 1])
+    max_y = np.max(all_points[:, 1])
+
+    center_x = (min_x + max_x) / 2
+    center_y = (min_y + max_y) / 2
+
+    area_w = max_x - min_x
+    area_h = max_y - min_y
+
+    total_count = int(260 * intensity)
+
+    overlay = output.copy()
+
+    for _ in range(total_count):
+        t = rng.random()
+
+        if t < 0.25:
+            nose = pt(6)
+            angle = rng.random() * np.pi * 2
+            dist = (rng.random() ** 0.6) * area_w * 0.15
+
+            x = nose[0] + np.cos(angle) * dist
+            y = nose[1] + np.sin(angle) * dist
+        else:
+            angle = rng.random() * np.pi * 2
+            dist = (rng.random() ** 0.9) * 0.5
+
+            x = center_x + np.cos(angle) * dist * area_w
+            y = center_y + np.sin(angle) * dist * area_h
+
+        x = int(np.clip(x, 0, w - 1))
+        y = int(np.clip(y, 0, h - 1))
+
+        if rng.random() < 0.9:
+            size = 0.4 + rng.random() * 0.7
+        else:
+            size = 1.1 + rng.random() * 0.7
+
+        radius = max(1, int(size * (0.8 + intensity * 1.6)))
+
+        opacity = 0.45 + rng.random() * 0.5
+        alpha = opacity * intensity
+
+        # soft glow
+        glow_radius = max(1, int(radius * 2.2))
+        cv2.circle(
+            overlay,
+            (x, y),
+            glow_radius,
+            freckle_color.tolist(),
+            -1,
+            cv2.LINE_AA
+        )
+
+        # ana çil
+        cv2.circle(
+            overlay,
+            (x, y),
+            radius,
+            freckle_color.tolist(),
+            -1,
+            cv2.LINE_AA
+        )
+
+        # Lokal blend
+        local_mask = np.zeros((h, w), dtype=np.float32)
+        cv2.circle(local_mask, (x, y), glow_radius, alpha * 0.35, -1, cv2.LINE_AA)
+        cv2.circle(local_mask, (x, y), radius, alpha, -1, cv2.LINE_AA)
+
+        local_mask = np.clip(local_mask, 0, 1)[:, :, None]
+        output = output * (1 - local_mask) + overlay * local_mask
+
+    return np.clip(output, 0, 255).astype(np.uint8)
 
 def apply_eyebrow_slit(image, landmarks, side="right", intensity=0.95):
     h, w = image.shape[:2]

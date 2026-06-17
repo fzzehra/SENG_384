@@ -476,7 +476,23 @@
           </div>
           <input type="range" id="blushInt" min="0" max="100" value="65">
         </div>
+        <div class="cosmetic-shelf">
+  <div class="shelf-label">Freckles</div>
 
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+    <div class="color-row" style="margin:0">
+      <label>Custom</label>
+      <input type="color" id="freckleCustom" value="#9b6e5c">
+    </div>
+    <button class="sm-btn" onclick="clearMakeup('freckles')">Remove</button>
+  </div>
+
+  <div class="int-row">
+    <span class="int-lbl">Intensity</span><span class="int-val" id="freckle-iv">0%</span>
+  </div>
+
+  <input type="range" id="freckleInt" min="0" max="100" value="0">
+</div>
         <!-- GÖZ FARI -->
         <div class="cosmetic-shelf">
           <div class="shelf-label">Eyeshadow</div>
@@ -549,6 +565,7 @@
   </div>
   <input type="range" id="eyelinerInt" min="0" max="100" value="85">
 </div>
+
 <!-- EYEBROW SLIT / PIERCING -->
         <div class="cosmetic-shelf">
           <div class="shelf-label">Eyebrow Details</div>
@@ -563,6 +580,8 @@
             </button>
           </div>
         </div>
+
+        
       </div><!-- /panel-makeup -->
 
       <!-- ════════ HAIR ════════ -->
@@ -674,6 +693,7 @@ function togglePal(id, btn) {
 [
   ['lipInt',   'lip-iv',   'lip_color'],
   ['blushInt', 'blush-iv', 'blush'],
+  ['freckleInt', 'freckle-iv', 'freckles'],
   ['esInt',    'es-iv',    'eyeshadow'],
   ['lensInt',  'lens-iv',  'eye_color'],
   ['browInt',  'brow-iv',  'eyebrow_color'],
