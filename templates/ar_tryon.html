@@ -683,15 +683,95 @@ function drawLipColor(pt, intensity) {
 
 function drawEyeshadow(pt, intensity) {
   const {r,g,b} = hexToRgb(document.getElementById('eyeshadowColor').value);
-  const lEye = [226,247,30,29,27,28,56,190,243,112,26,22,23,24,110,157];
-  const rEye = [446,467,260,259,257,258,286,414,463,341,256,252,253,254,339,384];
-  ctx.save(); ctx.fillStyle = `rgba(${r},${g},${b},${0.2 * intensity})`; ctx.filter = 'blur(4px)';
-  [lEye, rEye].forEach(eye => {
+
+  // Tam üst kapak (köşeden köşeye) — gerçek kıvrımı verir, kapakla birlikte hareket eder
+  const lFullLid = [33, 246, 161, 160, 159, 158, 157, 173, 133];
+  const rFullLid = [263, 466, 388, 387, 386, 385, 384, 398, 362];
+  // Kaş alt kenarı — göz-kaş mesafesini ölçmek için
+  const lBrow    = [46, 53, 52, 65, 55, 70, 63, 105, 66, 107];
+  const rBrow    = [276, 283, 282, 295, 285, 300, 293, 334, 296, 336];
+  // Göz köşeleri — genişlik ve clip referansı için (göz açık/kapalı fark etmez)
+  const lCorners = [33, 133];
+  const rCorners = [263, 362];
+  // Alt kapak — göz kapanma tespiti için
+  const lLower   = [145, 153, 154];
+  const rLower   = [374, 380, 381];
+
+  [
+    [lFullLid, lBrow, lCorners, lLower],
+    [rFullLid, rBrow, rCorners, rLower]
+  ].forEach(function(group) {
+    var lidIdx    = group[0];
+    var browIdx   = group[1];
+    var cornerIdx = group[2];
+    var lowerIdx  = group[3];
+
+    // Noktaları hesapla
+    var lid      = lidIdx.map(function(i) { return pt(i); });
+    var browPts  = browIdx.map(function(i) { return pt(i); });
+    var corners  = cornerIdx.map(function(i) { return pt(i); });
+    var lowerPts = lowerIdx.map(function(i) { return pt(i); });
+
+    // Kapak noktalarını X'e göre sırala (sol→sağ)
+    lid.sort(function(a, b) { return a.x - b.x; });
+
+    var lidTopY  = Math.min.apply(null, lid.map(function(p) { return p.y; }));
+    var lidMidY  = lid.reduce(function(s, p) { return s + p.y; }, 0) / lid.length;
+    var lidBotY  = Math.max.apply(null, lid.map(function(p) { return p.y; }));
+    var browBotY = Math.max.apply(null, browPts.map(function(p) { return p.y; }));
+    var cornerY  = corners.reduce(function(s, p) { return s + p.y; }, 0) / corners.length;
+    var lowerY   = lowerPts.reduce(function(s, p) { return s + p.y; }, 0) / lowerPts.length;
+    var eyeW     = Math.max.apply(null, corners.map(function(p) { return p.x; }))
+                 - Math.min.apply(null, corners.map(function(p) { return p.x; }));
+    var margin   = eyeW * 0.10;
+
+    // Lift: kapak tepesinden kaş altına olan mesafe (kişiye göre otomatik)
+    var lift = Math.max(4, lidTopY - browBotY) * 1.05;
+
+    // Göz kapanma tespiti: üst kapak orta Y ile alt kapak arasındaki mesafe
+    var openness   = lowerY - lidMidY;
+    var openClip   = cornerY - eyeW * 0.22;  // göz açık → sıkı clip (göze sızmaz)
+    var closedClip = lowerY + 2;              // göz kapalı → alt kapağı takip et
+    var t          = Math.max(0, Math.min(1, 1 - (openness - eyeW * 0.05) / (eyeW * 0.18)));
+    var clipY      = (1 - t) * openClip + t * closedClip;
+
+    // Opaklık: %50 intensity → ~%90 görünüm
+    var a = Math.min(0.98, intensity * 1.8);
+
+    // Şekli göz açıklığından yukarı kaydır — clip yerine blur doğal solar
+    var yShift = eyeW * 0.15;
+
+    var leftP  = lid[0];
+    var rightP = lid[lid.length - 1];
+    var archP  = lid.reduce(function(m, p) { return p.y < m.y ? p : m; }, lid[0]);
+    var archCtrlY = archP.y - eyeW * 0.06;
+
+    var shapeTop = lidTopY - lift - yShift;
+    var shapeBot = lidBotY - yShift;
+
+    // Gradient: şeklin tepesinden tabanına — her iki uç şeffaf, orta opak
+    var grad = ctx.createLinearGradient(0, shapeTop, 0, shapeBot);
+    grad.addColorStop(0,    'rgba(' + r + ',' + g + ',' + b + ',0)');
+    grad.addColorStop(0.15, 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')');
+    grad.addColorStop(0.82, 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')');
+    grad.addColorStop(1,    'rgba(' + r + ',' + g + ',' + b + ',0)');
+
+    ctx.save();
+    ctx.filter = 'blur(6px)';
+    ctx.fillStyle = grad;
+
     ctx.beginPath();
-    eye.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
-    ctx.closePath(); ctx.fill();
+    // Alt kenar: kapak yayı, yShift kadar yukarıda
+    ctx.moveTo(leftP.x - margin, leftP.y - yShift);
+    ctx.quadraticCurveTo(archP.x, archCtrlY - yShift, rightP.x + margin, rightP.y - yShift);
+    // Üst sınır: lift kadar daha yukarıda
+    ctx.lineTo(rightP.x + margin, rightP.y - lift - yShift);
+    ctx.quadraticCurveTo(archP.x, archCtrlY - lift - yShift, leftP.x - margin, leftP.y - lift - yShift);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
   });
-  ctx.restore();
 }
 
 function drawBlush(pt, intensity) {
