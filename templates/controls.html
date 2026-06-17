@@ -540,25 +540,40 @@
         </div>
 
         <!-- EYELİNER -->
-<div class="cosmetic-shelf">
-  <div class="shelf-label">Eyeliner</div>
-  <div class="shelf-row" id="eyelinerRow"></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-    <div class="color-row" style="margin:0">
-      <label>Custom</label>
-      <input type="color" id="eyelinerCustom" value="#1a1a1a">
-    </div>
-    <button class="sm-btn" onclick="clearMakeup('eyeliner')">Remove</button>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-    <label style="font-size:12px;color:#8888bb;font-weight:500;">Wing</label>
-    <input type="checkbox" id="eyelinerWing" checked style="width:16px;height:16px;cursor:pointer;">
-  </div>
+        <div class="cosmetic-shelf">
+          <div class="shelf-label">Eyeliner</div>
+          <div class="shelf-row" id="eyelinerRow"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <div class="color-row" style="margin:0">
+              <label>Custom</label>
+              <input type="color" id="eyelinerCustom" value="#1a1a1a">
+            </div>
+            <button class="sm-btn" onclick="clearMakeup('eyeliner')">Remove</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+            <label style="font-size:12px;color:#8888bb;font-weight:500;">Wing</label>
+            <input type="checkbox" id="eyelinerWing" checked style="width:16px;height:16px;cursor:pointer;">
+        </div>
+                
   <div class="int-row">
     <span class="int-lbl">Intensity</span><span class="int-val" id="eyeliner-iv">85%</span>
   </div>
   <input type="range" id="eyelinerInt" min="0" max="100" value="85">
 </div>
+<!-- EYEBROW SLIT / PIERCING -->
+        <div class="cosmetic-shelf">
+          <div class="shelf-label">Eyebrow Details</div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="sm-btn" onclick="applyMakeup('eyebrow_slit', '#ffffff', 85)">
+              Eyebrow Slit
+            </button>
+
+              <button class="sm-btn" onclick="clearMakeup('eyebrow_slit');">
+              Remove
+            </button>
+          </div>
+        </div>
       </div><!-- /panel-makeup -->
 
       <!-- ════════ HAIR ════════ -->

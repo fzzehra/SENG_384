@@ -337,8 +337,136 @@ def apply_makeup_pipeline(image, landmarks, makeup_type, color_hex="#d96b86", in
         print("MAKEUP: applying eyeliner")
         return apply_eyeliner(image, landmarks, color_hex=color_hex, intensity=intensity)
 
+    elif makeup_type == "eyebrow_slit":
+        print("MAKEUP: applying eyebrow slit")
+        return apply_eyebrow_slit(
+            image,
+            landmarks,
+            side="right",
+            intensity=intensity
+        )
+
+  
     elif makeup_type == "eyeliner_no_wing":
         print("MAKEUP: applying eyeliner (no wing)")
         return apply_eyeliner(image, landmarks, color_hex=color_hex, intensity=intensity, wing=False)
+    
+    
     print(f"MAKEUP: unknown makeup_type: {makeup_type}")
     return image
+
+def get_point_xy(landmarks, idx, w, h):
+    lm = landmarks[idx]
+    lx, ly = lm[0], lm[1]
+    if lx <= 1.0 and ly <= 1.0:
+        return int(lx * w), int(ly * h)
+    return int(lx), int(ly)
+
+def apply_eyebrow_slit(image, landmarks, side="right", intensity=0.95):
+    h, w = image.shape[:2]
+    output = image.copy().astype(np.float32)
+
+    def pt(i):
+        return np.array(get_point_xy(landmarks, i, w, h), dtype=np.int32)
+
+    # 1. KAŞ LANDMARKLARI - MEDIAPIPE 468
+    if side == "left":
+        # Sol kaş: dıştan içe
+        brow_indices = [70, 63, 105, 66, 107]
+        outer_idx = 70 # kaş dışı
+        inner_idx = 107 # kaş başı
+        direction = -1 # / yönü
+    else:
+        # Sağ kaş: içten dışa 
+        brow_indices = [336, 296, 334, 293, 300]
+        outer_idx = 300 # kaş dışı
+        inner_idx = 336 # kaş başı
+        direction = 1 # \ yönü
+
+    brow_pts = np.array([pt(i) for i in brow_indices], dtype=np.int32)
+    outer = pt(outer_idx)
+    inner = pt(inner_idx)
+
+    # 2. ÇİZİK POZİSYONU - KAŞIN DIŞ 2/3 KISMINDA
+    # Referansta tam ortadan değil, dışa yakın
+    center = (outer * 0.65 + inner * 0.35).astype(np.int32)
+
+    # 3. ÇİZİK BOYUTU - İNCE VE KISA
+    brow_w = abs(outer[0] - inner[0])
+    slit_len = int(brow_w * 0.35) # %35 - senin kodda %55'ti çok uzun
+    slit_thickness = max(2, int(brow_w * 0.08 * intensity)) # %8 - senin %18'di çok kalın
+
+    # 4. AÇI - REFERANSTAKİ GİBİ 55-60 DERECE
+    angle = np.deg2rad(58 * direction) # senin 68'di çok dik
+
+    dx = int(np.cos(angle) * slit_len / 2)
+    dy = int(np.sin(angle) * slit_len / 2)
+
+    p1 = (int(center[0] - dx), int(center[1] - dy))
+    p2 = (int(center[0] + dx), int(center[1] + dy))
+
+    # 5. MASKE - TRAPEZ ŞEKLİNDE
+    mask = np.zeros((h, w), dtype=np.uint8)
+    
+    # Üst geniş, alt dar trapez çizik
+    top_w = slit_thickness + 2
+    bot_w = slit_thickness
+    
+    # Çizgiyi trapez polygon olarak çiz
+    perp_angle = angle + np.pi/2
+    tdx = int(np.cos(perp_angle) * top_w / 2)
+    tdy = int(np.sin(perp_angle) * top_w / 2)
+    bdx = int(np.cos(perp_angle) * bot_w / 2)
+    bdy = int(np.sin(perp_angle) * bot_w / 2)
+    
+    pts = np.array([
+        [p1[0] - tdx, p1[1] - tdy],
+        [p1[0] + tdx, p1[1] + tdy],
+        [p2[0] + bdx, p2[1] + bdy],
+        [p2[0] - bdx, p2[1] - bdy]
+    ], np.int32)
+    
+    cv2.fillPoly(mask, [pts], 255)
+
+    # 6. SADECE KAŞ BÖLGESİYLE SINIRLA
+    brow_region = np.zeros((h, w), dtype=np.uint8)
+    
+    # Kaş polygonunu genişlet
+    expanded_top = brow_pts.copy()
+    expanded_top[:, 1] -= int(h * 0.012) # üstten 1.2%
+    
+    expanded_bot = brow_pts.copy()
+    expanded_bot[:, 1] += int(h * 0.018) # alttan 1.8%
+    
+    poly = np.vstack([expanded_top, expanded_bot[::-1]])
+    cv2.fillPoly(brow_region, [poly.astype(np.int32)], 255)
+    
+    # Dilate çok az - senin 9x9 çok geniş
+    brow_region = cv2.dilate(brow_region, np.ones((5, 5), np.uint8), iterations=1)
+    mask = cv2.bitwise_and(mask, brow_region)
+
+    # 7. BLUR - KENARLAR SOFT OLSUN
+    # Referansta keskin değil, soft geçiş var
+    mask = cv2.GaussianBlur(mask, (7, 7), 0) # senin 5x5'ti
+
+    # 8. TEN RENGİ - KAŞIN HEMEN ALTINDAN AL
+    sample_x = int(np.clip(center[0], 0, w-1))
+    sample_y = int(np.clip(center[1] + h * 0.025, 0, h-1)) # %2.5 aşağı
+    
+    # 5x5 alan ortalaması al - tek piksel noise olur
+    y1, y2 = max(0, sample_y-2), min(h, sample_y+3)
+    x1, x2 = max(0, sample_x-2), min(w, sample_x+3)
+    skin_color = np.mean(output[y1:y2, x1:x2], axis=(0,1))
+
+    # 9. UYGULA - SOFT BLEND
+    skin_layer = np.full_like(output, skin_color)
+    alpha = (mask.astype(np.float32) / 255.0)[:, :, None]
+    alpha = np.clip(alpha * intensity, 0, 1)
+    
+    # Çok hafif multiply - ten rengi biraz koyulaşsın
+    output_dark = output * 0.96
+    result = output_dark * (1 - alpha) + skin_layer * alpha
+
+    return np.clip(result, 0, 255).astype(np.uint8)
+
+
