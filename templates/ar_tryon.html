@@ -86,14 +86,18 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
         <div>
           <div class="section-label">3D Glasses</div>
           <div class="acc-grid" id="glassesGrid">
-            <button class="acc-btn full active" id="btn-no-glasses" onclick="clearModel('glasses', this)">No Glasses</button>
+            <button class="acc-btn full active" id="btn-no-glasses" onclick="clearModel(this)">No Glasses</button>
           </div>
         </div>
         <div class="divider"></div>
         <div>
-          <div class="section-label">3D Hat</div>
-          <div class="acc-grid" id="hatsGrid">
-            <button class="acc-btn full active" id="btn-no-hat" onclick="clearModel('hat', this)">No Hat</button>
+          <div class="section-label">Hat</div>
+          <div class="acc-grid">
+            <button class="acc-btn full active" onclick="selectAcc('hat',null,this)">No Hat</button>
+            <button class="acc-btn" onclick="selectAcc('hat','hat1.png',this)">Hat 1</button>
+            <button class="acc-btn" onclick="selectAcc('hat','hat2.png',this)">Hat 2</button>
+            <button class="acc-btn" onclick="selectAcc('hat','hat3.png',this)">Hat 3</button>
+            <button class="acc-btn" onclick="selectAcc('hat','hat4.png',this)">Hat 4</button>
           </div>
         </div>
         <div class="divider"></div>
@@ -111,9 +115,9 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
           <div class="section-label">Necklace</div>
           <div class="acc-grid">
             <button class="acc-btn full active" onclick="selectAcc('necklace',null,this)">No Necklace</button>
-            <button class="acc-btn" onclick="selectAcc('necklace','gold_necklace.png',this)">Gold</button>
-            <button class="acc-btn" onclick="selectAcc('necklace','pearl_necklace.png',this)">Pearl</button>
-            <button class="acc-btn" onclick="selectAcc('necklace','simple_chain.png',this)">Chain</button>
+            <button class="acc-btn" onclick="selectAcc('necklace','necklace1.png',this)">Necklace 1</button>
+            <button class="acc-btn" onclick="selectAcc('necklace','necklace2.png',this)">Necklace 2</button>
+            <button class="acc-btn" onclick="selectAcc('necklace','necklace3.png',this)">Necklace 3</button>
           </div>
         </div>
       </div>
@@ -178,7 +182,18 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
       </div>
 
       <div class="panel-section" id="tab-adjust">
-
+        <div>
+          <div class="section-label">PNG Hat</div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Scale</span><span id="hScaleVal">1.35x</span></div>
+            <input type="range" id="hatScale" min="0.8" max="2.5" step="0.05" value="1.35" oninput="document.getElementById('hScaleVal').textContent=parseFloat(this.value).toFixed(2)+'x'">
+          </div>
+          <div class="slider-row" style="margin-top:8px;">
+            <div class="slider-label"><span>Vertical offset</span><span id="hOffsetVal">0px</span></div>
+            <input type="range" id="hatOffset" min="-80" max="80" step="1" value="0" oninput="document.getElementById('hOffsetVal').textContent=this.value+'px'">
+          </div>
+        </div>
+        <div class="divider"></div>
         <div>
           <div class="section-label">PNG Earring</div>
           <div class="slider-row">
@@ -211,26 +226,10 @@ const GLASSES_CATALOG = [
 ];
 
 const glassesConfig = {
-  'glasses-1-.glb': { zOffset: 0.5, scale: 2.0, yOffset: -0.1 },
-  'glasses-7.glb':  { zOffset: 1.4, scale: 1.85, yOffset: -0.1 },
-  'glasses-10.glb': { zOffset: 2.0, scale: 1.9, yOffset: -0.1 },
-  'glasses-12.glb': { zOffset: 2.5, scale: 2.0, yOffset: -0.1 }
-};
-
-const HAT_CATALOG = [
-  { name: 'Bucket Hat', file: 'bucket_hat.glb' },
-  { name: 'FBX Hat', file: 'fbx.glb' },
-  { name: 'Lowpoly Hat', file: 'menard_hat_lowpoly.glb' },
-  { name: 'Gen8 Hat', file: 'obj_bucket_hat_gen8_toshitimo.glb' },
-  { name: 'Victorian Hat', file: 'victorian_abigail_hat.glb' }
-];
-
-const hatConfig = {
-  'bucket_hat.glb': { zOffset: 1.5, scale: 2.2, yOffset: 0.2, rotX: 0.4 },
-  'fbx.glb': { zOffset: 1.5, scale: 2.2, yOffset: 0.2, rotX: 0.4 },
-  'menard_hat_lowpoly.glb': { zOffset: 1.5, scale: 2.2, yOffset: 0.2, rotX: 0.4 },
-  'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 1.5, scale: 2.2, yOffset: 0.2, rotX: 0.4 },
-  'victorian_abigail_hat.glb': { zOffset: 1.5, scale: 2.2, yOffset: 0.2, rotX: 0.4 }
+  'glasses-1-.glb': { zOffset: 0.5, scale: 2.0 },
+  'glasses-7.glb':  { zOffset: 1.4, scale: 1.85 },
+  'glasses-10.glb': { zOffset: 2.0, scale: 1.9 },
+  'glasses-12.glb': { zOffset: 2.5, scale: 2.0 }
 };
 
 const video = document.getElementById('webcam');
@@ -243,7 +242,6 @@ const debugEl = document.getElementById('debugInfo');
 
 let selected = { hat: null, earring: null, necklace: null };
 let pngImages = {};
-let pngMeta = {};
 let frameCount = 0, lastFpsTime = performance.now();
 let faceLandmarker = null;
 let running = false;
@@ -264,17 +262,13 @@ const dLight = new THREE.DirectionalLight(0xffffff, 1.2);
 dLight.position.set(0, 1, 1);
 scene3d.add(dLight);
 
-const headGroup = new THREE.Group();
-scene3d.add(headGroup);
+const modelGroup = new THREE.Group();
+scene3d.add(modelGroup);
 
 const gltfLoader = new THREE.GLTFLoader();
-
-let activeModels = {
-  glasses: { group: new THREE.Group(), model: null, normScale: 1, cfg: null, ready: false },
-  hat: { group: new THREE.Group(), model: null, normScale: 1, cfg: null, ready: false }
-};
-headGroup.add(activeModels.glasses.group);
-headGroup.add(activeModels.hat.group);
+let currentModel = null;
+let modelNormScale = 1;
+let modelReady = false;
 
 window.switchTab = function(tabName, tabEl) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -283,34 +277,29 @@ window.switchTab = function(tabName, tabEl) {
   document.getElementById('tab-' + tabName).classList.add('active');
 };
 
-function buildModelGrid(catalog, type, gridId, noBtnId, path) {
-  const grid = document.getElementById(gridId);
-  const noBtn = document.getElementById(noBtnId);
+function buildGlassesGrid() {
+  const grid = document.getElementById('glassesGrid');
+  const noGlassesBtn = document.getElementById('btn-no-glasses');
   grid.innerHTML = '';
-  grid.appendChild(noBtn);
+  grid.appendChild(noGlassesBtn);
 
-  catalog.forEach((item, idx) => {
+  GLASSES_CATALOG.forEach((item, idx) => {
     const btn = document.createElement('button');
     btn.className = 'acc-btn';
-    const canvasId = `prevCanvas_${type}_${idx}`;
+    const canvasId = `prevCanvas_${idx}`;
     
     btn.innerHTML = `<canvas id="${canvasId}" width="80" height="40"></canvas><span>${item.name}</span>`;
-    btn.addEventListener('click', () => loadModel(item.file, type, btn, path));
+    btn.addEventListener('click', () => loadModel(item.file, btn));
     grid.appendChild(btn);
 
     setTimeout(() => {
       const cEl = document.getElementById(canvasId);
-      if (cEl) generatePreview(item.file, cEl, path);
+      if (cEl) generatePreview(item.file, cEl);
     }, 100);
   });
 }
 
-function buildGlassesGrid() {
-  buildModelGrid(GLASSES_CATALOG, 'glasses', 'glassesGrid', 'btn-no-glasses', '/static/accessories/glasses/');
-  buildModelGrid(HAT_CATALOG, 'hat', 'hatsGrid', 'btn-no-hat', '/static/accessories/hats_3d/');
-}
-
-function generatePreview(file, canvasEl, path) {
+function generatePreview(file, canvasEl) {
   const pRenderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: true });
   pRenderer.setSize(80, 40);
   pRenderer.setClearColor(0x000000, 0);
@@ -323,7 +312,7 @@ function generatePreview(file, canvasEl, path) {
 
   const pCamera = new THREE.PerspectiveCamera(35, 2, 0.1, 100);
 
-  gltfLoader.load(path + file, gltf => {
+  gltfLoader.load('/static/accessories/glasses/' + file, gltf => {
     const m = gltf.scene;
     const box = new THREE.Box3().setFromObject(m);
     const center = box.getCenter(new THREE.Vector3());
@@ -337,61 +326,43 @@ function generatePreview(file, canvasEl, path) {
   });
 }
 
-window.loadModel = function(file, type, btn, path) {
+window.loadModel = function(file, btn) {
   if (btn) {
-    const gridSelector = type === 'glasses' ? '#glassesGrid' : '#hatsGrid';
-    document.querySelectorAll(`${gridSelector} .acc-btn`).forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#glassesGrid .acc-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
   }
-  window.clearModel(type, null, false);
-  statusBar.textContent = `Loading 3D ${type}: ` + file;
+  window.clearModel(null, false);
+  statusBar.textContent = 'Loading 3D Model: ' + file;
 
-  gltfLoader.load(path + file, gltf => {
-    const m = gltf.scene;
-    const box = new THREE.Box3().setFromObject(m);
+  gltfLoader.load('/static/accessories/glasses/' + file, gltf => {
+    currentModel = gltf.scene;
+    const box = new THREE.Box3().setFromObject(currentModel);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     
-    const cfg = type === 'glasses' ? (glassesConfig[file] || { zOffset: 0.5, scale: 1.8, yOffset: -0.1, rotX: 0 }) 
-                                   : (hatConfig[file] || { zOffset: 0.0, scale: 2.5, yOffset: 0.3, rotX: -Math.PI / 2 });
+    currentModel.position.sub(center).add(new THREE.Vector3(0, -0.05, 0));
+    const cfg = glassesConfig[file] || { zOffset: 0.5, scale: 1.8 };
+    currentModel.position.z -= cfg.zOffset;
+    currentModel._scaleMultiplier = cfg.scale;
     
-    const pivot = new THREE.Group();
-    const wrapper = new THREE.Group();
-    
-    m.position.sub(center); // Center the model inside the wrapper
-    wrapper.add(m);
-    
-    if (cfg.rotX) wrapper.rotation.x = cfg.rotX;
-    
-    // For hats, shift the wrapper UP so the pivot is at the bottom of the hat.
-    // No extra Y offset needed - positioning is handled dynamically in renderLoop
-    
-    pivot.add(wrapper);
-    
-    activeModels[type].model = pivot; // pivot will be manipulated by renderLoop
-    activeModels[type].cfg = cfg;
-    activeModels[type].normScale = 1.0 / size.x;
-    
-    activeModels[type].group.add(pivot);
-    activeModels[type].ready = true;
+    modelGroup.add(currentModel);
+    modelNormScale = 1.0 / size.x;
+    modelReady = true;
     statusBar.textContent = 'Face detected ✓';
   }, undefined, err => {
     console.error(err);
-    statusBar.textContent = `Failed to load ${type}!`;
+    statusBar.textContent = 'Failed to load model!';
   });
 };
 
-window.clearModel = function(type, btn, updateUI = true) {
+window.clearModel = function(btn, updateUI = true) {
   if (updateUI && btn) {
-    const gridSelector = type === 'glasses' ? '#glassesGrid' : '#hatsGrid';
-    document.querySelectorAll(`${gridSelector} .acc-btn`).forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#glassesGrid .acc-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
   }
-  
-  const mGroup = activeModels[type].group;
-  while (mGroup.children.length > 0) mGroup.remove(mGroup.children[0]);
-  activeModels[type].model = null;
-  activeModels[type].ready = false;
+  while (modelGroup.children.length > 0) modelGroup.remove(modelGroup.children[0]);
+  currentModel = null;
+  modelReady = false;
 };
 
 window.selectAcc = function(type, file, btn) {
@@ -399,88 +370,16 @@ window.selectAcc = function(type, file, btn) {
   grid.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   selected[type] = file;
-  console.log('AR selectAcc:', type, '->', file);
   if (file) loadPNG(file, type);
 };
-
-function computeTrim(img) {
-  const c = document.createElement('canvas');
-  c.width = img.naturalWidth;
-  c.height = img.naturalHeight;
-  const cx = c.getContext('2d');
-  cx.drawImage(img, 0, 0);
-  let data;
-  try {
-    data = cx.getImageData(0, 0, c.width, c.height).data;
-  } catch (e) {
-    return { sx: 0, sy: 0, sw: img.naturalWidth, sh: img.naturalHeight };
-  }
-  let minX = c.width, minY = c.height, maxX = 0, maxY = 0, found = false;
-  for (let y = 0; y < c.height; y++) {
-    for (let x = 0; x < c.width; x++) {
-      if (data[(y * c.width + x) * 4 + 3] > 10) {
-        found = true;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-    }
-  }
-  if (!found) return { sx: 0, sy: 0, sw: img.naturalWidth, sh: img.naturalHeight };
-  return { sx: minX, sy: minY, sw: maxX - minX + 1, sh: maxY - minY + 1 };
-}
 
 function loadPNG(file, type) {
   if (pngImages[file]) return;
   const img = new Image();
   const folderMap = { hat:'hats', earring:'earrings', necklace:'necklaces' };
   img.src = '/static/accessories/' + folderMap[type] + '/' + file;
-  img.onload = () => {
-    pngImages[file] = img;
-    pngMeta[file] = computeTrim(img);
-    console.log('AR PNG loaded:', file, pngMeta[file]);
-  };
-  img.onerror = () => console.error('AR PNG FAILED to load:', img.src);
+  img.onload = () => { pngImages[file] = img; };
 }
-
-function drawAnchoredPNG(file, targetX, targetY, targetW, angle, anchorY, opacity) {
-  const img = pngImages[file];
-  if (!img) return;
-  const meta = pngMeta[file] || { sx: 0, sy: 0, sw: img.naturalWidth, sh: img.naturalHeight };
-  const tH = targetW * (meta.sh / meta.sw);
-  ctx.save();
-  ctx.globalAlpha = opacity == null ? 1 : Math.max(0, Math.min(1, opacity));
-  ctx.translate(targetX, targetY);
-  ctx.rotate(angle);
-  ctx.drawImage(img, meta.sx, meta.sy, meta.sw, meta.sh, -targetW / 2, -anchorY * tH, targetW, tH);
-  ctx.restore();
-}
-
-function estimateYaw(pt) {
-  const nose = pt(1), left = pt(234), right = pt(454);
-  const dL = Math.abs(nose.x - left.x);
-  const dR = Math.abs(nose.x - right.x);
-  const total = dL + dR;
-  if (total < 1) return 0;
-  return (dL - dR) / total;
-}
-
-function farSideOpacity(yaw) {
-  const m = Math.min(1, Math.max(0, (Math.abs(yaw) - 0.12) / 0.33));
-  return 1 - m;
-}
-
-let _lastEarSide = '';
-function reportEar(yaw, side) {
-  debugEl.textContent = `yaw:${yaw.toFixed(2)} ear:${side}`;
-  if (side !== _lastEarSide) {
-    console.log('AR earring side:', side, 'yaw=', yaw.toFixed(2));
-    _lastEarSide = side;
-  }
-}
-
-let _lastNeck = '';
 
 window.startCamera = async function() {
   document.getElementById('startBtn').style.display = 'none';
@@ -542,7 +441,7 @@ function renderLoop() {
 
   if (!result.faceLandmarks?.length) {
     statusBar.textContent = 'No face detected';
-    headGroup.visible = false;
+    if (currentModel) currentModel.visible = false;
     renderer3d.render(scene3d, camera3d);
     return;
   }
@@ -552,9 +451,9 @@ function renderLoop() {
   const W = canvas2d.width, H = canvas2d.height;
   const pt = i => ({ x: lm[i].x * W, y: lm[i].y * H });
 
-  // ─── 1. 3D MODELS POSITION & CALCULATION ───
-  if (result.facialTransformationMatrixes?.length) {
-    headGroup.visible = true;
+  // ─── 1. 3D GLASSES POSITION & CALCULATION ───
+  if (result.facialTransformationMatrixes?.length && currentModel && modelReady) {
+    currentModel.visible = true;
     const mp = result.facialTransformationMatrixes[0].data;
     const m = new THREE.Matrix4().set(
       mp[0], mp[4], mp[8],  mp[12],
@@ -569,12 +468,8 @@ function renderLoop() {
     m.decompose(pos, quat, scaleV);
 
     const bridgeNose = lm[168];
-    const foreHead = lm[10]; // Top of forehead landmark
-
     const ndcX = (bridgeNose.x * 2) - 1;
     const ndcY = -(bridgeNose.y * 2) + 1;
-    
-    const foreNdcY = -(foreHead.y * 2) + 1;
 
     const depth = Math.abs(pos.z);
     const fovRad = THREE.MathUtils.degToRad(30);
@@ -583,10 +478,6 @@ function renderLoop() {
 
     pos.x = -(ndcX * halfScreenWorldWidth);
     pos.y = (ndcY * halfScreenWorldHeight) - 0.05;
-    
-    // Calculate world position of forehead
-    const forePosY = (foreNdcY * halfScreenWorldHeight) - 0.05;
-    const autoHatYOffset = Math.abs(forePosY - pos.y); // Dynamic distance from nose to forehead
 
     const lEyePx = lm[33].x * W;
     const rEyePx = lm[263].x * W;
@@ -596,43 +487,28 @@ function renderLoop() {
     pos.z = -depth - (eyeDistWorld * 0.5);
     const qAynali = new THREE.Quaternion(quat.x, -quat.y, -quat.z, quat.w);
 
-    headGroup.position.set(pos.x, pos.y, pos.z);
-    headGroup.quaternion.copy(qAynali);
+    const targetWidth = eyeDistWorld * (currentModel._scaleMultiplier || 1.8);
+    const finalScale = targetWidth * modelNormScale;
+
+    modelGroup.position.set(pos.x, pos.y - 0.1, pos.z);
+    modelGroup.quaternion.copy(qAynali);
+    modelGroup.scale.setScalar(finalScale);
+
+    debugEl.textContent = `pos:(${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)}) scale:${finalScale.toFixed(3)}`;
 
     const euler = new THREE.Euler().setFromQuaternion(qAynali, 'YXZ');
     const yawAbs = Math.abs(euler.y);
     const occlusionOpacity = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(yawAbs, 0.3, 0.7, 1.0, 0.0), 0.0, 1.0);
-
-    ['glasses', 'hat'].forEach(type => {
-      const active = activeModels[type];
-      if (active.ready && active.model) {
-        const targetWidth = eyeDistWorld * active.cfg.scale;
-        const finalScale = targetWidth * active.normScale;
-        active.model.scale.setScalar(finalScale);
-        
-        // Dynamic positioning: If it's a hat, place it exactly at the forehead distance plus a tiny base offset
-        let finalY = active.cfg.yOffset * eyeDistWorld;
-        if (type === 'hat') {
-            finalY = autoHatYOffset + (active.cfg.yOffset * eyeDistWorld); 
-        }
-
-        active.model.position.set(0, finalY, -active.cfg.zOffset * eyeDistWorld);
-
-        active.model.traverse(child => {
-          if (!child.isMesh) return;
-          if (!child.material._originalOpacity) {
-            child.material = child.material.clone();
-            child.material.transparent = true;
-            child.material._originalOpacity = child.material.opacity || 1.0;
-          }
-          child.material.opacity = occlusionOpacity * child.material._originalOpacity;
-        });
+    
+    currentModel.traverse(child => {
+      if (!child.isMesh) return;
+      if (!child.material._originalOpacity) {
+        child.material = child.material.clone();
+        child.material.transparent = true;
+        child.material._originalOpacity = child.material.opacity || 1.0;
       }
+      child.material.opacity = occlusionOpacity * child.material._originalOpacity;
     });
-
-    debugEl.textContent = `pos:(${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)})`;
-  } else {
-    headGroup.visible = false;
   }
 
   // ─── 2. 2D MAKEUP RENDERING (Çizim Katmanı Z-Index 2) ───
@@ -657,7 +533,7 @@ function renderLoop() {
   // ─── 3. 2D PNG ACCESSORIES RENDERING (Çizim Katmanı Z-Index 2) ───
   if (selected.necklace && pngImages[selected.necklace]) drawNecklace(pt);
   if (selected.earring && pngImages[selected.earring]) drawEarring(pt);
-  // if (selected.hat && pngImages[selected.hat]) drawHat(pt); // Disabled PNG hats since we have 3D now
+  if (selected.hat && pngImages[selected.hat]) drawHat(pt);
 
   // 3D Render (En Üst Katman Z-Index 3)
   renderer3d.render(scene3d, camera3d);
@@ -833,40 +709,24 @@ function drawHat(pt) {
 }
 
 function drawEarring(pt) {
-  const file = selected.earring;
-  const meta = pngMeta[file];
-  if (!meta) return;
+  const img = pngImages[selected.earring];
   const scale = parseFloat(document.getElementById('earringScale').value);
   const yOff = parseInt(document.getElementById('earringOffset').value);
-  const lSide = pt(234), rSide = pt(454), chin = pt(152), fore = pt(10);
+  const lLobe = pt(172), rLobe = pt(397), chin = pt(152), fore = pt(10);
   const faceH = Math.abs(chin.y - fore.y);
-  const angle = Math.atan2(rSide.y - lSide.y, rSide.x - lSide.x);
-  const tH = faceH * 0.15 * scale;
-  const tW = tH * (meta.sw / meta.sh);
-  const drop = faceH * 0.12;
-  const yaw = estimateYaw(pt);
-  const fade = farSideOpacity(yaw);
-  const leftOp = yaw < 0 ? fade : 1;
-  const rightOp = yaw > 0 ? fade : 1;
-  const side = yaw > 0.12 ? 'LEFT-only' : (yaw < -0.12 ? 'RIGHT-only' : 'BOTH');
-  if (leftOp > 0.02) drawAnchoredPNG(file, lSide.x - faceH * 0.02, lSide.y + drop + yOff, tW, angle, 0, leftOp);
-  if (rightOp > 0.02) drawAnchoredPNG(file, rSide.x + faceH * 0.02, rSide.y + drop + yOff, tW, angle, 0, rightOp);
-  reportEar(yaw, side);
+  const tH = faceH * 0.18 * scale; const tW = img.naturalWidth * (tH / img.naturalHeight);
+  ctx.drawImage(img, lLobe.x - tW/2, lLobe.y + yOff, tW, tH);
+  ctx.drawImage(img, rLobe.x - tW/2, rLobe.y + yOff, tW, tH);
 }
 
 function drawNecklace(pt) {
-  const file = selected.necklace;
-  const meta = pngMeta[file];
-  if (!meta) return;
+  const img = pngImages[selected.necklace];
   const lT = pt(234), rT = pt(454), chin = pt(152);
   const faceW = Math.hypot(rT.x - lT.x, rT.y - lT.y);
-  const tW = faceW * 1.5;
-  const cx = (lT.x + rT.x) / 2;
-  const angle = Math.atan2(rT.y - lT.y, rT.x - lT.x);
-  const yaw = estimateYaw(pt);
-  const shift = yaw * faceW * 0.15;
-  if (_lastNeck !== file) { console.log('AR necklace render:', file); _lastNeck = file; }
-  drawAnchoredPNG(file, cx + shift, chin.y + faceW * 0.14, tW, angle, 0, 1);
+  const tW = faceW * 1.4; const tH = img.naturalHeight * (tW / img.naturalWidth);
+  const cx = (lT.x + rT.x) / 2; const angle = Math.atan2(rT.y - lT.y, rT.x - lT.x);
+  ctx.save(); ctx.translate(cx, chin.y); ctx.rotate(angle);
+  ctx.drawImage(img, -tW/2, 0, tW, tH); ctx.restore();
 }
 </script>
 </body>

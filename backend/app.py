@@ -3,9 +3,6 @@
 import os
 import time
 
-from backend.modules.utils.win_path_fix import apply as apply_win_path_fix
-apply_win_path_fix()
-
 from flask import Flask, render_template, session, redirect, url_for, flash, request, jsonify, current_app
 from flask_cors import CORS
 
@@ -29,12 +26,6 @@ def create_app():
     )
 
     CORS(app)
-
-    @app.after_request
-    def add_no_cache_headers(response):
-        if response.mimetype == "text/html":
-            response.headers["Cache-Control"] = "no-store, max-age=0"
-        return response
 
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-secret")
     app.config["UPLOAD_FOLDER"] = "static/uploads"

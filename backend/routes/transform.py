@@ -222,269 +222,76 @@ def resolve_accessory_path(t_type, item_name):
     return None
 
 
-JEWELRY_ITEM_SCALE = {
-    "earring": {
-        "_default": 1.0,
-        "hoop_gold": 1.0,
-        "pearl_drop": 1.1,
-        "silver_earring": 1.0,
-    },
-    "necklace": {
-        "_default": 1.0,
-        "gold_necklace": 1.0,
-        "pearl_necklace": 1.0,
-        "simple_chain": 1.05,
-    },
-}
+def apply_jewelry_with_yolo(image, t_type, item_path, intensity=1.0):
+    output = image.copy()
+    results = pose_model(output, verbose=False)
 
-
-def _jewelry_item_scale(t_type, item_path):
-    key = os.path.splitext(os.path.basename(item_path or ""))[0]
-    table = JEWELRY_ITEM_SCALE.get(t_type, {})
-    return float(table.get(key, table.get("_default", 1.0)))
-
-
-def _trim_bgra(overlay):
-    if overlay is None or overlay.ndim < 3 or overlay.shape[2] < 4:
-        return overlay
-    alpha = overlay[:, :, 3]
-    ys, xs = np.where(alpha > 0)
-    if len(xs) == 0:
-        return overlay
-    return overlay[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
-
-
-def overlay_with_anchor(base_bgr, overlay, target_xy, target_width,
-                        anchor=(0.5, 0.0), angle_deg=0.0, opacity=1.0):
-    if overlay is None:
-        return base_bgr
-
-    if overlay.ndim == 2:
-        overlay = cv2.cvtColor(overlay, cv2.COLOR_GRAY2BGRA)
-    if overlay.shape[2] == 3:
-        alpha = np.full(overlay.shape[:2], 255, dtype=np.uint8)
-        overlay = np.dstack([overlay, alpha])
-
-    overlay = _trim_bgra(overlay)
-    oh, ow = overlay.shape[:2]
-    if ow <= 0 or oh <= 0:
-        return base_bgr
-
-    scale = max(1, int(round(target_width))) / float(ow)
-    new_w = max(1, int(round(ow * scale)))
-    new_h = max(1, int(round(oh * scale)))
-    overlay = cv2.resize(overlay, (new_w, new_h), interpolation=cv2.INTER_AREA)
-
-    ax, ay = anchor
-    anchor_x = ax * new_w
-    anchor_y = ay * new_h
-
-    if abs(angle_deg) > 0.5:
-        center = (new_w / 2.0, new_h / 2.0)
-        rot = cv2.getRotationMatrix2D(center, angle_deg, 1.0)
-        cos = abs(rot[0, 0])
-        sin = abs(rot[0, 1])
-        rot_w = int(new_h * sin + new_w * cos)
-        rot_h = int(new_h * cos + new_w * sin)
-        rot[0, 2] += rot_w / 2.0 - center[0]
-        rot[1, 2] += rot_h / 2.0 - center[1]
-        overlay = cv2.warpAffine(
-            overlay, rot, (rot_w, rot_h),
-            flags=cv2.INTER_LINEAR,
-            borderMode=cv2.BORDER_CONSTANT,
-            borderValue=(0, 0, 0, 0)
-        )
-        rx = rot[0, 0] * anchor_x + rot[0, 1] * anchor_y + rot[0, 2]
-        ry = rot[1, 0] * anchor_x + rot[1, 1] * anchor_y + rot[1, 2]
-        anchor_x, anchor_y = rx, ry
-        new_w, new_h = rot_w, rot_h
-
-    tx, ty = target_xy
-    x = int(round(tx - anchor_x))
-    y = int(round(ty - anchor_y))
-
-    bh, bw = base_bgr.shape[:2]
-    x1 = max(0, x)
-    y1 = max(0, y)
-    x2 = min(bw, x + new_w)
-    y2 = min(bh, y + new_h)
-    if x1 >= x2 or y1 >= y2:
-        return base_bgr
-
-    ox1 = x1 - x
-    oy1 = y1 - y
-    ox2 = ox1 + (x2 - x1)
-    oy2 = oy1 + (y2 - y1)
-
-    crop = overlay[oy1:oy2, ox1:ox2]
-    alpha = (crop[:, :, 3:4].astype(np.float32) / 255.0) * float(max(0.0, min(1.0, opacity)))
-    rgb = crop[:, :, :3].astype(np.float32)
-    roi = base_bgr[y1:y2, x1:x2].astype(np.float32)
-    base_bgr[y1:y2, x1:x2] = np.clip(roi * (1.0 - alpha) + rgb * alpha, 0, 255).astype(np.uint8)
-    return base_bgr
-
-
-def _ext_point(ext, key):
-    value = ext.get(key) if ext else None
-    if isinstance(value, tuple) and len(value) == 2:
-        return np.array(value, dtype=np.float32)
-    return None
-
-
-def _facemesh_refs(landmarks, ext):
-    if not landmarks or len(landmarks) < 468:
-        return None
-    left = np.array(landmarks[234], dtype=np.float32)
-    right = np.array(landmarks[454], dtype=np.float32)
-    chin = np.array(landmarks[152], dtype=np.float32)
-    nose = np.array(landmarks[1], dtype=np.float32)
-    face_width = max(40.0, float(np.linalg.norm(right - left)))
-    tilt = float(np.degrees(np.arctan2(right[1] - left[1], right[0] - left[0])))
-    return {
-        "left": left,
-        "right": right,
-        "chin": chin,
-        "nose": nose,
-        "face_width": face_width,
-        "tilt": tilt,
-        "ear_left": _ext_point(ext, "left_ear"),
-        "ear_right": _ext_point(ext, "right_ear"),
-        "shoulder_left": _ext_point(ext, "left_shoulder"),
-        "shoulder_right": _ext_point(ext, "right_shoulder"),
-    }
-
-
-def _yolo_keypoints(image):
-    results = pose_model(image, verbose=False)
     if (
         not results
         or not hasattr(results[0], "keypoints")
         or results[0].keypoints is None
         or len(results[0].keypoints.xy) == 0
     ):
-        return None
-    kp = results[0].keypoints.xy[0].cpu().numpy()
-    if len(kp) < 7:
-        return None
-    return kp
-
-
-def _place_earrings(output, overlay, refs, kp, item_scale, intensity):
-    face_width = refs["face_width"] if refs else None
-    tilt = refs["tilt"] if refs else 0.0
-
-    ear_a = ear_b = None
-    source = None
-
-    if kp is not None and kp[3][0] > 0 and kp[4][0] > 0:
-        ear_a, ear_b = kp[3], kp[4]
-        source = "YOLO-kulak"
-        if face_width is None:
-            face_width = float(np.linalg.norm(np.array(ear_b) - np.array(ear_a)))
-    elif refs and refs["ear_left"] is not None and refs["ear_right"] is not None:
-        ear_a, ear_b = refs["ear_left"], refs["ear_right"]
-        source = "FaceMesh-kulak(tahmini)"
-
-    if ear_a is None or ear_b is None or not face_width:
-        print("JEWELRY: küpe için referans bulunamadı, atlandı")
+        print("YOLO: İnsan iskeleti algılanamadı.")
         return output
 
-    pts = sorted(
-        [np.array(ear_a, dtype=np.float32), np.array(ear_b, dtype=np.float32)],
-        key=lambda p: float(p[0])
-    )
-    img_left, img_right = pts[0], pts[1]
+    keypoints = results[0].keypoints.xy[0].cpu().numpy()
 
-    drop = 0.075 * face_width
-    left_lobe = (float(img_left[0]), float(img_left[1]) + drop)
-    right_lobe = (float(img_right[0]), float(img_right[1]) + drop)
-
-    target_w = max(8, int(face_width * 0.11 * item_scale))
-    print("JEWELRY: küpe kaynak=%s face_width=%.1f target_w=%d tilt=%.1f" %
-          (source, face_width, target_w, tilt))
-
-    output = overlay_with_anchor(output, overlay, left_lobe, target_w,
-                                 anchor=(0.5, 0.06), angle_deg=-tilt, opacity=intensity)
-    output = overlay_with_anchor(output, overlay, right_lobe, target_w,
-                                 anchor=(0.5, 0.06), angle_deg=-tilt, opacity=intensity)
-    return output
-
-
-def _place_necklace(output, overlay, refs, kp, item_scale, intensity):
-    span = mid = None
-    source = None
-
-    if kp is not None and kp[5][0] > 0 and kp[6][0] > 0:
-        ls = np.array(kp[5], dtype=np.float32)
-        rs = np.array(kp[6], dtype=np.float32)
-        span = float(np.linalg.norm(rs - ls))
-        mid = ((ls[0] + rs[0]) / 2.0, (ls[1] + rs[1]) / 2.0)
-        source = "YOLO-omuz"
-    elif refs and refs["shoulder_left"] is not None and refs["shoulder_right"] is not None:
-        ls = refs["shoulder_left"]
-        rs = refs["shoulder_right"]
-        span = float(np.linalg.norm(rs - ls))
-        mid = ((ls[0] + rs[0]) / 2.0, (ls[1] + rs[1]) / 2.0)
-        source = "FaceMesh-omuz(tahmini)"
-
-    if (span is None or mid is None) and refs:
-        span = refs["face_width"] * 1.7
-        mid = (float(refs["nose"][0]), float(refs["chin"][1] + refs["face_width"] * 0.5))
-        source = "FaceMesh-yüz(yedek)"
-
-    if span is None or mid is None:
-        print("JEWELRY: kolye için referans bulunamadı, atlandı")
+    if len(keypoints) < 7:
+        print("YOLO: Yeterli referans noktası algılanamadı.")
         return output
 
-    width = span * 0.80 * item_scale
+    left_ear = keypoints[3]
+    right_ear = keypoints[4]
+    left_shoulder = keypoints[5]
+    right_shoulder = keypoints[6]
 
-    if refs:
-        center_x = float(mid[0])
-        top_y = float(refs["chin"][1] + 0.15 * refs["face_width"])
-    else:
-        center_x = float(mid[0])
-        top_y = float(mid[1] - 0.25 * span)
+    face_width = float(np.linalg.norm(right_ear - left_ear))
 
-    target_w = max(20, int(width))
-    print("JEWELRY: kolye kaynak=%s span=%.1f target_w=%d top=(%d,%d)" %
-          (source, span, target_w, int(center_x), int(top_y)))
-
-    return overlay_with_anchor(output, overlay, (center_x, top_y), target_w,
-                               anchor=(0.5, 0.0), angle_deg=0.0, opacity=intensity)
-
-
-def apply_jewelry_with_yolo(image, t_type, item_path, intensity=1.0):
-    output = image.copy()
-    print("JEWELRY v3 (anchor/yaw) AKTİF:", t_type, os.path.basename(item_path or ""))
-
-    overlay = cv2.imread(item_path, cv2.IMREAD_UNCHANGED)
-    if overlay is None:
-        print("JEWELRY: overlay okunamadı:", item_path)
+    if face_width < 10 or left_shoulder[0] == 0 or right_shoulder[0] == 0:
+        print("YOLO: İlgili bölgeler fotoğrafta kesik veya görünmüyor.")
         return output
-
-    item_scale = _jewelry_item_scale(t_type, item_path)
-
-    refs = None
-    try:
-        fm = process_landmark_pipeline(output)
-        landmarks = fm.get("landmarks") if fm.get("success") else None
-        ext = fm.get("extended_landmarks") or {}
-        refs = _facemesh_refs(landmarks, ext) if landmarks else None
-    except Exception as landmark_error:
-        print("JEWELRY: FaceMesh hata, YOLO-only yedeğe geçiliyor:", landmark_error)
-
-    if refs:
-        print("JEWELRY: FaceMesh OK face_width=%.1f tilt=%.1f" % (refs["face_width"], refs["tilt"]))
-    else:
-        print("JEWELRY: FaceMesh referansı yok")
-
-    kp = _yolo_keypoints(output)
-    print("JEWELRY: YOLO pose", "OK" if kp is not None else "yok")
 
     if t_type == "earring":
-        return _place_earrings(output, overlay, refs, kp, item_scale, intensity)
-    if t_type == "necklace":
-        return _place_necklace(output, overlay, refs, kp, item_scale, intensity)
+        overlay = cv2.imread(item_path, cv2.IMREAD_UNCHANGED)
+        if overlay is None:
+            print("Earring overlay could not be read:", item_path)
+            return output
+
+        oh, ow = overlay.shape[:2]
+        earring_width = 0.070 * face_width
+        scale = earring_width / ow
+
+        # Left Earlobe
+        left_earlobe = (left_ear[0], left_ear[1] + 0.15 * face_width)
+        lx = int(left_earlobe[0] - (ow * scale) / 2)
+        ly = int(left_earlobe[1] - (oh * scale) / 2)
+        output = apply_png_overlay(output, overlay, lx, ly, scale=scale)
+
+        # Right Earlobe
+        right_earlobe = (right_ear[0], right_ear[1] + 0.15 * face_width)
+        rx = int(right_earlobe[0] - (ow * scale) / 2)
+        ry = int(right_earlobe[1] - (oh * scale) / 2)
+        output = apply_png_overlay(output, overlay, rx, ry, scale=scale)
+
+    elif t_type == "necklace":
+        overlay = cv2.imread(item_path, cv2.IMREAD_UNCHANGED)
+        if overlay is None:
+            print("Necklace overlay could not be read:", item_path)
+            return output
+
+        oh, ow = overlay.shape[:2]
+        necklace_width = 1.25 * face_width
+        scale = necklace_width / ow
+
+        neck_x = (left_shoulder[0] + right_shoulder[0]) / 2.0
+        neck_y = (left_shoulder[1] + right_shoulder[1]) / 2.0
+        necklace_center = (neck_x, neck_y + 0.10 * face_width)
+
+        nx = int(necklace_center[0] - (ow * scale) / 2)
+        ny = int(necklace_center[1] - (oh * scale) / 2)
+        output = apply_png_overlay(output, overlay, nx, ny, scale=scale)
+
     return output
 
 @transform_bp.route("/", methods=["POST"])
