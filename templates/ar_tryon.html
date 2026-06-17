@@ -736,7 +736,7 @@ function drawEyeshadow(pt, intensity) {
     var clipY      = (1 - t) * openClip + t * closedClip;
 
     // Opaklık: %50 intensity → ~%90 görünüm
-    var a = Math.min(0.98, intensity * 1.8);
+    var a = Math.min(0.98, intensity * 2.25);
 
     // Şekli göz açıklığından yukarı kaydır — clip yerine blur doğal solar
     var yShift = eyeW * 0.15;
