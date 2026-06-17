@@ -776,18 +776,59 @@ function drawEyeshadow(pt, intensity) {
 
 function drawBlush(pt, intensity) {
   const {r,g,b} = hexToRgb(document.getElementById('blushColor').value);
-  const lC = pt(123), rC = pt(352);
-  const faceW = Math.hypot(pt(454).x-pt(234).x, pt(454).y-pt(234).y);
-  const radius = faceW * 0.21 * intensity;
-  ctx.save(); ctx.filter = 'blur(3px)';
-  [[lC,4],[rC,-4]].forEach(([p,dx])=>{
-    const x = p.x + dx; const y = p.y - 2;
-    const grad = ctx.createRadialGradient(x,y,0,x,y,radius);
-    grad.addColorStop(0, `rgba(${r},${g},${b},${0.42*intensity})`);
-    grad.addColorStop(0.6, `rgba(${r},${g},${b},${0.18*intensity})`);
-    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x,y,radius,0,Math.PI*2); ctx.fill();
+
+  const lEdge = pt(234), rEdge = pt(454), noseTip = pt(4);
+  const faceW    = Math.abs(rEdge.x - lEdge.x);
+  const faceH    = pt(152).y - pt(10).y;
+  const faceMidX = (lEdge.x + rEdge.x) / 2;
+  const W = ctx.canvas.width, H = ctx.canvas.height;
+
+  const yShift = faceH * 0.10;
+  const lC = { x: pt(117).x, y: pt(117).y + yShift };
+  const rC = { x: pt(346).x, y: pt(346).y + yShift };
+  const radius = faceW * 0.19;
+
+  const noseShift = (noseTip.x - faceMidX) / faceW;
+  const rawBase   = Math.min(0.95, intensity * 1.20);
+  const fadeK     = 4.0;
+  const lAlpha    = Math.max(0, Math.min(1, 1 + noseShift * fadeK)) * rawBase;
+  const rAlpha    = Math.max(0, Math.min(1, 1 - noseShift * fadeK)) * rawBase;
+
+  // Blur'ü offscreen canvas'ta çiz — sonra yüz oval clip ile ana canvas'a aktar
+  // Bu sayede ctx.filter blur, clip sınırından sızmaz
+  if (!drawBlush._off) drawBlush._off = document.createElement('canvas');
+  var off = drawBlush._off;
+  if (off.width !== W) off.width = W;
+  if (off.height !== H) off.height = H;
+  var oCtx = off.getContext('2d');
+  oCtx.clearRect(0, 0, W, H);
+  oCtx.filter = 'blur(16px)';
+
+  [[lC, lAlpha], [rC, rAlpha]].forEach(function(pair) {
+    var p = pair[0], alpha = pair[1];
+    if (alpha < 0.01) return;
+    var grad = oCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
+    grad.addColorStop(0,   'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')');
+    grad.addColorStop(0.5, 'rgba(' + r + ',' + g + ',' + b + ',' + (alpha * 0.4) + ')');
+    grad.addColorStop(1,   'rgba(' + r + ',' + g + ',' + b + ',0)');
+    oCtx.fillStyle = grad;
+    oCtx.beginPath();
+    oCtx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+    oCtx.fill();
   });
+
+  // Yüz oval clip ile ana canvas'a kopyala
+  const faceOval = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,
+                    400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+  ctx.save();
+  ctx.beginPath();
+  faceOval.forEach(function(i, idx) {
+    var p = pt(i);
+    idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+  });
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(off, 0, 0);
   ctx.restore();
 }
 
