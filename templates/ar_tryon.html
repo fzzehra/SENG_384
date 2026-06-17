@@ -226,11 +226,11 @@ const HAT_CATALOG = [
 ];
 
 const hatConfig = {
-  'bucket_hat.glb': { zOffset: -0.2, scale: 2.5, yOffset: 0.1, rotX: 1.1 },
-  'fbx.glb': { zOffset: -0.2, scale: 2.5, yOffset: 0.1, rotX: 1.1 },
-  'menard_hat_lowpoly.glb': { zOffset: -0.2, scale: 2.5, yOffset: 0.1, rotX: 1.1 },
-  'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: -0.2, scale: 2.5, yOffset: 0.1, rotX: 1.1 },
-  'victorian_abigail_hat.glb': { zOffset: -0.2, scale: 2.5, yOffset: 0.1, rotX: 1.1 }
+  'bucket_hat.glb': { zOffset: 1.5, scale: 2.2, yOffset: 0.2, rotX: 0.4 },
+  'fbx.glb': { zOffset: 1.5, scale: 2.2, yOffset: 0.2, rotX: 0.4 },
+  'menard_hat_lowpoly.glb': { zOffset: 1.5, scale: 2.2, yOffset: 0.2, rotX: 0.4 },
+  'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 1.5, scale: 2.2, yOffset: 0.2, rotX: 0.4 },
+  'victorian_abigail_hat.glb': { zOffset: 1.5, scale: 2.2, yOffset: 0.2, rotX: 0.4 }
 };
 
 const video = document.getElementById('webcam');
@@ -363,11 +363,7 @@ window.loadModel = function(file, type, btn, path) {
     if (cfg.rotX) wrapper.rotation.x = cfg.rotX;
     
     // For hats, shift the wrapper UP so the pivot is at the bottom of the hat.
-    // Since the original bottom was facing Z+, after rotating -90 on X, the bottom is facing Y-.
-    // The height in the new space is size.z.
-    if (type === 'hat') {
-        wrapper.position.y = size.z / 2;
-    }
+    // No extra Y offset needed - positioning is handled dynamically in renderLoop
     
     pivot.add(wrapper);
     
