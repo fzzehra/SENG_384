@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chameleon AR Try-On</title>
+<title>Chameleon AR Studio - 3D & 2D Integrated</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -16,13 +16,13 @@ body{min-height:100vh;background:linear-gradient(135deg,#f0f4ff 0%,#e8fcd4 50%,#
 h1{font-family:'Playfair Display',serif;font-size:36px;color:#2a2a7a;}
 .studio{display:grid;grid-template-columns:1fr 300px;gap:20px;width:100%;max-width:1060px;}
 
-/* Preview: video + 2d canvas + three.js canvas üst üste */
-.preview-wrap{position:relative;border-radius:20px;overflow:hidden;background:#000;aspect-ratio:4/3;box-shadow:0 20px 60px rgba(70,70,229,0.15);}
-#webcam{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1);}
-/* 2d makeup canvas */
-#canvas2d{position:absolute;top:0;left:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none;}
-/* three.js 3d canvas — en üstte, pointer-events yok */
-#canvas3d{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+.preview-wrap{position:relative;border-radius:20px;overflow:hidden;background:#000;aspect-ratio:4/3;box-shadow:0 20px 60px rgba(70,70,229,0.15);width:100%;}
+
+/* Katman (Z-Index) Ayarları - Çakışmayı Önleyen Kısım */
+#webcam{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1); position:relative; z-index:1;}
+#canvas2d{position:absolute;top:0;left:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none; z-index:2;}
+#canvas3d{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none; z-index:3;}
+
 .status-bar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.5);color:#fff;font-size:12px;padding:6px 14px;border-radius:100px;backdrop-filter:blur(8px);white-space:nowrap;z-index:10;}
 .start-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#6060e5,#4646e5);color:#fff;font-size:15px;font-weight:600;padding:14px 28px;border-radius:14px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 8px 24px rgba(70,70,229,0.4);transition:all 0.3s;z-index:10;}
 .start-btn:hover{transform:translate(-50%,-50%) translateY(-2px);}
@@ -37,14 +37,13 @@ h1{font-family:'Playfair Display',serif;font-size:36px;color:#2a2a7a;}
 .panel-section.active{display:flex;}
 .section-label{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#6060aa;margin-bottom:6px;}
 
-/* Gözlük kartları — PNG ise küçük ikon, GLB ise 3D rozet göster */
 .acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
 .acc-btn{padding:9px 8px;border-radius:11px;border:1.5px solid rgba(70,70,229,0.15);background:rgba(255,255,255,0.6);font-size:12px;font-weight:500;color:#2a2a7a;cursor:pointer;transition:all 0.2s;text-align:center;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;gap:4px;}
 .acc-btn:hover{border-color:rgba(70,70,229,0.4);background:rgba(70,70,229,0.05);}
 .acc-btn.active{border-color:#4646e5;background:rgba(70,70,229,0.1);color:#4646e5;}
 .acc-btn.full{grid-column:span 2;}
+.acc-btn canvas{display:block;border-radius:6px;background:rgba(0,0,0,0.03);}
 .acc-btn img{width:48px;height:28px;object-fit:contain;}
-.glb-badge{font-size:9px;font-weight:700;background:linear-gradient(135deg,#6060e5,#9b59b6);color:#fff;padding:1px 6px;border-radius:4px;letter-spacing:0.5px;}
 
 .slider-row{display:flex;flex-direction:column;gap:5px;}
 .slider-label{display:flex;justify-content:space-between;font-size:12px;color:#6060aa;}
@@ -53,6 +52,7 @@ input[type=range]{width:100%;height:5px;accent-color:#4646e5;}
 .color-label{font-size:12px;color:#6060aa;min-width:40px;}
 input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:pointer;padding:0;}
 .divider{height:1px;background:rgba(70,70,229,0.07);}
+#debugInfo{font-size:11px;color:rgba(0,0,0,0.4);margin-top:10px;text-align:center;}
 </style>
 </head>
 <body>
@@ -67,9 +67,7 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
 <div class="studio">
   <div class="preview-wrap">
     <video id="webcam" autoplay playsinline muted></video>
-    <!-- 2D: makyaj, PNG aksesuarlar -->
     <canvas id="canvas2d"></canvas>
-    <!-- 3D: GLB gözlükler -->
     <canvas id="canvas3d"></canvas>
     <div class="fps-badge" id="fpsBadge">-- fps</div>
     <div class="status-bar" id="statusBar">Click Start to begin</div>
@@ -84,13 +82,11 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
     </div>
     <div class="tab-body">
 
-      <!-- ACCESSORIES -->
       <div class="panel-section active" id="tab-accessories">
         <div>
-          <div class="section-label">Glasses</div>
+          <div class="section-label">3D Glasses</div>
           <div class="acc-grid" id="glassesGrid">
-            <button class="acc-btn full active" onclick="selectAcc('glasses',null,this)">No Glasses</button>
-            <!-- JS ile dinamik doldurulacak -->
+            <button class="acc-btn full active" id="btn-no-glasses" onclick="clearModel(this)">No Glasses</button>
           </div>
         </div>
         <div class="divider"></div>
@@ -126,7 +122,6 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
         </div>
       </div>
 
-      <!-- MAKEUP -->
       <div class="panel-section" id="tab-makeup">
         <div>
           <div class="section-label">Lip Color</div>
@@ -154,57 +149,41 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
             <input type="range" id="blushIntensity" min="0" max="100" value="0" oninput="document.getElementById('blushIntVal').textContent=this.value+'%'">
           </div>
         </div>
-
-          <div class="divider"></div>
-            <div>
-              <div class="section-label">Eye Color</div>
-              <div class="color-row"><span class="color-label">Color</span><input type="color" id="eyeColor" value="#4a7c2e"></div>
-              <div class="slider-row">
-                <div class="slider-label"><span>Intensity</span><span id="eyeColorIntVal">0%</span></div>
-                <input type="range" id="eyeColorIntensity" min="0" max="100" value="0" oninput="document.getElementById('eyeColorIntVal').textContent=this.value+'%'">
-              </div>
-            </div>
-
-            <div class="divider"></div>
-            <div>
-              <div class="section-label">Eyebrow</div>
-              <div class="color-row"><span class="color-label">Color</span><input type="color" id="browColor" value="#3b2f2f"></div>
-              <div class="slider-row">
-                <div class="slider-label"><span>Intensity</span><span id="browIntVal">0%</span></div>
-                <input type="range" id="browIntensity" min="0" max="100" value="0" oninput="document.getElementById('browIntVal').textContent=this.value+'%'">
-              </div>
-            </div>
-
-            <div class="divider"></div>
-            <div>
-              <div class="section-label">Eyeliner</div>
-              <div class="color-row"><span class="color-label">Color</span><input type="color" id="linerColor" value="#000000"></div>
-              <div class="slider-row">
-                <div class="slider-label"><span>Intensity</span><span id="linerIntVal">0%</span></div>
-                <input type="range" id="linerIntensity" min="0" max="100" value="0" oninput="document.getElementById('linerIntVal').textContent=this.value+'%'">
-              </div>
-              <div style="margin-top:6px;font-size:11px;color:#6060aa;">
-                <label><input type="checkbox" id="linerWing" checked style="margin-right:4px;">Wing</label>
-                <div class="divider"></div>
-            
-      </div>
-
-      <!-- ADJUST -->
-      <div class="panel-section" id="tab-adjust">
+        <div class="divider"></div>
         <div>
-          <div class="section-label">Glasses</div>
+          <div class="section-label">Eye Color</div>
+          <div class="color-row"><span class="color-label">Color</span><input type="color" id="eyeColor" value="#4a7c2e"></div>
           <div class="slider-row">
-            <div class="slider-label"><span>Scale</span><span id="gScaleVal">1.0x</span></div>
-            <input type="range" id="glassesScale" min="0.5" max="2.0" step="0.05" value="1.0" oninput="document.getElementById('gScaleVal').textContent=parseFloat(this.value).toFixed(1)+'x'">
-          </div>
-          <div class="slider-row" style="margin-top:8px;">
-            <div class="slider-label"><span>Vertical offset</span><span id="gOffsetVal">0px</span></div>
-            <input type="range" id="glassesOffset" min="-60" max="60" step="1" value="0" oninput="document.getElementById('gOffsetVal').textContent=this.value+'px'">
+            <div class="slider-label"><span>Intensity</span><span id="eyeColorIntVal">0%</span></div>
+            <input type="range" id="eyeColorIntensity" min="0" max="100" value="0" oninput="document.getElementById('eyeColorIntVal').textContent=this.value+'%'">
           </div>
         </div>
         <div class="divider"></div>
         <div>
-          <div class="section-label">Hat</div>
+          <div class="section-label">Eyebrow</div>
+          <div class="color-row"><span class="color-label">Color</span><input type="color" id="browColor" value="#3b2f2f"></div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Intensity</span><span id="browIntVal">0%</span></div>
+            <input type="range" id="browIntensity" min="0" max="100" value="0" oninput="document.getElementById('browIntVal').textContent=this.value+'%'">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">Eyeliner</div>
+          <div class="color-row"><span class="color-label">Color</span><input type="color" id="linerColor" value="#000000"></div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Intensity</span><span id="linerIntVal">0%</span></div>
+            <input type="range" id="linerIntensity" min="0" max="100" value="0" oninput="document.getElementById('linerIntVal').textContent=this.value+'%'">
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:#6060aa;">
+            <label><input type="checkbox" id="linerWing" checked style="margin-right:4px;">Wing</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section" id="tab-adjust">
+        <div>
+          <div class="section-label">PNG Hat</div>
           <div class="slider-row">
             <div class="slider-label"><span>Scale</span><span id="hScaleVal">1.35x</span></div>
             <input type="range" id="hatScale" min="0.8" max="2.5" step="0.05" value="1.35" oninput="document.getElementById('hScaleVal').textContent=parseFloat(this.value).toFixed(2)+'x'">
@@ -216,7 +195,7 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
         </div>
         <div class="divider"></div>
         <div>
-          <div class="section-label">Earring</div>
+          <div class="section-label">PNG Earring</div>
           <div class="slider-row">
             <div class="slider-label"><span>Scale</span><span id="eScaleVal">1.0x</span></div>
             <input type="range" id="earringScale" min="0.3" max="2.0" step="0.05" value="1.0" oninput="document.getElementById('eScaleVal').textContent=parseFloat(this.value).toFixed(1)+'x'">
@@ -231,248 +210,308 @@ input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:po
     </div>
   </div>
 </div>
+<div id="debugInfo">--</div>
 
-<!-- Three.js + GLTFLoader -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
-<script>
-// ─── GÖZLÜK KATALOĞU ────────────────────────────────────────────────────────
-// type: 'png' → eski yöntem (canvas2d), 'glb' → Three.js 3D
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+
 const GLASSES_CATALOG = [
-  { name: 'Glasses 1',    file: 'glasses-1-.glb', type: 'glb' },
-  { name: 'Glasses 2',    file: 'glasses-7.glb', type: 'glb' },
-  { name: 'Glasses 3',    file: 'glasses-10.glb', type: 'glb' },
-  { name: 'Glasses 4',    file: 'glasses-12.glb', type: 'glb' },
-  // GLB örnekleri — kendi .glb dosyalarının adını buraya yaz
-  // { name: 'Classic 3D',  file: 'classic.glb',  type: 'glb' },
-  // { name: 'Sunglasses 3D', file: 'sunglass.glb', type: 'glb' },
+  { name: 'Glasses 1', file: 'glasses-1-.glb' },
+  { name: 'Glasses 2', file: 'glasses-7.glb' },
+  { name: 'Glasses 3', file: 'glasses-10.glb' },
+  { name: 'Glasses 4', file: 'glasses-12.glb' }
 ];
 
-// ─── STATE ───────────────────────────────────────────────────────────────────
-const video    = document.getElementById('webcam');
+const glassesConfig = {
+  'glasses-1-.glb': { zOffset: 0.5, scale: 2.0 },
+  'glasses-7.glb':  { zOffset: 1.4, scale: 1.85 },
+  'glasses-10.glb': { zOffset: 2.0, scale: 1.9 },
+  'glasses-12.glb': { zOffset: 2.5, scale: 2.0 }
+};
+
+const video = document.getElementById('webcam');
 const canvas2d = document.getElementById('canvas2d');
 const canvas3d = document.getElementById('canvas3d');
-const ctx      = canvas2d.getContext('2d');
+const ctx = canvas2d.getContext('2d');
 const statusBar = document.getElementById('statusBar');
-const fpsBadge  = document.getElementById('fpsBadge');
+const fpsBadge = document.getElementById('fpsBadge');
+const debugEl = document.getElementById('debugInfo');
 
-let selected = { glasses: null, glassesType: null, hat: null, earring: null, necklace: null };
+let selected = { hat: null, earring: null, necklace: null };
 let pngImages = {};
 let frameCount = 0, lastFpsTime = performance.now();
-let currentLandmarks = null;
+let faceLandmarker = null;
+let running = false;
+let lastTime = -1;
 
-// ─── THREE.JS KURULUM ────────────────────────────────────────────────────────
-const threeRenderer = new THREE.WebGLRenderer({ canvas: canvas3d, alpha: true, antialias: true });
-threeRenderer.setClearColor(0x000000, 0);
-threeRenderer.setPixelRatio(window.devicePixelRatio);
+// Three.js Setup
+const renderer3d = new THREE.WebGLRenderer({ canvas: canvas3d, alpha: true, antialias: true });
+renderer3d.setPixelRatio(window.devicePixelRatio);
+renderer3d.setSize(640, 480, false); 
 
-const threeScene  = new THREE.Scene();
-const threeCamera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
-threeCamera.position.set(0, 0, 2);
+const scene3d = new THREE.Scene();
+const camera3d = new THREE.PerspectiveCamera(60, 640/480, 0.1, 2000);
+camera3d.position.set(0, 0, 0);
+camera3d.lookAt(0, 0, -1);
 
-// Işık
-const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-threeScene.add(ambientLight);
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(0, 1, 2);
-threeScene.add(dirLight);
+scene3d.add(new THREE.AmbientLight(0xffffff, 2.2));
+const dLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dLight.position.set(0, 1, 1);
+scene3d.add(dLight);
+
+const modelGroup = new THREE.Group();
+scene3d.add(modelGroup);
 
 const gltfLoader = new THREE.GLTFLoader();
-let glbModel = null;
-let glbNormalizedScale = 1;    // yüklü GLB modeli
-let glbLoading = false;
+let currentModel = null;
+let modelNormScale = 1;
+let modelReady = false;
 
-// ─── GÖZLÜK BUTONLARINI OLUŞTUR ──────────────────────────────────────────────
+window.switchTab = function(tabName, tabEl) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
+  tabEl.classList.add('active');
+  document.getElementById('tab-' + tabName).classList.add('active');
+};
+
 function buildGlassesGrid() {
   const grid = document.getElementById('glassesGrid');
-  GLASSES_CATALOG.forEach(item => {
+  const noGlassesBtn = document.getElementById('btn-no-glasses');
+  grid.innerHTML = '';
+  grid.appendChild(noGlassesBtn);
+
+  GLASSES_CATALOG.forEach((item, idx) => {
     const btn = document.createElement('button');
     btn.className = 'acc-btn';
-    btn.dataset.file = item.file;
-    btn.dataset.type = item.type;
-
-    if (item.type === 'glb') {
-      btn.innerHTML = `<span>${item.name}</span><span class="glb-badge">3D</span>`;
-    } else {
-      btn.innerHTML = `<img src="/static/accessories/glasses/${item.file}" alt="${item.name}"><span>${item.name}</span>`;
-    }
-
-    btn.addEventListener('click', () => selectAcc('glasses', item.file, btn, item.type));
+    const canvasId = `prevCanvas_${idx}`;
+    
+    btn.innerHTML = `<canvas id="${canvasId}" width="80" height="40"></canvas><span>${item.name}</span>`;
+    btn.addEventListener('click', () => loadModel(item.file, btn));
     grid.appendChild(btn);
+
+    setTimeout(() => {
+      const cEl = document.getElementById(canvasId);
+      if (cEl) generatePreview(item.file, cEl);
+    }, 100);
   });
 }
 
-// ─── AKSESUAR SEÇİMİ ────────────────────────────────────────────────────────
-function selectAcc(type, file, btn, fileType = 'png') {
+function generatePreview(file, canvasEl) {
+  const pRenderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: true });
+  pRenderer.setSize(80, 40);
+  pRenderer.setClearColor(0x000000, 0);
+  
+  const pScene = new THREE.Scene();
+  pScene.add(new THREE.AmbientLight(0xffffff, 2.5));
+  const pLight = new THREE.DirectionalLight(0xffffff, 1.5);
+  pLight.position.set(0, 1, 2);
+  pScene.add(pLight);
+
+  const pCamera = new THREE.PerspectiveCamera(35, 2, 0.1, 100);
+
+  gltfLoader.load('/static/accessories/glasses/' + file, gltf => {
+    const m = gltf.scene;
+    const box = new THREE.Box3().setFromObject(m);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    m.position.sub(center);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    pCamera.position.z = maxDim * 1.8;
+    pScene.add(m);
+    pRenderer.render(pScene, pCamera);
+    pRenderer.dispose();
+  });
+}
+
+window.loadModel = function(file, btn) {
+  if (btn) {
+    document.querySelectorAll('#glassesGrid .acc-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  window.clearModel(null, false);
+  statusBar.textContent = 'Loading 3D Model: ' + file;
+
+  gltfLoader.load('/static/accessories/glasses/' + file, gltf => {
+    currentModel = gltf.scene;
+    const box = new THREE.Box3().setFromObject(currentModel);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    currentModel.position.sub(center).add(new THREE.Vector3(0, -0.05, 0));
+    const cfg = glassesConfig[file] || { zOffset: 0.5, scale: 1.8 };
+    currentModel.position.z -= cfg.zOffset;
+    currentModel._scaleMultiplier = cfg.scale;
+    
+    modelGroup.add(currentModel);
+    modelNormScale = 1.0 / size.x;
+    modelReady = true;
+    statusBar.textContent = 'Face detected ✓';
+  }, undefined, err => {
+    console.error(err);
+    statusBar.textContent = 'Failed to load model!';
+  });
+};
+
+window.clearModel = function(btn, updateUI = true) {
+  if (updateUI && btn) {
+    document.querySelectorAll('#glassesGrid .acc-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  while (modelGroup.children.length > 0) modelGroup.remove(modelGroup.children[0]);
+  currentModel = null;
+  modelReady = false;
+};
+
+window.selectAcc = function(type, file, btn) {
   const grid = btn.closest('.acc-grid');
   grid.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-
-  if (type === 'glasses') {
-    selected.glasses     = file;
-    selected.glassesType = fileType;
-
-    // Önceki GLB modeli temizle
-    if (glbModel) { threeScene.remove(glbModel); glbModel = null; }
-
-    if (file && fileType === 'glb') {
-      loadGLB(file);
-    } else if (file && fileType === 'png') {
-      loadPNG(file, 'glasses');
-    }
-  } else {
-    selected[type] = file;
-    if (file) loadPNG(file, type);
-  }
-}
+  selected[type] = file;
+  if (file) loadPNG(file, type);
+};
 
 function loadPNG(file, type) {
   if (pngImages[file]) return;
   const img = new Image();
-  const folderMap = { glasses:'glasses', hat:'hats', earring:'earrings', necklace:'necklaces' };
+  const folderMap = { hat:'hats', earring:'earrings', necklace:'necklaces' };
   img.src = '/static/accessories/' + folderMap[type] + '/' + file;
-  img.onload  = () => { pngImages[file] = img; };
-  img.onerror = () => console.warn('PNG not found:', file);
+  img.onload = () => { pngImages[file] = img; };
 }
 
-
-
-function loadGLB(file) {
-  if (glbLoading) return;
-  glbLoading = true;
-  statusBar.textContent = 'Loading 3D model...';
-
-  gltfLoader.load(
-    '/static/accessories/glasses/' + file,
-    gltf => {
-      if (glbModel) { threeScene.remove(glbModel); glbModel = null; }
-      glbModel = gltf.scene;
-    
-      const box = new THREE.Box3().setFromObject(glbModel);
-      const center = box.getCenter(new THREE.Vector3());
-      glbModel.position.sub(center);
-
-      const modelWidth = box.max.x - box.min.x;
-      glbNormalizedScale = modelWidth > 0 ? 1 / modelWidth : 1;
-
-      threeScene.add(glbModel);
-      glbLoading = false;
-      statusBar.textContent = 'Face detected ✓';
-    },
-    xhr => { statusBar.textContent = 'Loading... ' + Math.round(xhr.loaded / xhr.total * 100) + '%'; },
-    err => { console.error('GLB:', err); glbLoading = false; statusBar.textContent = 'GLB load failed'; }
-  );
-}
-
-// ─── KAMERA BAŞLAT ───────────────────────────────────────────────────────────
-async function startCamera() {
+window.startCamera = async function() {
   document.getElementById('startBtn').style.display = 'none';
-  statusBar.textContent = 'Loading MediaPipe...';
+  statusBar.textContent = 'Loading MediaPipe FaceLandmarker...';
 
-  const faceMesh = new FaceMesh({ locateFile: f => 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/' + f });
-  faceMesh.setOptions({ maxNumFaces:1, refineLandmarks:true, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
-  faceMesh.onResults(onResults);
+  const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+  faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+      delegate: "GPU"
+    },
+    outputFaceBlendshapes: false,
+    outputFacialTransformationMatrixes: true,
+    runningMode: "VIDEO",
+    numFaces: 1
+  });
 
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:640, height:480 } });
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
     video.srcObject = stream;
-    video.onloadedmetadata = () => {
-      canvas2d.width  = canvas3d.width  = video.videoWidth;
-      canvas2d.height = canvas3d.height = video.videoHeight;
+    
+    await new Promise(r => video.onloadedmetadata = r);
+    if (video.videoWidth === 0) {
+      await new Promise(r => video.onplay = r);
+    }
 
-      // Three.js kamera ayarı
-      threeRenderer.setSize(video.videoWidth, video.videoHeight);
-      threeCamera.aspect = video.videoWidth / video.videoHeight;
-      threeCamera.fov    = 45;
-      threeCamera.updateProjectionMatrix();
+    // Hem 2D hem 3D canvas boyutları ayarlanıyor, 'false' parametresi CSS'i koruyor.
+    canvas2d.width = canvas3d.width = video.videoWidth;
+    canvas2d.height = canvas3d.height = video.videoHeight;
+    renderer3d.setSize(video.videoWidth, video.videoHeight, false);
+    
+    camera3d.aspect = video.videoWidth / video.videoHeight;
+    camera3d.updateProjectionMatrix();
 
-      statusBar.textContent = 'Detecting face...';
-      const loop = async () => { await faceMesh.send({ image: video }); requestAnimationFrame(loop); };
-      requestAnimationFrame(loop);
-
-      // Three.js render döngüsü (bağımsız)
-      threeRenderLoop();
-    };
+    buildGlassesGrid();
+    running = true;
+    statusBar.textContent = 'Detecting face...';
+    renderLoop();
   } catch(e) {
+    console.error(e);
     statusBar.textContent = 'Camera access denied.';
     document.getElementById('startBtn').style.display = 'block';
   }
-}
+};
 
-// ─── THREE.JS RENDER DÖNGÜSÜ ────────────────────────────────────────────────
-function threeRenderLoop() {
-  requestAnimationFrame(threeRenderLoop);
-  if (glbModel && currentLandmarks) {
-    updateGLBPose(currentLandmarks, canvas2d.width, canvas2d.height);
-  }
-  threeRenderer.render(threeScene, threeCamera);
-}
+function renderLoop() {
+  if (!running) return;
+  requestAnimationFrame(renderLoop);
 
-// ─── GLB POZİSYON GÜNCELLEME ─────────────────────────────────────────────────
-// MediaPipe 2D landmark → Three.js 3D koordinata dönüştür
-function updateGLBPose(lm, W, H) {
-  if (!glbModel) return;
-
-  // Mirror koordinatlar
-  const lEye = { x: W - lm[263].x * W, y: lm[263].y * H };
-  const rEye = { x: W - lm[33].x * W,  y: lm[33].y * H  };
-  const nose = { x: W - lm[1].x * W,   y: lm[1].y * H   };
-
-  // Merkez — göz ortası değil, burun köprüsü daha stabil
-  const cx = (lEye.x + rEye.x) / 2;
-  const cy = (lEye.y + rEye.y) / 2;
-
-  // NDC
-  const ndcX = (cx / W) * 2 - 1;
-  const ndcY = -(cy / H) * 2 + 1;
-
-  // Z: 0.95 kullan — yüze yakın ama önünde değil
-  const vec = new THREE.Vector3(ndcX, ndcY, 0.95);
-  vec.unproject(threeCamera);
-  glbModel.position.copy(vec);
-
-  // Boyut — şakak arası mesafe kullan (göz değil)
-  const lTemple = { x: W - lm[234].x * W, y: lm[234].y * H };
-  const rTemple = { x: W - lm[454].x * W, y: lm[454].y * H };
-  const faceDistPx = Math.abs(rTemple.x - lTemple.x);
-  const faceDistNDC = (faceDistPx / W) * 2;
-  const targetScale = faceDistNDC * glbNormalizedScale * 0.35;
-  glbModel.scale.set(targetScale, targetScale, targetScale);
-
-  // Açı
-  const angle = Math.atan2(rEye.y - lEye.y, rEye.x - lEye.x);
-  
-  // Rotation — x=0 dene, baş aşağıysa x=Math.PI
-  glbModel.rotation.set(0, 0, angle);
-}
-  
-  
-// ─── MEDIAPIPE SONUÇLARI ────────────────────────────────────────────────────
-function onResults(results) {
-  ctx.clearRect(0, 0, canvas2d.width, canvas2d.height);
-  frameCount++;
   const now = performance.now();
+  if (video.readyState < 2 || now === lastTime) { renderer3d.render(scene3d, camera3d); return; }
+  lastTime = now;
+
+  frameCount++;
   if (now - lastFpsTime > 1000) { fpsBadge.textContent = frameCount + ' fps'; frameCount = 0; lastFpsTime = now; }
 
-  if (!results.multiFaceLandmarks?.length) {
+  const result = faceLandmarker.detectForVideo(video, now);
+  ctx.clearRect(0, 0, canvas2d.width, canvas2d.height);
+
+  if (!result.faceLandmarks?.length) {
     statusBar.textContent = 'No face detected';
-    currentLandmarks = null;
-    if (glbModel) glbModel.visible = false;
+    if (currentModel) currentModel.visible = false;
+    renderer3d.render(scene3d, camera3d);
     return;
   }
 
   statusBar.textContent = 'Face detected ✓';
-  const lm = results.multiFaceLandmarks[0];
-  currentLandmarks = lm;
-  if (glbModel) glbModel.visible = true;
-
+  const lm = result.faceLandmarks[0];
   const W = canvas2d.width, H = canvas2d.height;
   const pt = i => ({ x: lm[i].x * W, y: lm[i].y * H });
 
-  // Makyaj
+  // ─── 1. 3D GLASSES POSITION & CALCULATION ───
+  if (result.facialTransformationMatrixes?.length && currentModel && modelReady) {
+    currentModel.visible = true;
+    const mp = result.facialTransformationMatrixes[0].data;
+    const m = new THREE.Matrix4().set(
+      mp[0], mp[4], mp[8],  mp[12],
+      mp[1], mp[5], mp[9],  mp[13],
+      mp[2], mp[6], mp[10], mp[14],
+      mp[3], mp[7], mp[11], mp[15]
+    );
+
+    const pos = new THREE.Vector3();
+    const quat = new THREE.Quaternion();
+    const scaleV = new THREE.Vector3();
+    m.decompose(pos, quat, scaleV);
+
+    const bridgeNose = lm[168];
+    const ndcX = (bridgeNose.x * 2) - 1;
+    const ndcY = -(bridgeNose.y * 2) + 1;
+
+    const depth = Math.abs(pos.z);
+    const fovRad = THREE.MathUtils.degToRad(30);
+    const halfScreenWorldHeight = Math.tan(fovRad) * depth;
+    const halfScreenWorldWidth = halfScreenWorldHeight * camera3d.aspect;
+
+    pos.x = -(ndcX * halfScreenWorldWidth);
+    pos.y = (ndcY * halfScreenWorldHeight) - 0.05;
+
+    const lEyePx = lm[33].x * W;
+    const rEyePx = lm[263].x * W;
+    const eyeDistPx = Math.abs(rEyePx - lEyePx);
+    const eyeDistWorld = (eyeDistPx / W) * halfScreenWorldWidth * 2;
+
+    pos.z = -depth - (eyeDistWorld * 0.5);
+    const qAynali = new THREE.Quaternion(quat.x, -quat.y, -quat.z, quat.w);
+
+    const targetWidth = eyeDistWorld * (currentModel._scaleMultiplier || 1.8);
+    const finalScale = targetWidth * modelNormScale;
+
+    modelGroup.position.set(pos.x, pos.y - 0.1, pos.z);
+    modelGroup.quaternion.copy(qAynali);
+    modelGroup.scale.setScalar(finalScale);
+
+    debugEl.textContent = `pos:(${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)}) scale:${finalScale.toFixed(3)}`;
+
+    const euler = new THREE.Euler().setFromQuaternion(qAynali, 'YXZ');
+    const yawAbs = Math.abs(euler.y);
+    const occlusionOpacity = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(yawAbs, 0.3, 0.7, 1.0, 0.0), 0.0, 1.0);
+    
+    currentModel.traverse(child => {
+      if (!child.isMesh) return;
+      if (!child.material._originalOpacity) {
+        child.material = child.material.clone();
+        child.material.transparent = true;
+        child.material._originalOpacity = child.material.opacity || 1.0;
+      }
+      child.material.opacity = occlusionOpacity * child.material._originalOpacity;
+    });
+  }
+
+  // ─── 2. 2D MAKEUP RENDERING (Çizim Katmanı Z-Index 2) ───
   const lipInt = parseInt(document.getElementById('lipIntensity').value) / 100;
   if (lipInt > 0) drawLipColor(pt, lipInt);
 
@@ -480,84 +519,24 @@ function onResults(results) {
   if (eyeInt > 0) drawEyeshadow(pt, eyeInt);
 
   const blushInt = parseInt(document.getElementById('blushIntensity').value) / 100;
-  if (blushInt > 0) drawBlush(pt, H, blushInt);
+  if (blushInt > 0) drawBlush(pt, blushInt);
 
-const eyeCInt = parseInt(document.getElementById('eyeColorIntensity').value)/100;
-if(eyeCInt>0) applyEyeColor(pt, eyeCInt);
+  const eyeCInt = parseInt(document.getElementById('eyeColorIntensity').value) / 100;
+  if (eyeCInt > 0) applyEyeColor(pt, eyeCInt);
 
-const browInt = parseInt(document.getElementById('browIntensity').value)/100;
-if(browInt>0) applyEyebrowColor(pt, browInt);
+  const browInt = parseInt(document.getElementById('browIntensity').value) / 100;
+  if (browInt > 0) applyEyebrowColor(pt, browInt);
 
-const linerInt = parseInt(document.getElementById('linerIntensity').value)/100;
-if(linerInt>0) applyEyeliner(pt, linerInt, document.getElementById('linerWing').checked);
+  const linerInt = parseInt(document.getElementById('linerIntensity').value) / 100;
+  if (linerInt > 0) applyEyeliner(pt, linerInt, document.getElementById('linerWing').checked);
 
-
-  // PNG aksesuarlar (gözlük PNG ise burada çiz, GLB ise Three.js halleder)
+  // ─── 3. 2D PNG ACCESSORIES RENDERING (Çizim Katmanı Z-Index 2) ───
   if (selected.necklace && pngImages[selected.necklace]) drawNecklace(pt);
-  if (selected.earring  && pngImages[selected.earring])  drawEarring(pt, H);
-  if (selected.hat      && pngImages[selected.hat])      drawHat(pt);
-  if (selected.glasses  && selected.glassesType === 'png' && pngImages[selected.glasses]) {
-    drawGlasses(pt);
-  }
-}
+  if (selected.earring && pngImages[selected.earring]) drawEarring(pt);
+  if (selected.hat && pngImages[selected.hat]) drawHat(pt);
 
-// ─── ÇIZIM FONKSİYONLARI (PNG / 2D) ─────────────────────────────────────────
-function drawGlasses(pt) {
-  const img   = pngImages[selected.glasses];
-  const scale = parseFloat(document.getElementById('glassesScale').value);
-  const yOff  = parseInt(document.getElementById('glassesOffset').value);
-  const lEye  = pt(33), rEye = pt(263);
-  const eyeDist = Math.hypot(rEye.x - lEye.x, rEye.y - lEye.y);
-  const tW = eyeDist * 1.6 * scale;
-  const tH = img.naturalHeight * (tW / img.naturalWidth);
-  const cx = (lEye.x + rEye.x) / 2;
-  const cy = (lEye.y + rEye.y) / 2 + yOff;
-  const angle = Math.atan2(rEye.y - lEye.y, rEye.x - lEye.x);
-  ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle);
-  ctx.drawImage(img, -tW/2, -tH/2, tW, tH);
-  ctx.restore();
-}
-
-function drawHat(pt) {
-  const img   = pngImages[selected.hat];
-  const scale = parseFloat(document.getElementById('hatScale').value);
-  const yOff  = parseInt(document.getElementById('hatOffset').value);
-  const lT = pt(234), rT = pt(454), fore = pt(10);
-  const faceW = Math.hypot(rT.x - lT.x, rT.y - lT.y);
-  const tW = faceW * scale;
-  const tH = img.naturalHeight * (tW / img.naturalWidth);
-  const cx = (lT.x + rT.x) / 2;
-  const cy = fore.y - tH * 0.85 + yOff;
-  const angle = Math.atan2(rT.y - lT.y, rT.x - lT.x);
-  ctx.save(); ctx.translate(cx, cy + tH/2); ctx.rotate(angle);
-  ctx.drawImage(img, -tW/2, -tH/2, tW, tH);
-  ctx.restore();
-}
-
-function drawEarring(pt, H) {
-  const img   = pngImages[selected.earring];
-  const scale = parseFloat(document.getElementById('earringScale').value);
-  const yOff  = parseInt(document.getElementById('earringOffset').value);
-  const lLobe = pt(172), rLobe = pt(397);
-  const chin  = pt(152), fore  = pt(10);
-  const faceH = Math.abs(chin.y - fore.y);
-  const tH = faceH * 0.18 * scale;
-  const tW = img.naturalWidth * (tH / img.naturalHeight);
-  ctx.drawImage(img, lLobe.x - tW/2, lLobe.y + yOff, tW, tH);
-  ctx.drawImage(img, rLobe.x - tW/2, rLobe.y + yOff, tW, tH);
-}
-
-function drawNecklace(pt) {
-  const img   = pngImages[selected.necklace];
-  const lT    = pt(234), rT = pt(454), chin = pt(152);
-  const faceW = Math.hypot(rT.x - lT.x, rT.y - lT.y);
-  const tW    = faceW * 1.4;
-  const tH    = img.naturalHeight * (tW / img.naturalWidth);
-  const cx    = (lT.x + rT.x) / 2;
-  const angle = Math.atan2(rT.y - lT.y, rT.x - lT.x);
-  ctx.save(); ctx.translate(cx, chin.y); ctx.rotate(angle);
-  ctx.drawImage(img, -tW/2, 0, tW, tH);
-  ctx.restore();
+  // 3D Render (En Üst Katman Z-Index 3)
+  renderer3d.render(scene3d, camera3d);
 }
 
 function hexToRgb(hex) {
@@ -568,181 +547,134 @@ function drawLipColor(pt, intensity) {
   const {r,g,b} = hexToRgb(document.getElementById('lipColor').value);
   const outer = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
   const inner = [78,95,88,178,87,14,317,402,318,324,308,415,310,311,312,13,82,81,80,191];
-  
-  ctx.save();
-  ctx.beginPath();
+  ctx.save(); ctx.beginPath();
   outer.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
   ctx.closePath();
   inner.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
   ctx.closePath();
-  
-  // DÜZELTME: source-over + rgba alpha
   ctx.fillStyle = `rgba(${r},${g},${b},${0.35 + intensity*0.5})`;
-  ctx.globalCompositeOperation = 'source-over';
   ctx.filter = 'blur(1.5px)';
-  ctx.fill('evenodd'); // dişleri hariç tutar
+  ctx.fill('evenodd'); ctx.restore();
+}
+
+function drawEyeshadow(pt, intensity) {
+  const {r,g,b} = hexToRgb(document.getElementById('eyeshadowColor').value);
+  const lEye = [226,247,30,29,27,28,56,190,243,112,26,22,23,24,110,157];
+  const rEye = [446,467,260,259,257,258,286,414,463,341,256,252,253,254,339,384];
+  ctx.save(); ctx.fillStyle = `rgba(${r},${g},${b},${0.2 * intensity})`; ctx.filter = 'blur(4px)';
+  [lEye, rEye].forEach(eye => {
+    ctx.beginPath();
+    eye.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+    ctx.closePath(); ctx.fill();
+  });
   ctx.restore();
 }
 
-function drawBlush(pt, H, intensity) {
+function drawBlush(pt, intensity) {
   const {r,g,b} = hexToRgb(document.getElementById('blushColor').value);
   const lC = pt(123), rC = pt(352);
   const faceW = Math.hypot(pt(454).x-pt(234).x, pt(454).y-pt(234).y);
-  const radius = faceW * 0.21 * intensity; // daha geniş
-
-  ctx.save();
-  ctx.filter = 'blur(3px)';
-  
+  const radius = faceW * 0.21 * intensity;
+  ctx.save(); ctx.filter = 'blur(3px)';
   [[lC,4],[rC,-4]].forEach(([p,dx])=>{
-    const x = p.x + dx;
-    const y = p.y - 2; // yukarı al (3.foto konumu)
+    const x = p.x + dx; const y = p.y - 2;
     const grad = ctx.createRadialGradient(x,y,0,x,y,radius);
-    grad.addColorStop(0, `rgba(${r},${g},${b},${0.42*intensity})`); // 0.33→0.42
+    grad.addColorStop(0, `rgba(${r},${g},${b},${0.42*intensity})`);
     grad.addColorStop(0.6, `rgba(${r},${g},${b},${0.18*intensity})`);
     grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(x,y,radius,0,Math.PI*2);
-    ctx.fill();
+    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x,y,radius,0,Math.PI*2); ctx.fill();
   });
   ctx.restore();
 }
 
 function applyEyebrowColor(pt, intensity) {
   const {r,g,b} = hexToRgb(document.getElementById('browColor').value);
-  const leftTop = [70,63,105,66,107];
-  const leftBot = [107,55,65,52,53,46,70];
-  const rightTop = [300,293,334,296,336];
-  const rightBot = [336,285,295,282,283,276,300];
-
-  ctx.save();
-  ctx.fillStyle = `rgba(${r},${g},${b},${0.34*intensity})`;
-  ctx.filter = 'blur(2px)';
+  const leftTop = [70,63,105,66,107], leftBot = [107,55,65,52,53,46,70];
+  const rightTop = [300,293,334,296,336], rightBot = [336,285,295,282,283,276,300];
+  ctx.save(); ctx.fillStyle = `rgba(${r},${g},${b},${0.34*intensity})`; ctx.filter = 'blur(2px)';
   [[leftTop,leftBot],[rightTop,rightBot]].forEach(([top,bot])=>{
-    ctx.beginPath();
-    top.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y-1):ctx.lineTo(p.x,p.y-1);});
+    ctx.beginPath(); top.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y-1):ctx.lineTo(p.x,p.y-1);});
     bot.slice().reverse().forEach(i=>{const p=pt(i); ctx.lineTo(p.x,p.y+1);});
     ctx.closePath(); ctx.fill();
   });
   ctx.restore();
 }
+
 function applyEyeColor(pt, intensity) {
-  if(intensity<=0) return;
   const {r,g,b} = hexToRgb(document.getElementById('eyeColor').value);
-
   ctx.save();
-
   [468,473].forEach(idx=>{
     const c = pt(idx);
     const pts = idx===468 ? [469,470,471,472] : [474,475,476,477];
-    let rad = 0;
-    pts.forEach(i=>{ const p=pt(i); rad += Math.hypot(p.x-c.x, p.y-c.y); });
-    rad = rad/pts.length * 0.68; // irisi tam kaplama
+    let rad = 0; pts.forEach(i=>{ const p=pt(i); rad += Math.hypot(p.x-c.x, p.y-c.y); });
+    rad = rad/pts.length * 0.68;
 
-    // 1) doğal tint - multiply ile alttaki dokuyu koru
     ctx.globalCompositeOperation = 'multiply';
     const tint = ctx.createRadialGradient(c.x,c.y,rad*0.15, c.x,c.y,rad);
-    tint.addColorStop(0, `rgba(${r},${g},${b},${0.20*intensity})`);   // merkez açık
-    tint.addColorStop(0.6, `rgba(${r},${g},${b},${0.35*intensity})`); // orta
-    tint.addColorStop(1, `rgba(${r},${g},${b},${0.22*intensity})`);   // kenar
-    ctx.fillStyle = tint;
-    ctx.beginPath(); ctx.arc(c.x,c.y,rad,0,Math.PI*2); ctx.fill();
+    tint.addColorStop(0, `rgba(${r},${g},${b},${0.20*intensity})`);
+    tint.addColorStop(0.6, `rgba(${r},${g},${b},${0.35*intensity})`);
+    tint.addColorStop(1, `rgba(${r},${g},${b},${0.22*intensity})`);
+    ctx.fillStyle = tint; ctx.beginPath(); ctx.arc(c.x,c.y,rad,0,Math.PI*2); ctx.fill();
 
-    // 2) dış limbal ring - fotoğraftaki gibi koyu halka
     ctx.globalCompositeOperation = 'source-over';
     ctx.strokeStyle = `rgba(${Math.floor(r*0.5)},${Math.floor(g*0.5)},${Math.floor(b*0.5)},${0.40*intensity})`;
-    ctx.lineWidth = rad * 0.22;
-    ctx.beginPath(); ctx.arc(c.x,c.y,rad*0.90,0,Math.PI*2); ctx.stroke();
-
-    // 3) iç ışıltı - canlılık
-    const highlight = ctx.createRadialGradient(c.x-rad*0.2,c.y-rad*0.2,0, c.x,c.y,rad*0.4);
-    highlight.addColorStop(0, `rgba(255,255,255,${0.08*intensity})`);
-    highlight.addColorStop(1, `rgba(255,255,255,0)`);
-    ctx.fillStyle = highlight;
-    ctx.beginPath(); ctx.arc(c.x,c.y,rad*0.4,0,Math.PI*2); ctx.fill();
+    ctx.lineWidth = rad * 0.22; ctx.beginPath(); ctx.arc(c.x,c.y,rad*0.90,0,Math.PI*2); ctx.stroke();
   });
-
   ctx.restore();
 }
 
-
 function applyEyeliner(pt, intensity, wing) {
-  if(intensity<=0) return;
   const {r,g,b} = hexToRgb(document.getElementById('linerColor').value);
-
   const lLid = [33,246,161,160,159,158,157,173,133];
   const rLid = [263,466,388,387,386,385,384,398,362];
-
-  ctx.save();
-  ctx.strokeStyle = `rgba(${r},${g},${b},${0.96*intensity})`;
-  ctx.lineWidth = 1.8 * intensity;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
+  ctx.save(); ctx.strokeStyle = `rgba(${r},${g},${b},${0.96*intensity})`; ctx.lineWidth = 1.8 * intensity;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const noseX = pt(1).x;
-
   [[lLid,33],[rLid,263]].forEach(([lid, outerIdx])=>{
-    // kirpik hattı
-    ctx.beginPath();
-    lid.forEach((i,idx)=>{ const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); });
+    ctx.beginPath(); lid.forEach((i,idx)=>{ const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); });
     ctx.stroke();
-
     if(wing){
-      const outer = pt(outerIdx);
-      const dir = outer.x < noseX ? -1 : 1;
-
-      // FOTOĞRAFTAKİ GİBİ: 13px dışa, 6px yukarı
-      const tipX = outer.x + dir*13*intensity;
-      const tipY = outer.y - 6*intensity;
-
-      ctx.beginPath();
-      ctx.moveTo(outer.x, outer.y);
-      ctx.lineTo(tipX, tipY);
-      ctx.stroke();
-
-      // keskin üçgen dolgu
-      ctx.beginPath();
-      ctx.moveTo(outer.x + dir*2, outer.y);
-      ctx.lineTo(tipX, tipY);
-      ctx.lineTo(outer.x + dir*8*intensity, outer.y - 1.5*intensity);
-      ctx.closePath();
-      ctx.fillStyle = `rgba(${r},${g},${b},${0.85*intensity})`;
-      ctx.fill();
+      const outer = pt(outerIdx); const dir = outer.x < noseX ? -1 : 1;
+      const tipX = outer.x + dir*13*intensity; const tipY = outer.y - 6*intensity;
+      ctx.beginPath(); ctx.moveTo(outer.x, outer.y); ctx.lineTo(tipX, tipY); ctx.stroke();
     }
   });
   ctx.restore();
 }
 
-function drawEyeshadow(pt, intensity) {
-  const {r,g,b} = hexToRgb(document.getElementById('eyeshadowColor').value);
-  const lLid = [33,246,161,160,159,158,157,173,133];
-  const rLid = [263,466,388,387,386,385,384,398,362];
-
-  ctx.save();
-  ctx.fillStyle = `rgba(${r},${g},${b},${0.20 + intensity*0.35})`;
-  ctx.filter = 'blur(7px)'; // 3.foto gibi yumuşak
-
-  [lLid, rLid].forEach(lid => {
-    ctx.beginPath();
-    // alt: kirpik dibi
-    lid.forEach((i,idx)=>{ const p=pt(i); idx===0?ctx.moveTo(p.x,p.y+1):ctx.lineTo(p.x,p.y+1); });
-    // üst: sadece 14px yukarı (kaşa değil, kıvrıma kadar)
-    for(let i=lid.length-1;i>=0;i--){ const p=pt(lid[i]); ctx.lineTo(p.x, p.y - 14); }
-    ctx.closePath();
-    ctx.fill();
-  });
-  ctx.restore();
+function drawHat(pt) {
+  const img = pngImages[selected.hat];
+  const scale = parseFloat(document.getElementById('hatScale').value);
+  const yOff = parseInt(document.getElementById('hatOffset').value);
+  const lT = pt(234), rT = pt(454), fore = pt(10);
+  const faceW = Math.hypot(rT.x - lT.x, rT.y - lT.y);
+  const tW = faceW * scale; const tH = img.naturalHeight * (tW / img.naturalWidth);
+  const cx = (lT.x + rT.x) / 2; const cy = fore.y - tH * 0.85 + yOff;
+  const angle = Math.atan2(rT.y - lT.y, rT.x - lT.x);
+  ctx.save(); ctx.translate(cx, cy + tH/2); ctx.rotate(angle);
+  ctx.drawImage(img, -tW/2, -tH/2, tW, tH); ctx.restore();
 }
 
-function switchTab(name, el) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('tab-' + name).classList.add('active');
+function drawEarring(pt) {
+  const img = pngImages[selected.earring];
+  const scale = parseFloat(document.getElementById('earringScale').value);
+  const yOff = parseInt(document.getElementById('earringOffset').value);
+  const lLobe = pt(172), rLobe = pt(397), chin = pt(152), fore = pt(10);
+  const faceH = Math.abs(chin.y - fore.y);
+  const tH = faceH * 0.18 * scale; const tW = img.naturalWidth * (tH / img.naturalHeight);
+  ctx.drawImage(img, lLobe.x - tW/2, lLobe.y + yOff, tW, tH);
+  ctx.drawImage(img, rLobe.x - tW/2, rLobe.y + yOff, tW, tH);
 }
 
-// ─── INIT ────────────────────────────────────────────────────────────────────
-buildGlassesGrid();
+function drawNecklace(pt) {
+  const img = pngImages[selected.necklace];
+  const lT = pt(234), rT = pt(454), chin = pt(152);
+  const faceW = Math.hypot(rT.x - lT.x, rT.y - lT.y);
+  const tW = faceW * 1.4; const tH = img.naturalHeight * (tW / img.naturalWidth);
+  const cx = (lT.x + rT.x) / 2; const angle = Math.atan2(rT.y - lT.y, rT.x - lT.x);
+  ctx.save(); ctx.translate(cx, chin.y); ctx.rotate(angle);
+  ctx.drawImage(img, -tW/2, 0, tW, tH); ctx.restore();
+}
 </script>
 </body>
 </html>
