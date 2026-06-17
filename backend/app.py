@@ -103,14 +103,6 @@ def create_app():
 
         return render_template("history.html", history=history_data)
 
-    @app.route("/hairstyles")
-    def list_hairstyles():
-        folder = os.path.join(app.static_folder, "hairstyles")
-        if not os.path.exists(folder):
-            return jsonify([])
-        files = [f for f in os.listdir(folder) if f.lower().endswith(".png")]
-        return jsonify(files)
-       
     @app.route("/accessories/<category>")
     def list_accessories(category):
         allowed_categories = ["earrings", "necklaces", "glasses", "hats"]
