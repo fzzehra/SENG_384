@@ -326,17 +326,6 @@
     .int-val { font-size:12px; font-weight:600; color:var(--indigo); }
 
     /* ── HAIR ── */
-    .hs-list { display:flex; flex-wrap:wrap; gap:8px; }
-    .hs-card {
-      width:58px; height:58px; background:#fff; border-radius:12px;
-      border:1.5px solid rgba(70,70,229,.1);
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; overflow:hidden; transition:all .2s;
-    }
-    .hs-card img { width:100%; height:100%; object-fit:cover; }
-    .hs-card:hover { transform:translateY(-4px); border-color:var(--indigo); }
-    .hs-card.active { border-color:var(--indigo); box-shadow:0 0 0 3px var(--indigo-lt); }
-
     .hair-chip-row { display:flex; flex-wrap:wrap; gap:6px; }
     .hair-chip {
       width:28px; height:28px; border-radius:50%; cursor:pointer;
@@ -563,12 +552,6 @@
 
       <!-- ════════ HAIR ════════ -->
       <div class="tab-panel" id="panel-hair">
-        <div class="sec-title">Hairstyle</div>
-        <div class="ctrl-card">
-          <div class="hs-list" id="hairstyleList"><span style="font-size:12px;color:#8888bb;">Loading…</span></div>
-          <button class="sm-btn" style="margin-top:10px;" onclick="clearHairstyle()">Remove hairstyle</button>
-        </div>
-
         <div class="sec-title">Hair Color</div>
         <div class="ctrl-card">
           <div class="hair-chip-row" id="hairChipRow"></div>
@@ -583,40 +566,6 @@
           <input type="range" class="refine-slider" data-type="hair_color" min="0" max="100" value="0">
         </div>
 
-        <div id="fine-tuning-panel" style="display:none;">
-    <div class="sec-title">Fine Tuning (Optional)</div>
-    <div style="font-size:11px;color:#8888bb;margin-bottom:8px;padding:0 4px;">
-        Peruk otomatik olarak yüzüne göre yerleştirildi. Aşağıdaki ayarlar sadece ince düzeltme için — gerekmedikçe dokunmana gerek yok.
-    </div>
-    <div class="ctrl-card" style="display:flex;flex-direction:column;gap:14px;">
-      <div>
-        <div class="pos-label"><span>Vertical (Up / Down)</span><span id="hair-y-val">0</span></div>
-        <input type="range" id="hairYSlider" min="-200" max="150" value="0">
-      </div>
-      <div>
-        <div class="pos-label"><span>Horizontal (Left / Right)</span><span id="hair-x-val">0</span></div>
-        <input type="range" id="hairXSlider" min="-100" max="100" value="0">
-      </div>
-      <div>
-        <div class="pos-label"><span>Scale</span><span id="hair-scale-val">100%</span></div>
-        <input type="range" id="hairScaleSlider" min="50" max="300" value="100">
-      </div>
-    </div>
-</div>
-        <div class="ctrl-card" style="display:flex;flex-direction:column;gap:14px;">
-          <div>
-            <div class="pos-label"><span>Vertical (Up / Down)</span><span id="hair-y-val">0</span></div>
-            <input type="range" id="hairYSlider" min="-200" max="150" value="0">
-          </div>
-          <div>
-            <div class="pos-label"><span>Horizontal (Left / Right)</span><span id="hair-x-val">0</span></div>
-            <input type="range" id="hairXSlider" min="-100" max="100" value="0">
-          </div>
-          <div>
-            <div class="pos-label"><span>Scale</span><span id="hair-scale-val">100%</span></div>
-            <input type="range" id="hairScaleSlider" min="50" max="300" value="100">
-          </div>
-        </div>
       </div>
 
      <div class="tab-panel" id="panel-accessories">
@@ -947,46 +896,6 @@ function loadAccFetch(category, listId, key) {
     }).catch(() => { document.getElementById(listId).innerHTML = '<span style="font-size:12px;color:#cc4444;">Could not load</span>'; });
 }
 
-// ─── HAIRSTYLES ──────────────────────────────
-function clearHairstyle() {
-  overlay = null;
-  document.querySelectorAll('#hairstyleList .hs-card').forEach(c => c.classList.remove('active'));
-  const ftPanel = document.getElementById('fine-tuning-panel');
-  if (ftPanel) ftPanel.style.display = 'none';
-  trigger();
-}
-function loadHairstyles() {
-  fetch('/hairstyles').then(r => r.json()).then(files => {
-    const el = document.getElementById('hairstyleList'); if (!el) return;
-    el.innerHTML = '';
-    if (!files?.length) { el.innerHTML = '<span style="font-size:12px;color:#8888bb;">No hairstyles</span>'; return; }
-    files.forEach(file => {
-      const card = document.createElement('div'); card.className = 'hs-card';
-      card.innerHTML = `<img src="/static/hairstyles/${file}" title="${file.replace('.png','')}">`;
-      card.addEventListener('click', () => {
-        if (overlay === file) {
-          overlay = null;
-          card.classList.remove('active');
-        } else {
-          el.querySelectorAll('.hs-card').forEach(c => c.classList.remove('active'));
-          overlay = file;
-          card.classList.add('active');
-        }
-        // Fine tuning panelini sadece saç seçiliyken göster
-        const ftPanel = document.getElementById('fine-tuning-panel');
-        if (ftPanel) ftPanel.style.display = overlay ? 'block' : 'none';
-        
-        trigger();
-      });
-      el.appendChild(card);
-    });
-  });
-}
-
-// Hair position
-document.getElementById('hairYSlider')?.addEventListener('input', e => { hairY = parseInt(e.target.value); document.getElementById('hair-y-val').textContent = hairY; trigger(); });
-document.getElementById('hairXSlider')?.addEventListener('input', e => { hairX = parseInt(e.target.value); document.getElementById('hair-x-val').textContent = hairX; trigger(); });
-document.getElementById('hairScaleSlider')?.addEventListener('input', e => { const v = parseInt(e.target.value); hairScale = v/100; document.getElementById('hair-scale-val').textContent = v+'%'; trigger(); });
 document.getElementById('hairColorPicker')?.addEventListener('input', () => trigger());
 
 // ─── TRANSFORM BUILDER ───────────────────────
@@ -1004,17 +913,6 @@ function buildTransforms() {
   const hcS = document.querySelector('[data-type="hair_color"]');
   if (hcS && parseInt(hcS.value) !== 0)
     t.push({ type:'hair_color', intensity:parseInt(hcS.value)/100, params:{ color: document.getElementById('hairColorPicker').value } });
-  if (overlay) {
-    const hcS2 = document.querySelector('[data-type="hair_color"]');
-    t.push({ type:'hair_overlay', intensity:1.0, params:{ 
-      overlay, 
-      scale: hairScale, 
-      x_offset: hairX, 
-      y_offset: hairY,
-      auto: true,
-      color: hcS2 && parseInt(hcS2.value) > 0 ? document.getElementById('hairColorPicker').value : null,
-      color_intensity: hcS2 ? parseInt(hcS2.value)/100 : 0 } });
-  }
   if (acc.glasses || acc.hat)
     t.push({ type:'accessories', intensity:1, params:{ glasses:acc.glasses||null, hat:acc.hat||null } });
   if (acc.earring)  t.push({ type:'earring',  intensity:1, params:{ item:acc.earring } });
@@ -1054,7 +952,6 @@ buildAccGrid(GLASSES, 'glassesList', 'accessories/glasses', 'glasses');
 buildAccGrid(HATS,    'hatsList',    'accessories/hats',    'hat');
 loadAccFetch('earrings',  'earringList',  'earring');
 loadAccFetch('necklaces', 'necklaceList', 'necklace');
-loadHairstyles();
 </script>
 </body>
 </html>
