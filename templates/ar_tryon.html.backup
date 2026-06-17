@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chameleon AR Studio - 3D & 2D Integrated</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{min-height:100vh;background:linear-gradient(135deg,#f0f4ff 0%,#e8fcd4 50%,#f4f0ff 100%);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;padding:32px 20px;}
+.blob{position:fixed;border-radius:50%;filter:blur(60px);opacity:0.3;pointer-events:none;}
+.blob-1{width:320px;height:320px;background:#b0b0ff;top:-80px;left:-80px;}
+.blob-2{width:260px;height:260px;background:#a8f0c0;bottom:-60px;right:-60px;}
+.header{text-align:center;margin-bottom:28px;}
+.badge{display:inline-block;background:rgba(70,70,229,0.1);color:#4646e5;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:5px 14px;border-radius:100px;margin-bottom:12px;border:1px solid rgba(70,70,229,0.2);}
+h1{font-family:'Playfair Display',serif;font-size:36px;color:#2a2a7a;}
+.studio{display:grid;grid-template-columns:1fr 300px;gap:20px;width:100%;max-width:1060px;}
+
+.preview-wrap{position:relative;border-radius:20px;overflow:hidden;background:#000;aspect-ratio:4/3;box-shadow:0 20px 60px rgba(70,70,229,0.15);width:100%;}
+
+/* Katman (Z-Index) Ayarları - Çakışmayı Önleyen Kısım */
+#webcam{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1); position:relative; z-index:1;}
+#canvas2d{position:absolute;top:0;left:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none; z-index:2;}
+#canvas3d{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none; z-index:3;}
+
+.status-bar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.5);color:#fff;font-size:12px;padding:6px 14px;border-radius:100px;backdrop-filter:blur(8px);white-space:nowrap;z-index:10;}
+.start-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#6060e5,#4646e5);color:#fff;font-size:15px;font-weight:600;padding:14px 28px;border-radius:14px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 8px 24px rgba(70,70,229,0.4);transition:all 0.3s;z-index:10;}
+.start-btn:hover{transform:translate(-50%,-50%) translateY(-2px);}
+.fps-badge{position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.4);color:#fff;font-size:11px;padding:3px 8px;border-radius:8px;z-index:10;}
+
+.panel{background:rgba(255,255,255,0.72);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.85);border-radius:20px;padding:0;box-shadow:0 10px 40px rgba(70,70,229,0.08);display:flex;flex-direction:column;overflow:hidden;max-height:580px;}
+.tabs{display:flex;border-bottom:1px solid rgba(70,70,229,0.08);}
+.tab{flex:1;padding:12px 4px;font-size:11px;font-weight:600;text-align:center;color:#8888bb;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:0.5px;text-transform:uppercase;}
+.tab.active{color:#4646e5;border-bottom-color:#4646e5;}
+.tab-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;}
+.panel-section{display:none;flex-direction:column;gap:14px;}
+.panel-section.active{display:flex;}
+.section-label{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#6060aa;margin-bottom:6px;}
+
+.acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.acc-btn{padding:9px 8px;border-radius:11px;border:1.5px solid rgba(70,70,229,0.15);background:rgba(255,255,255,0.6);font-size:12px;font-weight:500;color:#2a2a7a;cursor:pointer;transition:all 0.2s;text-align:center;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.acc-btn:hover{border-color:rgba(70,70,229,0.4);background:rgba(70,70,229,0.05);}
+.acc-btn.active{border-color:#4646e5;background:rgba(70,70,229,0.1);color:#4646e5;}
+.acc-btn.full{grid-column:span 2;}
+.acc-btn canvas{display:block;border-radius:6px;background:rgba(0,0,0,0.03);}
+.acc-btn img{width:48px;height:28px;object-fit:contain;}
+
+.slider-row{display:flex;flex-direction:column;gap:5px;}
+.slider-label{display:flex;justify-content:space-between;font-size:12px;color:#6060aa;}
+input[type=range]{width:100%;height:5px;accent-color:#4646e5;}
+.color-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.color-label{font-size:12px;color:#6060aa;min-width:40px;}
+input[type=color]{width:32px;height:28px;border:none;border-radius:8px;cursor:pointer;padding:0;}
+.divider{height:1px;background:rgba(70,70,229,0.07);}
+#debugInfo{font-size:11px;color:rgba(0,0,0,0.4);margin-top:10px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="header">
+  <div class="badge">AR Try-On</div>
+  <h1>Chameleon Live Studio</h1>
+</div>
+
+<div class="studio">
+  <div class="preview-wrap">
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="canvas2d"></canvas>
+    <canvas id="canvas3d"></canvas>
+    <div class="fps-badge" id="fpsBadge">-- fps</div>
+    <div class="status-bar" id="statusBar">Click Start to begin</div>
+    <button class="start-btn" id="startBtn" onclick="startCamera()">&#9654; Start Camera</button>
+  </div>
+
+  <div class="panel">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('accessories',this)">Accessories</div>
+      <div class="tab" onclick="switchTab('makeup',this)">Makeup</div>
+      <div class="tab" onclick="switchTab('adjust',this)">Adjust</div>
+    </div>
+    <div class="tab-body">
+
+      <div class="panel-section active" id="tab-accessories">
+        <div>
+          <div class="section-label">3D Glasses</div>
+          <div class="acc-grid" id="glassesGrid">
+            <button class="acc-btn full active" id="btn-no-glasses" onclick="clearModel(this)">No Glasses</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">Hat</div>
+          <div class="acc-grid">
+            <button class="acc-btn full active" onclick="selectAcc('hat',null,this)">No Hat</button>
+            <button class="acc-btn" onclick="selectAcc('hat','hat1.png',this)">Hat 1</button>
+            <button class="acc-btn" onclick="selectAcc('hat','hat2.png',this)">Hat 2</button>
+            <button class="acc-btn" onclick="selectAcc('hat','hat3.png',this)">Hat 3</button>
+            <button class="acc-btn" onclick="selectAcc('hat','hat4.png',this)">Hat 4</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">Earrings</div>
+          <div class="acc-grid">
+            <button class="acc-btn full active" onclick="selectAcc('earring',null,this)">No Earrings</button>
+            <button class="acc-btn" onclick="selectAcc('earring','hoop_gold.png',this)">Hoop Gold</button>
+            <button class="acc-btn" onclick="selectAcc('earring','pearl_drop.png',this)">Pearl Drop</button>
+            <button class="acc-btn" onclick="selectAcc('earring','silver_earring.png',this)">Silver</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">Necklace</div>
+          <div class="acc-grid">
+            <button class="acc-btn full active" onclick="selectAcc('necklace',null,this)">No Necklace</button>
+            <button class="acc-btn" onclick="selectAcc('necklace','necklace1.png',this)">Necklace 1</button>
+            <button class="acc-btn" onclick="selectAcc('necklace','necklace2.png',this)">Necklace 2</button>
+            <button class="acc-btn" onclick="selectAcc('necklace','necklace3.png',this)">Necklace 3</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section" id="tab-makeup">
+        <div>
+          <div class="section-label">Lip Color</div>
+          <div class="color-row"><span class="color-label">Color</span><input type="color" id="lipColor" value="#cc2244"></div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Intensity</span><span id="lipIntVal">0%</span></div>
+            <input type="range" id="lipIntensity" min="0" max="100" value="0" oninput="document.getElementById('lipIntVal').textContent=this.value+'%'">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">Eyeshadow</div>
+          <div class="color-row"><span class="color-label">Color</span><input type="color" id="eyeshadowColor" value="#7744cc"></div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Intensity</span><span id="eyeIntVal">0%</span></div>
+            <input type="range" id="eyeIntensity" min="0" max="100" value="0" oninput="document.getElementById('eyeIntVal').textContent=this.value+'%'">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">Blush</div>
+          <div class="color-row"><span class="color-label">Color</span><input type="color" id="blushColor" value="#ff8899"></div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Intensity</span><span id="blushIntVal">0%</span></div>
+            <input type="range" id="blushIntensity" min="0" max="100" value="0" oninput="document.getElementById('blushIntVal').textContent=this.value+'%'">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">Eye Color</div>
+          <div class="color-row"><span class="color-label">Color</span><input type="color" id="eyeColor" value="#4a7c2e"></div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Intensity</span><span id="eyeColorIntVal">0%</span></div>
+            <input type="range" id="eyeColorIntensity" min="0" max="100" value="0" oninput="document.getElementById('eyeColorIntVal').textContent=this.value+'%'">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">Eyebrow</div>
+          <div class="color-row"><span class="color-label">Color</span><input type="color" id="browColor" value="#3b2f2f"></div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Intensity</span><span id="browIntVal">0%</span></div>
+            <input type="range" id="browIntensity" min="0" max="100" value="0" oninput="document.getElementById('browIntVal').textContent=this.value+'%'">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">Eyeliner</div>
+          <div class="color-row"><span class="color-label">Color</span><input type="color" id="linerColor" value="#000000"></div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Intensity</span><span id="linerIntVal">0%</span></div>
+            <input type="range" id="linerIntensity" min="0" max="100" value="0" oninput="document.getElementById('linerIntVal').textContent=this.value+'%'">
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:#6060aa;">
+            <label><input type="checkbox" id="linerWing" checked style="margin-right:4px;">Wing</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section" id="tab-adjust">
+        <div>
+          <div class="section-label">PNG Hat</div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Scale</span><span id="hScaleVal">1.35x</span></div>
+            <input type="range" id="hatScale" min="0.8" max="2.5" step="0.05" value="1.35" oninput="document.getElementById('hScaleVal').textContent=parseFloat(this.value).toFixed(2)+'x'">
+          </div>
+          <div class="slider-row" style="margin-top:8px;">
+            <div class="slider-label"><span>Vertical offset</span><span id="hOffsetVal">0px</span></div>
+            <input type="range" id="hatOffset" min="-80" max="80" step="1" value="0" oninput="document.getElementById('hOffsetVal').textContent=this.value+'px'">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="section-label">PNG Earring</div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Scale</span><span id="eScaleVal">1.0x</span></div>
+            <input type="range" id="earringScale" min="0.3" max="2.0" step="0.05" value="1.0" oninput="document.getElementById('eScaleVal').textContent=parseFloat(this.value).toFixed(1)+'x'">
+          </div>
+          <div class="slider-row" style="margin-top:8px;">
+            <div class="slider-label"><span>Vertical offset</span><span id="eOffsetVal">0px</span></div>
+            <input type="range" id="earringOffset" min="-40" max="40" step="1" value="0" oninput="document.getElementById('eOffsetVal').textContent=this.value+'px'">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div id="debugInfo">--</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+
+const GLASSES_CATALOG = [
+  { name: 'Glasses 1', file: 'glasses-1-.glb' },
+  { name: 'Glasses 2', file: 'glasses-7.glb' },
+  { name: 'Glasses 3', file: 'glasses-10.glb' },
+  { name: 'Glasses 4', file: 'glasses-12.glb' }
+];
+
+const glassesConfig = {
+  'glasses-1-.glb': { zOffset: 0.5, scale: 2.0 },
+  'glasses-7.glb':  { zOffset: 1.4, scale: 1.85 },
+  'glasses-10.glb': { zOffset: 2.0, scale: 1.9 },
+  'glasses-12.glb': { zOffset: 2.5, scale: 2.0 }
+};
+
+const video = document.getElementById('webcam');
+const canvas2d = document.getElementById('canvas2d');
+const canvas3d = document.getElementById('canvas3d');
+const ctx = canvas2d.getContext('2d');
+const statusBar = document.getElementById('statusBar');
+const fpsBadge = document.getElementById('fpsBadge');
+const debugEl = document.getElementById('debugInfo');
+
+let selected = { hat: null, earring: null, necklace: null };
+let pngImages = {};
+let frameCount = 0, lastFpsTime = performance.now();
+let faceLandmarker = null;
+let running = false;
+let lastTime = -1;
+
+// Three.js Setup
+const renderer3d = new THREE.WebGLRenderer({ canvas: canvas3d, alpha: true, antialias: true });
+renderer3d.setPixelRatio(window.devicePixelRatio);
+renderer3d.setSize(640, 480, false); 
+
+const scene3d = new THREE.Scene();
+const camera3d = new THREE.PerspectiveCamera(60, 640/480, 0.1, 2000);
+camera3d.position.set(0, 0, 0);
+camera3d.lookAt(0, 0, -1);
+
+scene3d.add(new THREE.AmbientLight(0xffffff, 2.2));
+const dLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dLight.position.set(0, 1, 1);
+scene3d.add(dLight);
+
+const modelGroup = new THREE.Group();
+scene3d.add(modelGroup);
+
+const gltfLoader = new THREE.GLTFLoader();
+let currentModel = null;
+let modelNormScale = 1;
+let modelReady = false;
+
+window.switchTab = function(tabName, tabEl) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
+  tabEl.classList.add('active');
+  document.getElementById('tab-' + tabName).classList.add('active');
+};
+
+function buildGlassesGrid() {
+  const grid = document.getElementById('glassesGrid');
+  const noGlassesBtn = document.getElementById('btn-no-glasses');
+  grid.innerHTML = '';
+  grid.appendChild(noGlassesBtn);
+
+  GLASSES_CATALOG.forEach((item, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'acc-btn';
+    const canvasId = `prevCanvas_${idx}`;
+    
+    btn.innerHTML = `<canvas id="${canvasId}" width="80" height="40"></canvas><span>${item.name}</span>`;
+    btn.addEventListener('click', () => loadModel(item.file, btn));
+    grid.appendChild(btn);
+
+    setTimeout(() => {
+      const cEl = document.getElementById(canvasId);
+      if (cEl) generatePreview(item.file, cEl);
+    }, 100);
+  });
+}
+
+function generatePreview(file, canvasEl) {
+  const pRenderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: true });
+  pRenderer.setSize(80, 40);
+  pRenderer.setClearColor(0x000000, 0);
+  
+  const pScene = new THREE.Scene();
+  pScene.add(new THREE.AmbientLight(0xffffff, 2.5));
+  const pLight = new THREE.DirectionalLight(0xffffff, 1.5);
+  pLight.position.set(0, 1, 2);
+  pScene.add(pLight);
+
+  const pCamera = new THREE.PerspectiveCamera(35, 2, 0.1, 100);
+
+  gltfLoader.load('/static/accessories/glasses/' + file, gltf => {
+    const m = gltf.scene;
+    const box = new THREE.Box3().setFromObject(m);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    m.position.sub(center);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    pCamera.position.z = maxDim * 1.8;
+    pScene.add(m);
+    pRenderer.render(pScene, pCamera);
+    pRenderer.dispose();
+  });
+}
+
+window.loadModel = function(file, btn) {
+  if (btn) {
+    document.querySelectorAll('#glassesGrid .acc-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  window.clearModel(null, false);
+  statusBar.textContent = 'Loading 3D Model: ' + file;
+
+  gltfLoader.load('/static/accessories/glasses/' + file, gltf => {
+    currentModel = gltf.scene;
+    const box = new THREE.Box3().setFromObject(currentModel);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    currentModel.position.sub(center).add(new THREE.Vector3(0, -0.05, 0));
+    const cfg = glassesConfig[file] || { zOffset: 0.5, scale: 1.8 };
+    currentModel.position.z -= cfg.zOffset;
+    currentModel._scaleMultiplier = cfg.scale;
+    
+    modelGroup.add(currentModel);
+    modelNormScale = 1.0 / size.x;
+    modelReady = true;
+    statusBar.textContent = 'Face detected ✓';
+  }, undefined, err => {
+    console.error(err);
+    statusBar.textContent = 'Failed to load model!';
+  });
+};
+
+window.clearModel = function(btn, updateUI = true) {
+  if (updateUI && btn) {
+    document.querySelectorAll('#glassesGrid .acc-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  while (modelGroup.children.length > 0) modelGroup.remove(modelGroup.children[0]);
+  currentModel = null;
+  modelReady = false;
+};
+
+window.selectAcc = function(type, file, btn) {
+  const grid = btn.closest('.acc-grid');
+  grid.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selected[type] = file;
+  if (file) loadPNG(file, type);
+};
+
+function loadPNG(file, type) {
+  if (pngImages[file]) return;
+  const img = new Image();
+  const folderMap = { hat:'hats', earring:'earrings', necklace:'necklaces' };
+  img.src = '/static/accessories/' + folderMap[type] + '/' + file;
+  img.onload = () => { pngImages[file] = img; };
+}
+
+window.startCamera = async function() {
+  document.getElementById('startBtn').style.display = 'none';
+  statusBar.textContent = 'Loading MediaPipe FaceLandmarker...';
+
+  const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+  faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+      delegate: "GPU"
+    },
+    outputFaceBlendshapes: false,
+    outputFacialTransformationMatrixes: true,
+    runningMode: "VIDEO",
+    numFaces: 1
+  });
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+    video.srcObject = stream;
+    
+    await new Promise(r => video.onloadedmetadata = r);
+    if (video.videoWidth === 0) {
+      await new Promise(r => video.onplay = r);
+    }
+
+    // Hem 2D hem 3D canvas boyutları ayarlanıyor, 'false' parametresi CSS'i koruyor.
+    canvas2d.width = canvas3d.width = video.videoWidth;
+    canvas2d.height = canvas3d.height = video.videoHeight;
+    renderer3d.setSize(video.videoWidth, video.videoHeight, false);
+    
+    camera3d.aspect = video.videoWidth / video.videoHeight;
+    camera3d.updateProjectionMatrix();
+
+    buildGlassesGrid();
+    running = true;
+    statusBar.textContent = 'Detecting face...';
+    renderLoop();
+  } catch(e) {
+    console.error(e);
+    statusBar.textContent = 'Camera access denied.';
+    document.getElementById('startBtn').style.display = 'block';
+  }
+};
+
+function renderLoop() {
+  if (!running) return;
+  requestAnimationFrame(renderLoop);
+
+  const now = performance.now();
+  if (video.readyState < 2 || now === lastTime) { renderer3d.render(scene3d, camera3d); return; }
+  lastTime = now;
+
+  frameCount++;
+  if (now - lastFpsTime > 1000) { fpsBadge.textContent = frameCount + ' fps'; frameCount = 0; lastFpsTime = now; }
+
+  const result = faceLandmarker.detectForVideo(video, now);
+  ctx.clearRect(0, 0, canvas2d.width, canvas2d.height);
+
+  if (!result.faceLandmarks?.length) {
+    statusBar.textContent = 'No face detected';
+    if (currentModel) currentModel.visible = false;
+    renderer3d.render(scene3d, camera3d);
+    return;
+  }
+
+  statusBar.textContent = 'Face detected ✓';
+  const lm = result.faceLandmarks[0];
+  const W = canvas2d.width, H = canvas2d.height;
+  const pt = i => ({ x: lm[i].x * W, y: lm[i].y * H });
+
+  // ─── 1. 3D GLASSES POSITION & CALCULATION ───
+  if (result.facialTransformationMatrixes?.length && currentModel && modelReady) {
+    currentModel.visible = true;
+    const mp = result.facialTransformationMatrixes[0].data;
+    const m = new THREE.Matrix4().set(
+      mp[0], mp[4], mp[8],  mp[12],
+      mp[1], mp[5], mp[9],  mp[13],
+      mp[2], mp[6], mp[10], mp[14],
+      mp[3], mp[7], mp[11], mp[15]
+    );
+
+    const pos = new THREE.Vector3();
+    const quat = new THREE.Quaternion();
+    const scaleV = new THREE.Vector3();
+    m.decompose(pos, quat, scaleV);
+
+    const bridgeNose = lm[168];
+    const ndcX = (bridgeNose.x * 2) - 1;
+    const ndcY = -(bridgeNose.y * 2) + 1;
+
+    const depth = Math.abs(pos.z);
+    const fovRad = THREE.MathUtils.degToRad(30);
+    const halfScreenWorldHeight = Math.tan(fovRad) * depth;
+    const halfScreenWorldWidth = halfScreenWorldHeight * camera3d.aspect;
+
+    pos.x = -(ndcX * halfScreenWorldWidth);
+    pos.y = (ndcY * halfScreenWorldHeight) - 0.05;
+
+    const lEyePx = lm[33].x * W;
+    const rEyePx = lm[263].x * W;
+    const eyeDistPx = Math.abs(rEyePx - lEyePx);
+    const eyeDistWorld = (eyeDistPx / W) * halfScreenWorldWidth * 2;
+
+    pos.z = -depth - (eyeDistWorld * 0.5);
+    const qAynali = new THREE.Quaternion(quat.x, -quat.y, -quat.z, quat.w);
+
+    const targetWidth = eyeDistWorld * (currentModel._scaleMultiplier || 1.8);
+    const finalScale = targetWidth * modelNormScale;
+
+    modelGroup.position.set(pos.x, pos.y - 0.1, pos.z);
+    modelGroup.quaternion.copy(qAynali);
+    modelGroup.scale.setScalar(finalScale);
+
+    debugEl.textContent = `pos:(${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)}) scale:${finalScale.toFixed(3)}`;
+
+    const euler = new THREE.Euler().setFromQuaternion(qAynali, 'YXZ');
+    const yawAbs = Math.abs(euler.y);
+    const occlusionOpacity = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(yawAbs, 0.3, 0.7, 1.0, 0.0), 0.0, 1.0);
+    
+    currentModel.traverse(child => {
+      if (!child.isMesh) return;
+      if (!child.material._originalOpacity) {
+        child.material = child.material.clone();
+        child.material.transparent = true;
+        child.material._originalOpacity = child.material.opacity || 1.0;
+      }
+      child.material.opacity = occlusionOpacity * child.material._originalOpacity;
+    });
+  }
+
+  // ─── 2. 2D MAKEUP RENDERING (Çizim Katmanı Z-Index 2) ───
+  const lipInt = parseInt(document.getElementById('lipIntensity').value) / 100;
+  if (lipInt > 0) drawLipColor(pt, lipInt);
+
+  const eyeInt = parseInt(document.getElementById('eyeIntensity').value) / 100;
+  if (eyeInt > 0) drawEyeshadow(pt, eyeInt);
+
+  const blushInt = parseInt(document.getElementById('blushIntensity').value) / 100;
+  if (blushInt > 0) drawBlush(pt, blushInt);
+
+  const eyeCInt = parseInt(document.getElementById('eyeColorIntensity').value) / 100;
+  if (eyeCInt > 0) applyEyeColor(pt, eyeCInt);
+
+  const browInt = parseInt(document.getElementById('browIntensity').value) / 100;
+  if (browInt > 0) applyEyebrowColor(pt, browInt);
+
+  const linerInt = parseInt(document.getElementById('linerIntensity').value) / 100;
+  if (linerInt > 0) applyEyeliner(pt, linerInt, document.getElementById('linerWing').checked);
+
+  // ─── 3. 2D PNG ACCESSORIES RENDERING (Çizim Katmanı Z-Index 2) ───
+  if (selected.necklace && pngImages[selected.necklace]) drawNecklace(pt);
+  if (selected.earring && pngImages[selected.earring]) drawEarring(pt);
+  if (selected.hat && pngImages[selected.hat]) drawHat(pt);
+
+  // 3D Render (En Üst Katman Z-Index 3)
+  renderer3d.render(scene3d, camera3d);
+}
+
+function hexToRgb(hex) {
+  return { r:parseInt(hex.slice(1,3),16), g:parseInt(hex.slice(3,5),16), b:parseInt(hex.slice(5,7),16) };
+}
+
+function drawLipColor(pt, intensity) {
+  const {r,g,b} = hexToRgb(document.getElementById('lipColor').value);
+  const outer = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
+  const inner = [78,95,88,178,87,14,317,402,318,324,308,415,310,311,312,13,82,81,80,191];
+  ctx.save(); ctx.beginPath();
+  outer.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+  ctx.closePath();
+  inner.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+  ctx.closePath();
+  ctx.fillStyle = `rgba(${r},${g},${b},${0.35 + intensity*0.5})`;
+  ctx.filter = 'blur(1.5px)';
+  ctx.fill('evenodd'); ctx.restore();
+}
+
+function drawEyeshadow(pt, intensity) {
+  const {r,g,b} = hexToRgb(document.getElementById('eyeshadowColor').value);
+  const lEye = [226,247,30,29,27,28,56,190,243,112,26,22,23,24,110,157];
+  const rEye = [446,467,260,259,257,258,286,414,463,341,256,252,253,254,339,384];
+  ctx.save(); ctx.fillStyle = `rgba(${r},${g},${b},${0.2 * intensity})`; ctx.filter = 'blur(4px)';
+  [lEye, rEye].forEach(eye => {
+    ctx.beginPath();
+    eye.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+    ctx.closePath(); ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawBlush(pt, intensity) {
+  const {r,g,b} = hexToRgb(document.getElementById('blushColor').value);
+  const lC = pt(123), rC = pt(352);
+  const faceW = Math.hypot(pt(454).x-pt(234).x, pt(454).y-pt(234).y);
+  const radius = faceW * 0.21 * intensity;
+  ctx.save(); ctx.filter = 'blur(3px)';
+  [[lC,4],[rC,-4]].forEach(([p,dx])=>{
+    const x = p.x + dx; const y = p.y - 2;
+    const grad = ctx.createRadialGradient(x,y,0,x,y,radius);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${0.42*intensity})`);
+    grad.addColorStop(0.6, `rgba(${r},${g},${b},${0.18*intensity})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x,y,radius,0,Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+}
+
+function applyEyebrowColor(pt, intensity) {
+  const {r,g,b} = hexToRgb(document.getElementById('browColor').value);
+  const leftTop = [70,63,105,66,107], leftBot = [107,55,65,52,53,46,70];
+  const rightTop = [300,293,334,296,336], rightBot = [336,285,295,282,283,276,300];
+  ctx.save(); ctx.fillStyle = `rgba(${r},${g},${b},${0.34*intensity})`; ctx.filter = 'blur(2px)';
+  [[leftTop,leftBot],[rightTop,rightBot]].forEach(([top,bot])=>{
+    ctx.beginPath(); top.forEach((i,idx)=>{const p=pt(i); idx===0?ctx.moveTo(p.x,p.y-1):ctx.lineTo(p.x,p.y-1);});
+    bot.slice().reverse().forEach(i=>{const p=pt(i); ctx.lineTo(p.x,p.y+1);});
+    ctx.closePath(); ctx.fill();
+  });
+  ctx.restore();
+}
+
+function applyEyeColor(pt, intensity) {
+  const {r,g,b} = hexToRgb(document.getElementById('eyeColor').value);
+  ctx.save();
+  [468,473].forEach(idx=>{
+    const c = pt(idx);
+    const pts = idx===468 ? [469,470,471,472] : [474,475,476,477];
+    let rad = 0; pts.forEach(i=>{ const p=pt(i); rad += Math.hypot(p.x-c.x, p.y-c.y); });
+    rad = rad/pts.length * 0.68;
+
+    ctx.globalCompositeOperation = 'multiply';
+    const tint = ctx.createRadialGradient(c.x,c.y,rad*0.15, c.x,c.y,rad);
+    tint.addColorStop(0, `rgba(${r},${g},${b},${0.20*intensity})`);
+    tint.addColorStop(0.6, `rgba(${r},${g},${b},${0.35*intensity})`);
+    tint.addColorStop(1, `rgba(${r},${g},${b},${0.22*intensity})`);
+    ctx.fillStyle = tint; ctx.beginPath(); ctx.arc(c.x,c.y,rad,0,Math.PI*2); ctx.fill();
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = `rgba(${Math.floor(r*0.5)},${Math.floor(g*0.5)},${Math.floor(b*0.5)},${0.40*intensity})`;
+    ctx.lineWidth = rad * 0.22; ctx.beginPath(); ctx.arc(c.x,c.y,rad*0.90,0,Math.PI*2); ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function applyEyeliner(pt, intensity, wing) {
+  const {r,g,b} = hexToRgb(document.getElementById('linerColor').value);
+  const lLid = [33,246,161,160,159,158,157,173,133];
+  const rLid = [263,466,388,387,386,385,384,398,362];
+  ctx.save(); ctx.strokeStyle = `rgba(${r},${g},${b},${0.96*intensity})`; ctx.lineWidth = 1.8 * intensity;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const noseX = pt(1).x;
+  [[lLid,33],[rLid,263]].forEach(([lid, outerIdx])=>{
+    ctx.beginPath(); lid.forEach((i,idx)=>{ const p=pt(i); idx===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); });
+    ctx.stroke();
+    if(wing){
+      const outer = pt(outerIdx); const dir = outer.x < noseX ? -1 : 1;
+      const tipX = outer.x + dir*13*intensity; const tipY = outer.y - 6*intensity;
+      ctx.beginPath(); ctx.moveTo(outer.x, outer.y); ctx.lineTo(tipX, tipY); ctx.stroke();
+    }
+  });
+  ctx.restore();
+}
+
+function drawHat(pt) {
+  const img = pngImages[selected.hat];
+  const scale = parseFloat(document.getElementById('hatScale').value);
+  const yOff = parseInt(document.getElementById('hatOffset').value);
+  const lT = pt(234), rT = pt(454), fore = pt(10);
+  const faceW = Math.hypot(rT.x - lT.x, rT.y - lT.y);
+  const tW = faceW * scale; const tH = img.naturalHeight * (tW / img.naturalWidth);
+  const cx = (lT.x + rT.x) / 2; const cy = fore.y - tH * 0.85 + yOff;
+  const angle = Math.atan2(rT.y - lT.y, rT.x - lT.x);
+  ctx.save(); ctx.translate(cx, cy + tH/2); ctx.rotate(angle);
+  ctx.drawImage(img, -tW/2, -tH/2, tW, tH); ctx.restore();
+}
+
+function drawEarring(pt) {
+  const img = pngImages[selected.earring];
+  const scale = parseFloat(document.getElementById('earringScale').value);
+  const yOff = parseInt(document.getElementById('earringOffset').value);
+  const lLobe = pt(172), rLobe = pt(397), chin = pt(152), fore = pt(10);
+  const faceH = Math.abs(chin.y - fore.y);
+  const tH = faceH * 0.18 * scale; const tW = img.naturalWidth * (tH / img.naturalHeight);
+  ctx.drawImage(img, lLobe.x - tW/2, lLobe.y + yOff, tW, tH);
+  ctx.drawImage(img, rLobe.x - tW/2, rLobe.y + yOff, tW, tH);
+}
+
+function drawNecklace(pt) {
+  const img = pngImages[selected.necklace];
+  const lT = pt(234), rT = pt(454), chin = pt(152);
+  const faceW = Math.hypot(rT.x - lT.x, rT.y - lT.y);
+  const tW = faceW * 1.4; const tH = img.naturalHeight * (tW / img.naturalWidth);
+  const cx = (lT.x + rT.x) / 2; const angle = Math.atan2(rT.y - lT.y, rT.x - lT.x);
+  ctx.save(); ctx.translate(cx, chin.y); ctx.rotate(angle);
+  ctx.drawImage(img, -tW/2, 0, tW, tH); ctx.restore();
+}
+</script>
+</body>
+</html>

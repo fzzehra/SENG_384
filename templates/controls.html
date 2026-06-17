@@ -939,12 +939,14 @@ function trigger() { clearTimeout(debounce); debounce = setTimeout(applyAll, 320
 
 async function applyAll() {
   const transforms = buildTransforms();
+  console.log('UPLOAD /transform gönderiliyor:', JSON.stringify(transforms), '| image_path:', currentImagePath);
   if (!transforms.length) { livePreview.src = '/' + currentImagePath + '?v=' + Date.now(); return; }
   try {
     const res = await fetch('/transform/', { method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ image_path: currentImagePath, transforms }) });
     const data = await res.json();
+    console.log('UPLOAD /transform yanıt:', data.success, data.data && data.data.applied_transforms);
     if (data.success) livePreview.src = '/static/uploads/transformed.jpg?v=' + Date.now();
   } catch(e) { console.error(e); }
 }
