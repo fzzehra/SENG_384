@@ -14,10 +14,9 @@ from backend.modules.landmark.landmark import process_landmark_pipeline
 from backend.modules.warping import apply_expression
 from backend.modules.makeup.makeup import apply_makeup_pipeline
 from backend.modules.aging.aging import apply_aging_effect
-from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay
 from backend.modules.hat_glasses.glasses import place_glasses
 from backend.modules.hair.hat import place_hat
-from backend.modules.hair.hair import apply_hair_color, apply_hair_overlay, apply_eyebrow_color
+from backend.modules.hair.hair import apply_hair_color, apply_eyebrow_color
 from backend.modules.beard.beard import apply_beard_effect
 from backend.modules.moustache.moustache import apply_moustache
 from backend.modules.makeup.makeup import apply_makeup_pipeline
@@ -499,39 +498,6 @@ def transform_image():
                 )
                 results_meta.append("deaging")
                 print(f"APPLIED: deaging (Intensity: {t_intensity})")
-            elif t_type == "hair_overlay":
-                params = transform.get("params", {})
-                overlay_name = params.get("overlay", "")
-                scale_factor = float(params.get("scale", 1.0)) if params.get("scale") is not None else 1.0
-                x_offset = int(params.get("x_offset", 0))
-                y_offset = int(params.get("y_offset", 0))
-                # Otomatik mod: kullanıcı manuel ayar göndermediyse, slider'lar 0/100'de kaldıysa,
-                 # tamamen otomatik landmark-tabanlı yerleşim kullanılır (zaten varsayılan).
-                # Manuel ayarlar SADECE landmark hizalamasının üstüne ince düzeltme olarak biner.
-                auto_mode = params.get("auto", True)
-                if auto_mode:
-                    # Otomatik modda offset/scale kullanıcı dokunmadıkça nötr kalır
-                    scale_factor = max(0.85, min(1.25, scale_factor))  # ekstrem değerleri kıs
-                wig_color = params.get("color", None)
-                wig_color_intensity = float(params.get("color_intensity", 0.0))
-                overlay_path = os.path.join(current_app.static_folder, "hairstyles", overlay_name)
-
-                landmark_result = process_landmark_pipeline(output_image)
-                if landmark_result.get("success") and overlay_name:
-                    output_image = apply_hair_overlay(
-                        output_image,
-                        landmark_result["landmarks"],
-                        overlay_path=overlay_path,
-                        intensity=max(0.0, min(1.0, t_intensity)),
-                        scale_factor=max(0.5, min(3.0, scale_factor)),
-                        x_offset=x_offset,
-                        y_offset=y_offset,
-                        wig_color=wig_color,
-                        wig_color_intensity=wig_color_intensity,
-                        auto=params.get("auto", True)
-                    )
-                    results_meta.append("hair_overlay")
-                    print(f"APPLIED: hair_overlay ({overlay_name}, scale={scale_factor})")
             elif t_type == "beard":
                 landmark_result = process_landmark_pipeline(output_image)
 
