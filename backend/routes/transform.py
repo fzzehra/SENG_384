@@ -1,5 +1,3 @@
-#transform.py
-
 from backend.modules.accessories.jewelery import apply_jewelry_pipeline
 from backend.modules.makeup.makeup import apply_lip_color, apply_blush, apply_eyeshadow, apply_eye_color, apply_lashes
 import os
@@ -21,6 +19,7 @@ from backend.modules.beard.beard import apply_beard_effect
 from backend.modules.moustache.moustache import apply_moustache
 from backend.modules.makeup.makeup import apply_makeup_pipeline
 from backend.modules.piercing.piercing import apply_piercing
+from backend.modules.filters.face_filter import apply_face_filter
 
 pose_model = YOLO("yolov8n-pose.pt")
 transform_bp = Blueprint("transform", __name__)
@@ -43,7 +42,6 @@ TRANSFORM_MAP = {
     "lip_widen": "lip_widen",
     "face_widening": "face_slimming",
 }
-
 
 def apply_deaging_effect(image, intensity=0.5):
     intensity = float(max(0.0, min(1.0, intensity)))
@@ -943,7 +941,57 @@ def transform_image():
 
                 results_meta.append(f"{t_type}:{item_name}")
                 print("APPLIED:", t_type)
-           
+
+            elif t_type == "butterfly":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_face_filter(
+                        output_image,
+                        landmark_result["landmarks"],
+                        mask_name="butterfly_mask.png",
+                        intensity=t_intensity
+                    )
+                    results_meta.append("butterfly") 
+            elif t_type == "crystal":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_face_filter(
+                        output_image,
+                        landmark_result["landmarks"],
+                        mask_name="crystal_mask.png",
+                        intensity=t_intensity
+                    )
+                    results_meta.append("crystal")
+            elif t_type == "pearl":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_face_filter(
+                        output_image,
+                        landmark_result["landmarks"],
+                        mask_name="pearl_mask.png",
+                        intensity=t_intensity
+                    )
+                    results_meta.append("pearl")
+            elif t_type == "peacock":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_face_filter(
+                        output_image,
+                        landmark_result["landmarks"],
+                        mask_name="peacock_mask.png",
+                        intensity=t_intensity
+                    )
+                    results_meta.append("peacock")
+            elif t_type == "dragon":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_face_filter(
+                        output_image,
+                        landmark_result["landmarks"],
+                        mask_name="dragon.png",
+                        intensity=t_intensity
+                    )
+                    results_meta.append("dragon")
             elif t_type == "makeup_intensity":
                 continue
             else:
