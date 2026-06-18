@@ -154,6 +154,12 @@ def apply_eyeshadow(image, landmarks, color_hex="#b565a7", intensity=0.35):
     right_base = get_points(landmarks, right_lid_idx, w, h)
 
     lift = int(h * 0.018)
+    up_shift = int(h * 0.005)
+
+    left_base = left_base.copy()
+    left_base[:, 1] -= up_shift
+    right_base = right_base.copy()
+    right_base[:, 1] -= up_shift
 
     left_top = left_base.copy()
     left_top[:, 1] -= lift
@@ -161,7 +167,18 @@ def apply_eyeshadow(image, landmarks, color_hex="#b565a7", intensity=0.35):
     right_top = right_base.copy()
     right_top[:, 1] -= lift
 
-    left_shadow = np.vstack([left_top, left_base[::-1]])
+    # Dış köşeyi dışa kaydır; y'yi yanındaki noktaya hizala (yukarı kıvrılma önlenir)
+    lt_lm = landmarks[234]; rt_lm = landmarks[454]
+    fw = abs(rt_lm[0] - lt_lm[0])
+    ext = int(fw * 0.045)
+
+    down = int(h * 0.018)
+    left_base[0][0]  -= ext;  left_base[0][1]  += down
+    left_top[0][0]   -= ext;  left_top[0][1]   += down
+    right_base[0][0] += ext;  right_base[0][1] += down
+    right_top[0][0]  += ext;  right_top[0][1]  += down
+
+    left_shadow  = np.vstack([left_top,  left_base[::-1]])
     right_shadow = np.vstack([right_top, right_base[::-1]])
 
     cv2.fillPoly(mask, [left_shadow.astype(np.int32)], 255)
@@ -310,6 +327,87 @@ def apply_eye_color(image, landmarks, color_hex="#4a90e2", intensity=0.5):
     final_intensity = max(0.0, min(1.0, intensity)) * 0.65
 
     return blend_mask(image, mask, hex_to_bgr(color_hex), final_intensity)
+
+
+def apply_lashes(image, landmarks, color_hex='#1a1a1a', intensity=0.9,
+                 length_mult=1.0, thick_mult=1.0):
+    import math
+    h, w = image.shape[:2]
+    cbgr = hex_to_bgr(color_hex)
+    face_w = abs(get_point_xy(landmarks, 454, w, h)[0] - get_point_xy(landmarks, 234, w, h)[0])
+
+    left_lid_idx  = [33, 246, 161, 160, 159, 158, 157, 173, 133]
+    right_lid_idx = [263, 466, 388, 387, 386, 385, 384, 398, 362]
+    lash_mask = np.zeros((h, w), dtype=np.uint8)
+
+    for eye_idx, lid_idx in enumerate([left_lid_idx, right_lid_idx]):
+        lid = np.array([get_point_xy(landmarks, i, w, h) for i in lid_idx], dtype=np.float64)
+        P0 = lid[0].copy(); P2 = lid[-1].copy()
+        arch = lid[np.argsort(lid[:, 1])[:3]].mean(axis=0)
+        P1 = 2.0 * arch - 0.5 * P0 - 0.5 * P2
+
+        N = 200
+        ts = np.linspace(0, 1, N)
+        curve = np.array([(1-t)**2*P0 + 2*(1-t)*t*P1 + t**2*P2 for t in ts])
+        arc = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(curve, axis=0), axis=1))])
+        total_arc = arc[-1]
+
+        cos_c = math.cos(0.22); sin_c = math.sin(0.22)
+
+        for i_lash in range(25):
+            t_outer = 0.20 + 0.95 * i_lash / 24
+            tb = max(0.0, min(1.0, 1.0 - t_outer / 1.15))
+            idx_a = max(1, min(int(np.searchsorted(arc, tb * total_arc)), N - 2))
+            bx, by = curve[idx_a]
+
+            dx = curve[idx_a+1][0] - curve[idx_a-1][0]
+            dy = curve[idx_a+1][1] - curve[idx_a-1][1]
+            tnorm = math.sqrt(dx*dx + dy*dy) + 1e-6
+            tx = dx/tnorm; ty = dy/tnorm
+            nx = -ty; ny = tx
+            if ny > 0: nx = -nx; ny = -ny
+
+            # İç köşede daha fazla offset (orada eyelid daha alçak)
+            inner_t = tb  # 0=dış köşe, 1=iç köşe
+            base_off = face_w * (0.010 + 0.015 * inner_t)
+            bx += nx * base_off; by += ny * base_off
+
+            # Dış tarafa tilt: sol göz sola, sağ göz sağa
+            out_x = -1.0 if eye_idx == 0 else 1.0
+            tilt = 0.28
+            eff_nx = nx * (1-tilt) + out_x * tilt
+            eff_ny = ny * (1-tilt)
+            en = math.sqrt(eff_nx**2 + eff_ny**2) + 1e-6
+            eff_nx /= en; eff_ny /= en
+
+            len_factor = 0.07 + 0.93 * (t_outer / 1.15) ** 0.45
+            lash_len = face_w * (0.034 + len_factor * 0.100) * length_mult
+            base_w   = face_w * 0.0165 * thick_mult  # eski 300% = yeni 60%
+
+            if eye_idx == 0:
+                cnx = eff_nx*cos_c - eff_ny*sin_c; cny = eff_nx*sin_c + eff_ny*cos_c
+            else:
+                cnx = eff_nx*cos_c + eff_ny*sin_c; cny = -eff_nx*sin_c + eff_ny*cos_c
+
+            tip_x = bx + cnx*lash_len; tip_y = by + cny*lash_len
+            ctrl_x = bx + eff_nx*lash_len*0.6; ctrl_y = by + eff_ny*lash_len*0.6
+            lp_x = -ty*base_w; lp_y = tx*base_w
+
+            upper = []; lower = []
+            for k in range(9):
+                s = k/8
+                tp = max(0.08, 1.0 - s * 0.92)  # kökten uca uniform incelme
+                upper.append([(1-s)**2*(bx-lp_x)+2*(1-s)*s*(ctrl_x-lp_x*tp)+s**2*(tip_x-lp_x*0.08),
+                               (1-s)**2*(by-lp_y)+2*(1-s)*s*(ctrl_y-lp_y*tp)+s**2*(tip_y-lp_y*0.08)])
+                lower.append([(1-s)**2*(bx+lp_x*tp)+2*(1-s)*s*(ctrl_x+lp_x*tp)+s**2*(tip_x+lp_x*0.08),
+                               (1-s)**2*(by+lp_y*tp)+2*(1-s)*s*(ctrl_y+lp_y*tp)+s**2*(tip_y+lp_y*0.08)])
+            cv2.fillPoly(lash_mask, [np.array(upper + lower[::-1], dtype=np.int32)], 255)
+
+    alpha = lash_mask.astype(np.float32) / 255.0 * intensity
+    result = image.astype(np.float32)
+    for c in range(3):
+        result[:, :, c] = result[:, :, c] * (1 - alpha) + cbgr[c] * alpha
+    return result.clip(0, 255).astype(np.uint8)
 
 
 def apply_makeup_pipeline(image, landmarks, makeup_type, color_hex="#d96b86", intensity=0.5):

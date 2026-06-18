@@ -43,6 +43,10 @@ def apply_hair_color(image, landmarks, color_hex='#000000', intensity=0.5):
     if hair_mask is not None and hair_mask.sum() > 0:
         fm = _face_mask(image.shape, landmarks)
         hair_mask = cv2.subtract(hair_mask, fm)
+        # Çene altını kapat
+        chin_y = landmarks[152][1]
+        cutoff_y = min(h, chin_y + int(h * 0.03))
+        hair_mask[cutoff_y:, :] = 0
         hair_mask = cv2.GaussianBlur(hair_mask, (15, 15), 0)
     else:
         # Fallback: HSV-based detection

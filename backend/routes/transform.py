@@ -1,5 +1,5 @@
 from backend.modules.accessories.jewelery import apply_jewelry_pipeline
-from backend.modules.makeup.makeup import apply_lip_color, apply_blush, apply_eyeshadow, apply_eye_color
+from backend.modules.makeup.makeup import apply_lip_color, apply_blush, apply_eyeshadow, apply_eye_color, apply_lashes
 import os
 import cv2
 import numpy as np
@@ -882,7 +882,23 @@ def transform_image():
                     print("APPLIED: eyeliner")
                 else:
                     print("Landmark detection failed for eyeliner.")
-            
+
+            elif t_type == "lashes":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    params = transform.get("params", {})
+                    output_image = apply_lashes(
+                        output_image,
+                        landmark_result["landmarks"],
+                        color_hex=color,
+                        intensity=t_intensity,
+                        length_mult=float(params.get("length", 1.0)),
+                        thick_mult=float(params.get("thickness", 1.0))
+                    )
+                    results_meta.append("lashes")
+                else:
+                    print("Landmark detection failed for lashes.")
+
             elif t_type == "eyebrow_slit":
                 landmark_result = process_landmark_pipeline(output_image)
 
