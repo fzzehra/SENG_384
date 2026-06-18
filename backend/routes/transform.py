@@ -1,7 +1,5 @@
-#transform.py
-
 from backend.modules.accessories.jewelery import apply_jewelry_pipeline
-from backend.modules.makeup.makeup import apply_lip_color, apply_blush, apply_eyeshadow, apply_eye_color
+from backend.modules.makeup.makeup import apply_lip_color, apply_blush, apply_eyeshadow, apply_eye_color, apply_lashes
 import os
 import cv2
 import numpy as np
@@ -21,6 +19,7 @@ from backend.modules.beard.beard import apply_beard_effect
 from backend.modules.moustache.moustache import apply_moustache
 from backend.modules.makeup.makeup import apply_makeup_pipeline
 from backend.modules.piercing.piercing import apply_piercing
+from backend.modules.filters.face_filter import apply_face_filter
 
 pose_model = YOLO("yolov8n-pose.pt")
 transform_bp = Blueprint("transform", __name__)
@@ -43,7 +42,6 @@ TRANSFORM_MAP = {
     "lip_widen": "lip_widen",
     "face_widening": "face_slimming",
 }
-
 
 def apply_deaging_effect(image, intensity=0.5):
     intensity = float(max(0.0, min(1.0, intensity)))
@@ -437,14 +435,17 @@ def _place_necklace(output, overlay, refs, kp, item_scale, intensity):
         print("JEWELRY: kolye için referans bulunamadı, atlandı")
         return output
 
-    width = span * 0.80 * item_scale
-
     if refs:
+        face_w = refs["face_width"]
+        width = face_w * 1.25
         center_x = float(mid[0])
-        top_y = float(refs["chin"][1] + 0.15 * refs["face_width"])
+        top_y = float(refs["chin"][1] + 0.15 * face_w)
     else:
+        width = span * 0.80
         center_x = float(mid[0])
         top_y = float(mid[1] - 0.25 * span)
+
+    width = width * item_scale
 
     target_w = max(20, int(width))
     print("JEWELRY: kolye kaynak=%s span=%.1f target_w=%d top=(%d,%d)" %
@@ -881,7 +882,23 @@ def transform_image():
                     print("APPLIED: eyeliner")
                 else:
                     print("Landmark detection failed for eyeliner.")
-            
+
+            elif t_type == "lashes":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    params = transform.get("params", {})
+                    output_image = apply_lashes(
+                        output_image,
+                        landmark_result["landmarks"],
+                        color_hex=color,
+                        intensity=t_intensity,
+                        length_mult=float(params.get("length", 1.0)),
+                        thick_mult=float(params.get("thickness", 1.0))
+                    )
+                    results_meta.append("lashes")
+                else:
+                    print("Landmark detection failed for lashes.")
+
             elif t_type == "eyebrow_slit":
                 landmark_result = process_landmark_pipeline(output_image)
 
@@ -924,7 +941,57 @@ def transform_image():
 
                 results_meta.append(f"{t_type}:{item_name}")
                 print("APPLIED:", t_type)
-           
+
+            elif t_type == "butterfly":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_face_filter(
+                        output_image,
+                        landmark_result["landmarks"],
+                        mask_name="butterfly_mask.png",
+                        intensity=t_intensity
+                    )
+                    results_meta.append("butterfly") 
+            elif t_type == "crystal":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_face_filter(
+                        output_image,
+                        landmark_result["landmarks"],
+                        mask_name="crystal_mask.png",
+                        intensity=t_intensity
+                    )
+                    results_meta.append("crystal")
+            elif t_type == "pearl":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_face_filter(
+                        output_image,
+                        landmark_result["landmarks"],
+                        mask_name="pearl_mask.png",
+                        intensity=t_intensity
+                    )
+                    results_meta.append("pearl")
+            elif t_type == "peacock":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_face_filter(
+                        output_image,
+                        landmark_result["landmarks"],
+                        mask_name="peacock_mask.png",
+                        intensity=t_intensity
+                    )
+                    results_meta.append("peacock")
+            elif t_type == "dragon":
+                landmark_result = process_landmark_pipeline(output_image)
+                if landmark_result.get("success"):
+                    output_image = apply_face_filter(
+                        output_image,
+                        landmark_result["landmarks"],
+                        mask_name="dragon.png",
+                        intensity=t_intensity
+                    )
+                    results_meta.append("dragon")
             elif t_type == "makeup_intensity":
                 continue
             else:

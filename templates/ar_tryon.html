@@ -491,6 +491,26 @@
               <label><input type="checkbox" id="linerWing" checked style="margin-right:4px;">Wing</label>
             </div>
           </div>
+          <div class="divider"></div>
+          <div>
+            <div class="section-label">Lashes</div>
+            <div class="color-row"><span class="color-label">Color</span><input type="color" id="lashColor" value="#0a0505"></div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Intensity</span><span id="lashIntVal">0%</span></div>
+              <input type="range" id="lashIntensity" min="0" max="100" value="0"
+                oninput="document.getElementById('lashIntVal').textContent=this.value+'%'">
+            </div>
+            <div class="slider-row" style="margin-top:6px;">
+              <div class="slider-label"><span>Length</span><span id="lashLenVal">1.0x</span></div>
+              <input type="range" id="lashLength" min="0.4" max="2.5" step="0.1" value="2.0"
+                oninput="document.getElementById('lashLenVal').textContent=parseFloat(this.value).toFixed(1)+'x'">
+            </div>
+            <div class="slider-row" style="margin-top:6px;">
+              <div class="slider-label"><span>Thickness</span><span id="lashThickVal">1.0x</span></div>
+              <input type="range" id="lashThickness" min="0.3" max="3.0" step="0.1" value="1.4"
+                oninput="document.getElementById('lashThickVal').textContent=parseFloat(this.value).toFixed(1)+'x'">
+            </div>
+          </div>
         </div>
 
         <div class="panel-section" id="tab-adjust">
@@ -501,11 +521,6 @@
               <div class="slider-label"><span>Scale</span><span id="eScaleVal">1.0x</span></div>
               <input type="range" id="earringScale" min="0.3" max="2.0" step="0.05" value="1.0"
                 oninput="document.getElementById('eScaleVal').textContent=parseFloat(this.value).toFixed(1)+'x'">
-            </div>
-            <div class="slider-row" style="margin-top:8px;">
-              <div class="slider-label"><span>Vertical offset</span><span id="eOffsetVal">0px</span></div>
-              <input type="range" id="earringOffset" min="-40" max="40" step="1" value="0"
-                oninput="document.getElementById('eOffsetVal').textContent=this.value+'px'">
             </div>
           </div>
         </div>
@@ -522,17 +537,17 @@
     import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
 
     const GLASSES_CATALOG = [
-      { name: 'Glasses 1', file: 'glasses-1-.glb' },
-      { name: 'Glasses 2', file: 'glasses-7.glb' },
-      { name: 'Glasses 3', file: 'glasses-10.glb' },
-      { name: 'Glasses 4', file: 'glasses-12.glb' }
+      { name: 'Sun Glasses ', file: 'glasses-1-.glb' },
+      { name: 'Classic Glasses ', file: 'glasses-7.glb' },
+      { name: 'Round Glasses ', file: 'glasses-10.glb' },
+      { name: 'Red Glasses ', file: 'glasses-12.glb' }
     ];
 
     const glassesConfig = {
       'glasses-1-.glb': { zOffset: 0.5, scale: 2.0, yOffset: -0.1 },
-      'glasses-7.glb': { zOffset: 1.4, scale: 1.85, yOffset: -0.1 },
-      'glasses-10.glb': { zOffset: 2.0, scale: 1.9, yOffset: -0.1 },
-      'glasses-12.glb': { zOffset: 2.5, scale: 2.0, yOffset: -0.1 }
+      'glasses-7.glb': { zOffset: 1.9, scale: 1.85, yOffset: -0.1 },
+      'glasses-10.glb': { zOffset: 2.5, scale: 1.9, yOffset: -0.1 },
+      'glasses-12.glb': { zOffset: 2.9, scale: 2.0, yOffset: -0.1 }
     };
 
     const HAT_CATALOG = [
@@ -543,10 +558,10 @@
     ];
 
     const hatConfig = {
-      'bucket_hat.glb': { zOffset: 0.95, scale: 2.6, yOffset: 0.78, rotX: 0.1, rotY: 0 },
-      'fbx.glb': { zOffset: 0.0, scale: 2.55, scaleX: 1.15, yOffset: 0.94, rotX: 0.1, rotY: 0 },
-      'menard_hat_lowpoly.glb': { zOffset: 0.95, scale: 2.25, yOffset: 0.85, rotX: 0.1, rotY: 0 },
-      'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 0.95, scale: 2.45, yOffset: 0.9, rotX: -0.25, rotY: Math.PI }
+      'bucket_hat.glb': { zOffset: 0.95, scale: 2.1, yOffset: 0.78, rotX: 0.1, rotY: 0 },
+      'fbx.glb': { zOffset: 0.0, scale: 2.05, scaleX: 1.15, yOffset: 0.94, rotX: 0.1, rotY: 0 },
+      'menard_hat_lowpoly.glb': { zOffset: 0.95, scale: 1.85, yOffset: 0.85, rotX: 0.1, rotY: 0 },
+      'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 0.95, scale: 2.0, yOffset: 0.9, rotX: -0.25, rotY: Math.PI }
     };
 
     const video = document.getElementById('webcam');
@@ -1045,6 +1060,9 @@
       const linerInt = parseInt(document.getElementById('linerIntensity').value) / 100;
       if (linerInt > 0) applyEyeliner(pt, linerInt, document.getElementById('linerWing').checked);
 
+      const lashInt = parseInt(document.getElementById('lashIntensity').value) / 100;
+      if (lashInt > 0) drawLashes(pt, lashInt);
+
       // ─── 3. 2D PNG ACCESSORIES RENDERING (Çizim Katmanı Z-Index 2) ───
       if (selected.necklace && pngImages[selected.necklace]) drawNecklace(pt);
       if (selected.earring && pngImages[selected.earring]) drawEarring(pt);
@@ -1180,7 +1198,7 @@
       const radius = faceW * 0.19;
 
       const noseShift = (noseTip.x - faceMidX) / faceW;
-      const rawBase = Math.min(0.95, intensity * 1.20);
+      const rawBase = Math.min(0.95, intensity * 1.60);
       const fadeK = 4.0;
       const lAlpha = Math.max(0, Math.min(1, 1 + noseShift * fadeK)) * rawBase;
       const rAlpha = Math.max(0, Math.min(1, 1 - noseShift * fadeK)) * rawBase;
@@ -1257,6 +1275,147 @@
         ctx.lineWidth = rad * 0.22; ctx.beginPath(); ctx.arc(c.x, c.y, rad * 0.90, 0, Math.PI * 2); ctx.stroke();
       });
       ctx.restore();
+    }
+
+    function drawLashes(pt, intensity) {
+      var colorEl = document.getElementById('lashColor');
+      var col = hexToRgb(colorEl ? colorEl.value : '#0a0505');
+      var r = col.r, g = col.g, b = col.b;
+
+      var lenMult   = parseFloat(document.getElementById('lashLength').value)    || 1.0;
+      var thickMult = parseFloat(document.getElementById('lashThickness').value) || 1.0;
+
+      var faceW = Math.abs(pt(454).x - pt(234).x);
+
+      var lFullLid = [33, 246, 161, 160, 159, 158, 157, 173, 133];
+      var rFullLid = [263, 466, 388, 387, 386, 385, 384, 398, 362];
+      // Her göz için alt kapak (göz kapanma tespiti)
+      var lowerLidIdx = [[145, 153, 154], [374, 380, 381]];
+      // Her göz için köşe genişliği (openness eşik değeri için)
+      var cornerIdx   = [[33, 133], [263, 362]];
+      var numLashes = 18;
+
+      if (!drawLashes._ema) drawLashes._ema = [{}, {}];
+
+      [lFullLid, rFullLid].forEach(function(lidIdx, eyeIdx) {
+        var lid = lidIdx.map(function(i) { return pt(i); });
+        lid.sort(function(a, c) { return a.x - c.x; });
+
+        // Göz açık/kapalı tespiti
+        var lowerY  = lowerLidIdx[eyeIdx].reduce(function(s, i) { return s + pt(i).y; }, 0) / 3;
+        var lidMidY = lid.reduce(function(s, p) { return s + p.y; }, 0) / lid.length;
+        var eyeW    = Math.abs(pt(cornerIdx[eyeIdx][0]).x - pt(cornerIdx[eyeIdx][1]).x);
+        var openness = lowerY - lidMidY;
+        var rawClosedT = Math.max(0, Math.min(1, 1 - (openness - eyeW * 0.04) / (eyeW * 0.16)));
+
+        // ── Quadratic Bezier ile düzgün kapak eğrisi ──────────────────────
+        var P0raw = lid[0];
+        var P2raw = lid[lid.length - 1];
+        var sortedByY = lid.slice().sort(function(a, b) { return a.y - b.y; });
+        var arch = {
+          x: (sortedByY[0].x + sortedByY[1].x + sortedByY[2].x) / 3,
+          y: (sortedByY[0].y + sortedByY[1].y + sortedByY[2].y) / 3
+        };
+        var P1raw = { x: 2*arch.x - P0raw.x*0.5 - P2raw.x*0.5,
+                      y: 2*arch.y - P0raw.y*0.5 - P2raw.y*0.5 };
+
+        // ── EMA temporal smoothing: landmark gürültüsünü bastır ──────────
+        var e = drawLashes._ema[eyeIdx];
+        var a = 0.18;  // güçlü smoothing (~5 kare)
+        function sm(cur, key) {
+          e[key] = (e[key] === undefined) ? cur : (1 - a) * e[key] + a * cur;
+          return e[key];
+        }
+        var P0 = { x: sm(P0raw.x, 'p0x'), y: sm(P0raw.y, 'p0y') };
+        var P1 = { x: sm(P1raw.x, 'p1x'), y: sm(P1raw.y, 'p1y') };
+        var P2 = { x: sm(P2raw.x, 'p2x'), y: sm(P2raw.y, 'p2y') };
+        var closedT = sm(rawClosedT, 'ct');
+
+        // Dış köşe: sol göz = P0 (düşük X), sağ göz = P2 (yüksek X)
+        var outerPt = (eyeIdx === 0) ? P0 : P2;
+        // Dış köşe tanjantı (tb=0 veya tb=1'deki bezier türevi)
+        var outerTanX, outerTanY;
+        if (eyeIdx === 0) {
+          // Sol göz: P0 dış köşe, dışarısı = P1'den uzak yön (negatif)
+          outerTanX = 2*(P0.x - P1.x); outerTanY = 2*(P0.y - P1.y);
+        } else {
+          // Sağ göz: P2 dış köşe, dışarısı = P1'den uzak yön (pozitif)
+          outerTanX = 2*(P2.x - P1.x); outerTanY = 2*(P2.y - P1.y);
+        }
+        var otLen2 = Math.hypot(outerTanX, outerTanY);
+        if (otLen2 > 0) { outerTanX /= otLen2; outerTanY /= otLen2; }
+
+        var tOuterStart = 0.20, tOuterEnd = 1.15;
+        var curlA = 0.22;
+        var cosC = Math.cos(curlA), sinC = Math.sin(curlA);
+
+        for (var k = 0; k < numLashes; k++) {
+          var tOuter = tOuterStart + (k / (numLashes - 1)) * (tOuterEnd - tOuterStart);
+          var tb = Math.max(0, Math.min(1, (eyeIdx === 0) ? (1 - tOuter) : tOuter));
+
+          var bx, by, tanX, tanY;
+
+          if (tOuter <= 1.0) {
+            var tbI = 1 - tb;
+            bx = tbI*tbI*P0.x + 2*tb*tbI*P1.x + tb*tb*P2.x;
+            by = tbI*tbI*P0.y + 2*tb*tbI*P1.y + tb*tb*P2.y;
+            tanX = tbI*(P1.x - P0.x) + tb*(P2.x - P1.x);
+            tanY = tbI*(P1.y - P0.y) + tb*(P2.y - P1.y);
+            var tLen2 = Math.hypot(tanX, tanY);
+            if (tLen2 > 0) { tanX /= tLen2; tanY /= tLen2; }
+          } else {
+            var overshoot = (tOuter - 1.0) * eyeW * 0.25;
+            bx = outerPt.x + outerTanX * overshoot;
+            by = outerPt.y + outerTanY * overshoot;
+            tanX = outerTanX; tanY = outerTanY;
+          }
+
+          // Normal (yukarı yön)
+          var nx = -tanY, ny = tanX;
+          if (ny > 0) { nx = -nx; ny = -ny; }
+
+          // Yelpaze: göz kapanınca aşağı döner
+          var effNx = nx * (1 - closedT);
+          var effNy = ny * (1 - closedT) + closedT;
+          var effLen = Math.hypot(effNx, effNy);
+          if (effLen > 0) { effNx /= effLen; effNy /= effLen; }
+
+          // Curl: sol göz CCW, sağ göz CW
+          var curlNx, curlNy;
+          if (eyeIdx === 0) {
+            curlNx = effNx * cosC - effNy * sinC;
+            curlNy =  effNx * sinC + effNy * cosC;
+          } else {
+            curlNx = effNx * cosC + effNy * sinC;
+            curlNy = -effNx * sinC + effNy * cosC;
+          }
+
+          // Uzunluk: iç köşe kısa, dış köşe uzun (daha dik gradyan)
+          var lenFactor = 0.07 + 0.93 * Math.pow(tOuter / tOuterEnd, 0.45);
+          var lashLen = faceW * (0.017 + lenFactor * 0.050) * intensity * lenMult;
+          var baseW   = faceW * (0.0032 + lenFactor * 0.0004) * thickMult;
+
+          var tipX  = bx + curlNx * lashLen;
+          var tipY  = by + curlNy * lashLen;
+          var ctrlX = bx + effNx * lashLen * 0.55;
+          var ctrlY = by + effNy * lashLen * 0.55;
+
+          var dirX = tipX - bx, dirY = tipY - by;
+          var dirLen = Math.hypot(dirX, dirY);
+          if (dirLen > 0) { dirX /= dirLen; dirY /= dirLen; }
+          var lpx = -dirY * baseW / 2;
+          var lpy =  dirX * baseW / 2;
+
+          var alpha = Math.min(0.98, intensity * 0.95);
+          ctx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+          ctx.beginPath();
+          ctx.moveTo(bx - lpx, by - lpy);
+          ctx.quadraticCurveTo(ctrlX - lpx * 0.3, ctrlY - lpy * 0.3, tipX, tipY);
+          ctx.quadraticCurveTo(ctrlX + lpx * 0.3, ctrlY + lpy * 0.3, bx + lpx, by + lpy);
+          ctx.closePath();
+          ctx.fill();
+        }
+      });
     }
 
     function applyEyeliner(pt, intensity, wing) {
@@ -1440,7 +1599,6 @@
       const meta = pngMeta[file];
       if (!meta) return;
       const scale = parseFloat(document.getElementById('earringScale').value);
-      const yOff = parseInt(document.getElementById('earringOffset').value);
       const lSide = pt(234), rSide = pt(454), chin = pt(152), fore = pt(10);
       const faceH = Math.abs(chin.y - fore.y);
       const angle = Math.atan2(rSide.y - lSide.y, rSide.x - lSide.x);
@@ -1452,8 +1610,8 @@
       const leftOp = yaw < 0 ? fade : 1;
       const rightOp = yaw > 0 ? fade : 1;
       const side = yaw > 0.12 ? 'LEFT-only' : (yaw < -0.12 ? 'RIGHT-only' : 'BOTH');
-      if (leftOp > 0.02) drawAnchoredPNG(file, lSide.x - faceH * 0.02, lSide.y + drop + yOff, tW, angle, 0, leftOp);
-      if (rightOp > 0.02) drawAnchoredPNG(file, rSide.x + faceH * 0.02, rSide.y + drop + yOff, tW, angle, 0, rightOp);
+      if (leftOp > 0.02) drawAnchoredPNG(file, lSide.x - faceH * 0.02, lSide.y + drop, tW, angle, 0, leftOp);
+      if (rightOp > 0.02) drawAnchoredPNG(file, rSide.x + faceH * 0.02, rSide.y + drop, tW, angle, 0, rightOp);
       reportEar(yaw, side);
     }
 

@@ -566,6 +566,30 @@
   <input type="range" id="eyelinerInt" min="0" max="100" value="85">
 </div>
 
+<!-- KİRPİK -->
+        <div class="cosmetic-shelf">
+          <div class="shelf-label">Eyelashes</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <div class="color-row" style="margin:0">
+              <label>Color</label>
+              <input type="color" id="lashColor" value="#1a1a1a">
+            </div>
+            <button class="sm-btn" onclick="clearMakeup('lashes')">Remove</button>
+          </div>
+          <div class="int-row">
+            <span class="int-lbl">Length</span><span class="int-val" id="lash-len-v">0%</span>
+          </div>
+          <input type="range" id="lashLen" min="0" max="100" value="0">
+          <div class="int-row">
+            <span class="int-lbl">Thickness</span><span class="int-val" id="lash-thick-v">0%</span>
+          </div>
+          <input type="range" id="lashThick" min="0" max="100" value="0">
+          <div class="int-row">
+            <span class="int-lbl">Intensity</span><span class="int-val" id="lash-int-v">50%</span>
+          </div>
+          <input type="range" id="lashInt" min="0" max="100" value="50">
+        </div>
+
 <!-- EYEBROW SLIT / PIERCING -->
         <div class="cosmetic-shelf">
           <div class="shelf-label">Eyebrow Details</div>
@@ -579,11 +603,42 @@
               Remove
             </button>
           </div>
+          
         </div>
-
-        
+<div class="cosmetic-shelf" id="faceFilterList">
+  <div class="shelf-row" id="faceFilterRow">
+    <div class="acc-card" id="butterflyCard" onclick="selectFaceFilter('butterfly')">
+      <img src="/static/filters/assets/butterfly_mask.png">
+      <span class="acc-name">Butterfly</span>
+    </div>
+    <div class="acc-card" id="crystalCard" onclick="selectFaceFilter('crystal')">
+      <img src="/static/filters/assets/crystal_mask.png">
+    <span class="acc-name">Crystal</span>
+  </div>
+  <div class="acc-card" id="pearlCard" onclick="selectFaceFilter('pearl')">
+    <img src="/static/filters/assets/pearl_mask.png">
+    <span class="acc-name">Pearl</span>
+  </div>
+  <div class="acc-card" id="peacockCard" onclick="selectFaceFilter('peacock')">
+    <img src="/static/filters/assets/peacock_mask.png">
+    <span class="acc-name">Peacock</span>
+  </div>
+   <button class="sm-btn" onclick="clearFaceFilter('mask');">
+              Remove
+            </button>
+</div>
       </div><!-- /panel-makeup -->
-
+<div class="cosmetic-shelf" id="faceTattooList">
+  <div class="shelf-row" id="faceTattooRow">
+    <div class="acc-card" id="dragonCard" onclick="selectFaceFilter('dragon')">
+      <img src="/static/filters/assets/dragon_mask.png">
+      <span class="acc-name">Dragon</span>
+    </div>
+    <button class="sm-btn" onclick="clearFaceFilter('mask');">
+              Remove
+            </button>
+  </div>
+</div>
       <!-- ════════ HAIR ════════ -->
       <div class="tab-panel" id="panel-hair">
         <div class="sec-title">Hair Color</div>
@@ -657,15 +712,26 @@
   <button class="sm-btn" onclick="clearPiercings()">Remove Piercings</button>
 </div>
 
+
+</div>
       </div></div></div></div>```
 
 <script>
 // ─── STATE ───────────────────────────────────
 const makeup = {};   // { type: { color, intensity } }
 let overlay = null, hairScale = 1.0, hairX = 0, hairY = 0;
-const acc = { earring: null, necklace: null, glasses: null, hat: null,eyebrowPiercing: null,
-  septumPiercing: null,
-  lipPiercing: null };
+const acc = {
+    earring:null,
+    necklace:null,
+    glasses:null,
+    hat:null,
+
+    eyebrowPiercing:null,
+    septumPiercing:null,
+    lipPiercing:null,
+
+    faceFilter:null
+};
 let debounce;
 let currentImagePath = 'static/uploads/original.jpg';
 
@@ -712,6 +778,32 @@ function togglePal(id, btn) {
   btn.textContent = vis ? 'More colors' : 'Hide';
 }
 
+function selectFaceFilter(type) {
+  acc.faceFilter = type;
+  document.querySelectorAll("#faceFilterList .acc-card")
+    .forEach(c => c.classList.remove("active"));
+  document.getElementById(type + "Card").classList.add("active");
+  trigger();
+}
+
+function clearFaceFilter() {
+  acc.faceFilter = null;
+  document.querySelectorAll("#faceFilterList .acc-card")
+    .forEach(c => c.classList.remove("active"));
+  trigger();
+}
+
+function clearFaceFilter() {
+
+    acc.faceFilter = null;
+
+    document.querySelectorAll("#faceFilterList .acc-card")
+        .forEach(c => c.classList.remove("active"));
+
+    trigger();
+}
+
+
 // Intensity sliders
 [
   ['lipInt',   'lip-iv',   'lip_color'],
@@ -754,6 +846,24 @@ document.getElementById('browCustom')?.addEventListener('input', e =>
 
 document.getElementById('eyelinerWing')?.addEventListener('change', () => {
   if (makeup['eyeliner']) applyEyeliner(makeup['eyeliner'].color);
+});
+
+function applyLashes() {
+  const color = document.getElementById('lashColor').value;
+  const len   = parseInt(document.getElementById('lashLen').value) / 100;
+  const thick = parseInt(document.getElementById('lashThick').value) / 100;
+  const intns = parseInt(document.getElementById('lashInt').value) / 100;
+  if (len === 0 && thick === 0) { delete makeup['lashes']; trigger(); return; }
+  makeup['lashes'] = { color, intensity: intns, params: { length: len, thickness: thick } };
+  trigger();
+}
+document.getElementById('lashColor')?.addEventListener('input', () => { if (makeup['lashes']) applyLashes(); });
+['lashLen','lashThick','lashInt'].forEach(id => {
+  const lblId = {'lashLen':'lash-len-v','lashThick':'lash-thick-v','lashInt':'lash-int-v'}[id];
+  document.getElementById(id)?.addEventListener('input', e => {
+    document.getElementById(lblId).textContent = e.target.value + '%';
+    applyLashes();
+  });
 });
 
 document.getElementById('freckleCustom')?.addEventListener('input', e =>
@@ -930,7 +1040,8 @@ const GLASSES = [{name:'Classic',file:'glasses1.png'},{name:'Sunglasses',file:'g
                  {name:'Cat-Eye Glasses',file:'glasses7.png'},{name:'Cute Glasses',file:'glasses8.png'},
                  {name:'Futuristic Sun-Glasses',file:'glasses9.png'},{name:'Formal Sun-Glasses',file:'glasses10.png'}];
 const HATS    = [{name:'Baseball Cap',file:'hat1.png'},{name:'Beret',file:'hat2.png'},
-                 {name:'Sun Hat',file:'hat3.png'},{name:'Sleep Hat',file:'hat4.png'}];
+                 {name:'Sun Hat',file:'hat3.png'},{name:'Academic Cap',file:'AcademicCap.png'},
+                 {name:'Fez',file:'fez.png'}];
 
 function buildAccGrid(items, containerId, pathPrefix, key) {
   const el = document.getElementById(containerId); if (!el) return;
@@ -1055,6 +1166,12 @@ if (acc.lipPiercing) {
     type: 'lip_piercing',
     intensity: 1,
     params: { item: acc.lipPiercing }
+  });
+}
+if (acc.faceFilter) {
+  t.push({
+    type: acc.faceFilter,  
+    intensity: 1
   });
 }
   return t;
