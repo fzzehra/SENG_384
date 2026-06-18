@@ -31,6 +31,7 @@ if (analyzeBtn) {
             document.getElementById("metricsResult").innerHTML = `
                 <p><strong>MSE:</strong> ${result.metrics.mse}</p>
                 <p><strong>PSNR:</strong> ${result.metrics.psnr}</p>
+                <p><strong>SNR:</strong> ${result.metrics.snr}</p>
                 <p><strong>SSIM:</strong> ${result.metrics.ssim}</p>
                 <p><strong>RMSE:</strong> ${result.metrics.rmse}</p>
                 <p><strong>Correlation:</strong> ${result.metrics.correlation}</p>
@@ -44,6 +45,20 @@ if (analyzeBtn) {
         <p><strong>Overall Energy Ratio:</strong> ${result.energy.overall_ratio}</p>
         <p><strong>Energy Change:</strong> ${result.energy.change_percent}%</p>
     `;
+
+            if (result.wavelet) {
+                const wo = result.wavelet.original;
+                const wt = result.wavelet.transformed;
+                const waveletEl = document.getElementById("waveletResult");
+                if (waveletEl) {
+                    waveletEl.innerHTML = `
+                        <p><strong>Approx (LL):</strong> ${Number(wo.approx_LL).toExponential(2)} → ${Number(wt.approx_LL).toExponential(2)}</p>
+                        <p><strong>Horizontal (LH):</strong> ${Number(wo.horizontal_LH).toExponential(2)} → ${Number(wt.horizontal_LH).toExponential(2)}</p>
+                        <p><strong>Vertical (HL):</strong> ${Number(wo.vertical_HL).toExponential(2)} → ${Number(wt.vertical_HL).toExponential(2)}</p>
+                        <p><strong>Diagonal (HH):</strong> ${Number(wo.diagonal_HH).toExponential(2)} → ${Number(wt.diagonal_HH).toExponential(2)}</p>
+                    `;
+                }
+            }
 
             // --- 2. SPEKTRUM GÖRSELLERİNİ GÜNCELLE ---
             document.getElementById("originalSpectrum").src =
