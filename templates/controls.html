@@ -701,7 +701,19 @@ function togglePal(id, btn) {
 ].forEach(([id, lblId, type]) => {
   document.getElementById(id)?.addEventListener('input', e => {
     document.getElementById(lblId).textContent = e.target.value + '%';
-    if (makeup[type]) { makeup[type].intensity = e.target.value / 100; trigger(); }
+   
+    if (type === 'freckles') {
+        applyMakeup(
+            'freckles',
+            document.getElementById('freckleCustom').value,
+            parseInt(e.target.value)
+        );
+    }
+    else if (makeup[type]) {
+        makeup[type].intensity = e.target.value / 100;
+        trigger();
+    }
+
   });
 });
 
@@ -720,6 +732,14 @@ document.getElementById('browCustom')?.addEventListener('input', e =>
 document.getElementById('eyelinerWing')?.addEventListener('change', () => {
   if (makeup['eyeliner']) applyEyeliner(makeup['eyeliner'].color);
 });
+
+document.getElementById('freckleCustom')?.addEventListener('input', e =>
+  applyMakeup(
+    'freckles',
+    e.target.value,
+    getIntPct('freckleInt')
+  )
+);
 
 // ─── BUILD COSMETIC ITEMS ────────────────────
 const LIP_COLORS   = ['#c9184a','#ff4d6d','#9d0208','#e5989b','#b5179e','#7b2cbf','#a44a3f','#6a040f'];
@@ -989,6 +1009,10 @@ buildAccGrid(GLASSES, 'glassesList', 'accessories/glasses', 'glasses');
 buildAccGrid(HATS,    'hatsList',    'accessories/hats',    'hat');
 loadAccFetch('earrings',  'earringList',  'earring');
 loadAccFetch('necklaces', 'necklaceList', 'necklace');
+makeup['freckles'] = {
+    color: '#9b6e5c',
+    intensity: 0
+};
 </script>
 </body>
 </html>
