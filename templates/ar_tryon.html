@@ -421,6 +421,11 @@
               <input type="range" id="lipIntensity" min="0" max="100" value="0"
                 oninput="document.getElementById('lipIntVal').textContent=this.value+'%'">
             </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Lip Plump</span><span id="lipWidenVal">0%</span></div>
+              <input type="range" id="lipWidenIntensity" min="0" max="100" value="0"
+                oninput="document.getElementById('lipWidenVal').textContent=this.value+'%'">
+            </div>
           </div>
           <div class="divider"></div>
           <div>
@@ -603,6 +608,13 @@
     // CRITICAL: transparent: true puts the occluder in the same sorting queue as the transparent glasses.
     // depthWrite: true ensures it still hides the hat rendered after it.
     const occluderMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, colorWrite: false, transparent: true, depthWrite: true });
+
+    // Gözlük kolu occluder'ı: renderOrder=1 (gözlükten önce), depth yazar, renk yazmaz
+    // Ön yüzü z≈0'da (gözlük ön çerçevesiyle aynı hizada), arkası başı kaplar
+    const glassesOccluderMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, colorWrite: false, transparent: true, depthWrite: true });
+    const glassesOccluder = new THREE.Mesh(occluderGeometry, glassesOccluderMat);
+    glassesOccluder.renderOrder = 1;
+    headGroup.add(glassesOccluder);
 
     // Glasses don't use an occluder, they render BEFORE this hat occluder so their arms aren't cut!
     const hatOccluder = new THREE.Mesh(occluderGeometry, occluderMaterial);
@@ -978,6 +990,13 @@
 
         const occluderRadius = eyeDistWorld * 0.9;
 
+        // Gözlük kolu occluder: ön yüzü yüz düzleminden ~0.3*eye geride,
+        // böylece kolun görünen kısmını kesmez, sadece kafa arkasına geçince elendirir
+        const gOccZr = occluderRadius * 0.85;
+        glassesOccluder.scale.set(occluderRadius * 1.2, occluderRadius * 1.4, gOccZr);
+        glassesOccluder.position.set(0, -eyeDistWorld * 0.1, -(gOccZr + eyeDistWorld * 0.12));
+        glassesOccluder.rotation.x = 0;
+
         // Hat occluder: wider and taller to hide hat straps/flaps properly
         // Flat on the Z axis and pushed back so it doesn't clip the front brim of the hat!
         hatOccluder.scale.set(occluderRadius * 1.25, occluderRadius * 1.55, occluderRadius * 0.85);
@@ -1015,7 +1034,7 @@
               // Don't fade out hats on rotation, only fade glasses
               if (type === 'glasses') {
                 child.material.transparent = true;
-                child.material.opacity = occlusionOpacity * child.material._originalOpacity;
+                child.material.opacity = child.material._originalOpacity;
               } else {
                 child.material.transparent = true;
                 child.material.opacity = occlusionOpacity * child.material._originalOpacity;
@@ -1032,8 +1051,21 @@
       }
 
       // ─── 2. 2D MAKEUP RENDERING (Çizim Katmanı Z-Index 2) ───
+      const widenInt = parseInt(document.getElementById('lipWidenIntensity').value) / 100;
+      const ptLip = widenInt > 0 ? makeWidenedPt(pt, widenInt) : pt;
+
+      // Lip plump aktifken video'yu canvas'a çiz, video elementi gizle
+      // → drawLipPlump gerçek piksel üzerine yazar, overlay katmanı olmaz
+      if (widenInt > 0) {
+        video.style.visibility = 'hidden';
+        ctx.drawImage(video, 0, 0, W, H);
+      } else {
+        video.style.visibility = 'visible';
+      }
+
       const lipInt = parseInt(document.getElementById('lipIntensity').value) / 100;
-      if (lipInt > 0) drawLipColor(pt, lipInt);
+      if (widenInt > 0) drawLipPlump(ptLip, pt, widenInt);
+      if (lipInt > 0) drawLipColor(ptLip, lipInt, pt);
 
       const eyeInt = parseInt(document.getElementById('eyeIntensity').value) / 100;
       if (eyeInt > 0) drawEyeshadow(pt, eyeInt);
@@ -1076,14 +1108,111 @@
       return { r: parseInt(hex.slice(1, 3), 16), g: parseInt(hex.slice(3, 5), 16), b: parseInt(hex.slice(5, 7), 16) };
     }
 
-    function drawLipColor(pt, intensity) {
+    // Fotoğraf lip_widen mantığını landmark offset olarak uygular + EMA yumuşatma
+    function makeWidenedPt(rawPt, intensity) {
+      if (!makeWidenedPt._ema) makeWidenedPt._ema = {};
+      var ema = makeWidenedPt._ema;
+      var a = 0.55;
+      var thickness = 22.0 * intensity;
+      var cx = (rawPt(61).x + rawPt(291).x) / 2;
+
+      var targets = {};
+      function addY(indices, dyFactor, weightBase, fixed) {
+        for (var k = 0; k < indices.length; k++) {
+          var idx = indices[k];
+          if (!targets[idx]) targets[idx] = { x: 0, y: 0 };
+          var w = fixed ? weightBase : Math.max(weightBase, 1 - Math.abs(rawPt(idx).x - cx) / 130);
+          targets[idx].y += thickness * dyFactor * w;
+        }
+      }
+      addY([61,185,40,39,37,0,267,269,270,409,291],    -1.0, 0.3, false);
+      addY([61,146,91,181,84,17,314,405,321,375,291],   +1.0, 0.3, false);
+      addY([78,191,80,81,82,13,312,311,310,415,308],    -0.3, 0.1, false);
+      addY([78,95,88,178,87,14,317,402,318,324,308],    +0.3, 0.1, false);
+      addY([164,2,94,327,48,278,57,287],                -0.2, 0.2, true);
+      addY([18,200,199,175,152,377,400,410],            +0.2, 0.2, true);
+
+      for (var idx in targets) {
+        if (!ema[idx]) ema[idx] = { x: 0, y: 0 };
+        ema[idx].x = ema[idx].x * (1-a) + targets[idx].x * a;
+        ema[idx].y = ema[idx].y * (1-a) + targets[idx].y * a;
+      }
+      return function(i) {
+        var p = rawPt(i);
+        if (ema[i]) return { x: p.x + ema[i].x, y: p.y + ema[i].y };
+        return p;
+      };
+    }
+
+    // Dudak stretch için kaynak canvas ve küçük bounding-box temp canvas
+    var _plumpOff = null, _plumpOffCtx = null;
+    var _plumpTmp = null, _plumpTmpCtx = null;
+    var _plumpCvsW = 0, _plumpCvsH = 0;
+
+    function drawLipPlump(ptW, rawPt, intensity) {
+      var W = canvas2d.width, H = canvas2d.height;
+      var vW = video.videoWidth || 640, vH = video.videoHeight || 480;
+
+      if (!_plumpOff || _plumpCvsW !== W || _plumpCvsH !== H) {
+        _plumpOff = document.createElement('canvas');
+        _plumpOff.width = W; _plumpOff.height = H;
+        _plumpOffCtx = _plumpOff.getContext('2d');
+        _plumpTmp = document.createElement('canvas');
+        _plumpTmpCtx = _plumpTmp.getContext('2d');
+        _plumpCvsW = W; _plumpCvsH = H;
+      }
+
+      // Kaynak: raw video (landmark koordinatlarıyla eşleşir, mirror yok)
+      _plumpOffCtx.clearRect(0, 0, W, H);
+      _plumpOffCtx.drawImage(video, 0, 0, vW, vH, 0, 0, W, H);
+
+      var outer = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
+      var origPts  = outer.map(function(i){ return rawPt(i); });
+      var widenPts = outer.map(function(i){ return ptW(i);   });
+
+      var ox1=Infinity,ox2=-Infinity,oy1=Infinity,oy2=-Infinity;
+      var wx1=Infinity,wx2=-Infinity,wy1=Infinity,wy2=-Infinity;
+      origPts.forEach(function(p){ ox1=Math.min(ox1,p.x);ox2=Math.max(ox2,p.x);oy1=Math.min(oy1,p.y);oy2=Math.max(oy2,p.y); });
+      widenPts.forEach(function(p){ wx1=Math.min(wx1,p.x);wx2=Math.max(wx2,p.x);wy1=Math.min(wy1,p.y);wy2=Math.max(wy2,p.y); });
+
+      // Temp canvas: sadece dudak bölgesi kadar (~200×80px), padding kenar geçişi için
+      var pad = 14;
+      var tx = Math.floor(wx1 - pad), ty = Math.floor(wy1 - pad);
+      var tw = Math.ceil(wx2 - wx1 + pad * 2), th = Math.ceil(wy2 - wy1 + pad * 2);
+      _plumpTmp.width = tw; _plumpTmp.height = th;
+      _plumpTmpCtx.clearRect(0, 0, tw, th);
+
+      // 1. Stretch içeriği temp canvas'a çiz (clip yok, içerik keskin kalır)
+      _plumpTmpCtx.drawImage(_plumpOff, ox1, oy1, ox2-ox1, oy2-oy1, wx1-tx, wy1-ty, wx2-wx1, wy2-wy1);
+
+      // 2. Blur'lu maske: widened şekli blur ile doldur → destination-in ile kenarlar solar
+      //    İçerik bulanıklaşmaz, sadece alpha geçişi oluşur
+      _plumpTmpCtx.globalCompositeOperation = 'destination-in';
+      _plumpTmpCtx.filter = 'blur(7px)';
+      _plumpTmpCtx.fillStyle = 'black';
+      _plumpTmpCtx.beginPath();
+      widenPts.forEach(function(p,idx){
+        idx === 0 ? _plumpTmpCtx.moveTo(p.x - tx, p.y - ty) : _plumpTmpCtx.lineTo(p.x - tx, p.y - ty);
+      });
+      _plumpTmpCtx.closePath();
+      _plumpTmpCtx.fill();
+      _plumpTmpCtx.filter = 'none';
+      _plumpTmpCtx.globalCompositeOperation = 'source-over';
+
+      // 3. Feathered sonucu ana canvas'a çiz (blur yok — içerik zaten keskin)
+      ctx.drawImage(_plumpTmp, tx, ty);
+    }
+
+    // ptOuter: genişletilmiş dış çizgi, ptInner: orijinal iç çizgi (ağız deliği kaymasın)
+    function drawLipColor(ptOuter, intensity, ptInner) {
+      if (!ptInner) ptInner = ptOuter;
       const { r, g, b } = hexToRgb(document.getElementById('lipColor').value);
       const outer = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146];
       const inner = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191];
       ctx.save(); ctx.beginPath();
-      outer.forEach((i, idx) => { const p = pt(i); idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); });
+      outer.forEach((i, idx) => { const p = ptOuter(i); idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); });
       ctx.closePath();
-      inner.forEach((i, idx) => { const p = pt(i); idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); });
+      inner.forEach((i, idx) => { const p = ptInner(i); idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); });
       ctx.closePath();
       ctx.fillStyle = `rgba(${r},${g},${b},${0.35 + intensity * 0.5})`;
       ctx.filter = 'blur(1.5px)';
