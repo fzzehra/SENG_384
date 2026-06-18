@@ -605,7 +605,7 @@
           </div>
           
         </div>
-<div class="cosmetic-shelf" id="faceFilterList">
+        <div class="cosmetic-shelf" id="faceFilterList">
   <div class="shelf-row" id="faceFilterRow">
     <div class="acc-card" id="butterflyCard" onclick="selectFaceFilter('butterfly')">
       <img src="/static/filters/assets/butterfly_mask.png">
@@ -627,18 +627,9 @@
               Remove
             </button>
 </div>
+        </div> 
       </div><!-- /panel-makeup -->
-<div class="cosmetic-shelf" id="faceTattooList">
-  <div class="shelf-row" id="faceTattooRow">
-    <div class="acc-card" id="dragonCard" onclick="selectFaceFilter('dragon')">
-      <img src="/static/filters/assets/dragon_mask.png">
-      <span class="acc-name">Dragon</span>
-    </div>
-    <button class="sm-btn" onclick="clearFaceFilter('mask');">
-              Remove
-            </button>
-  </div>
-</div>
+
       <!-- ════════ HAIR ════════ -->
       <div class="tab-panel" id="panel-hair">
         <div class="sec-title">Hair Color</div>
@@ -714,24 +705,22 @@
 
 
 </div>
-      </div></div></div></div>
+      </div></div></div>
 
 <script>
 // ─── STATE ───────────────────────────────────
 const makeup = {};   // { type: { color, intensity } }
 let overlay = null, hairScale = 1.0, hairX = 0, hairY = 0;
-const acc = {
-    earring:null,
-    necklace:null,
-    glasses:null,
-    hat:null,
+const acc = { 
+  earring: null, 
+  necklace: null, 
+  glasses: null, 
+  hat: null,
+  eyebrowPiercing: null,
+  septumPiercing: null,
+  lipPiercing: null
+   };
 
-    eyebrowPiercing:null,
-    septumPiercing:null,
-    lipPiercing:null,
-
-    faceFilter:null
-};
 let debounce;
 let currentImagePath = 'static/uploads/original.jpg';
 
@@ -777,7 +766,6 @@ function togglePal(id, btn) {
   el.style.display = vis ? 'none' : 'flex';
   btn.textContent = vis ? 'More colors' : 'Hide';
 }
-
 function selectFaceFilter(type) {
   acc.faceFilter = type;
   document.querySelectorAll("#faceFilterList .acc-card")
@@ -802,7 +790,6 @@ function clearFaceFilter() {
 
     trigger();
 }
-
 
 // Intensity sliders
 [
@@ -1176,6 +1163,7 @@ if (acc.faceFilter) {
 }
   return t;
 }
+
 
 function trigger() { clearTimeout(debounce); debounce = setTimeout(applyAll, 320); }
 

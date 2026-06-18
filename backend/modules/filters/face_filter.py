@@ -4,7 +4,7 @@ import numpy as np
 
 # Her maskeye özel oran ayarları
 MASK_CONFIG = {
-    "butterfly_mask.png": {"width_scale": 2.2, "height_scale": 0.52, "y_offset": 0.05, "alpha": 0.65},
+    "butterfly_mask.png": {"width_scale": 2.2, "height_scale": 0.52, "y_offset": 0.05, "alpha": 0.9},
     "crystal_mask.png":   {"width_scale": 1.7, "height_scale": 1.4, "y_offset": 0.08, "alpha": 0.95},
     "pearl_mask.png":     {"width_scale": 2.2, "height_scale": 0.65, "y_offset": 0.185, "alpha": 0.95},
     "peacock_mask.png":   {"width_scale": 2.6, "height_scale": 0.65, "y_offset": 0.15, "alpha": 0.9},

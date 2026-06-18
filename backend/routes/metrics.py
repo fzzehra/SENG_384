@@ -5,6 +5,7 @@
 
 from flask import Blueprint, request
 from backend.modules.utils.helpers import error_response, success_response
+from analysis.fft_metrics import compute_metrics
 
 metrics_bp = Blueprint("metrics", __name__)
 
@@ -22,11 +23,17 @@ def calculate_metrics():
     if not original_path or not transformed_path:
         return error_response("original_path and transformed_path are required.", 400)
 
+    try:
+        metrics = compute_metrics(original_path, transformed_path)
+    except Exception as e:
+        return error_response(str(e), 500)
+
     return success_response(
-        "Metrics endpoint is ready. Evaluation module will be integrated here.",
+        "Metrics calculated successfully.",
         data={
             "original_path": original_path,
-            "transformed_path": transformed_path
+            "transformed_path": transformed_path,
+            "metrics": metrics
         }
     )
     

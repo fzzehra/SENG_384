@@ -399,17 +399,57 @@
               <button class="acc-btn" onclick="selectAcc('earring','silver_earring.png',this)">Silver</button>
             </div>
           </div>
+        
           <div class="divider"></div>
+
+           <div>
+              <div class="section-label">Necklace</div>
+              <div class="acc-grid">
+                <button class="acc-btn full active" onclick="selectAcc('necklace',null,this)">No Necklace</button>
+                <button class="acc-btn" onclick="selectAcc('necklace','gold_necklace.png',this)">Gold</button>
+                <button class="acc-btn" onclick="selectAcc('necklace','pearl_necklace.png',this)">Pearl</button>
+                <button class="acc-btn" onclick="selectAcc('necklace','simple_chain.png',this)">Chain</button>
+              </div>
+          </div>
+
+      <div class="divider"></div>
+      
+        <div>
+          <div class="section-label">Piercing</div>
+          <div class="acc-grid">
+            <button class="acc-btn full video-piercing-btn" onclick="clearPiercing(this)">No Piercing</button>
+            <button class="acc-btn video-piercing-btn" onclick="selectPiercing('septum_piercing', this)">Septum</button>
+            <button class="acc-btn video-piercing-btn" onclick="selectPiercing('eyebrow_piercing', this)">Eyebrow</button>
+            <button class="acc-btn video-piercing-btn" onclick="selectPiercing('lip_piercing', this)">Lip</button>
+          </div>
+       </div>
+          
+          <div class="divider"></div>
+          
           <div>
-            <div class="section-label">Necklace</div>
-            <div class="acc-grid">
-              <button class="acc-btn full active" onclick="selectAcc('necklace',null,this)">No Necklace</button>
-              <button class="acc-btn" onclick="selectAcc('necklace','gold_necklace.png',this)">Gold</button>
-              <button class="acc-btn" onclick="selectAcc('necklace','pearl_necklace.png',this)">Pearl</button>
-              <button class="acc-btn" onclick="selectAcc('necklace','simple_chain.png',this)">Chain</button>
+            <div class="section-label">Face Filters</div>
+            <div class="acc-grid" id="faceFilterGrid">
+              <button class="acc-btn full active" onclick="clearFaceFilter()">No Filter</button>
+              <button class="acc-btn" onclick="selectFaceFilter('butterfly_mask.png', this)">
+                <img src="/static/filters/assets/butterfly_mask.png">
+                <span>Butterfly</span>
+              </button>
+              <button class="acc-btn" onclick="selectFaceFilter('crystal_mask.png', this)">
+                <img src="/static/filters/assets/crystal_mask.png">
+                <span>Crystal</span>
+              </button>
+              <button class="acc-btn" onclick="selectFaceFilter('pearl_mask.png', this)">
+                <img src="/static/filters/assets/pearl_mask.png">
+                <span>Pearl</span>
+              </button>
+              <button class="acc-btn" onclick="selectFaceFilter('peacock_mask.png', this)">
+                <img src="/static/filters/assets/peacock_mask.png">
+                <span>Peacock</span>
+              </button>
             </div>
           </div>
         </div>
+        <!-- tab-accessories panel-section kapanışı yukarıdaki tek </div> -->
 
         <div class="panel-section" id="tab-makeup">
           <div>
@@ -563,12 +603,25 @@
     ];
 
     const hatConfig = {
-      'bucket_hat.glb': { zOffset: 0.95, scale: 2.1, yOffset: 0.78, rotX: 0.1, rotY: 0 },
-      'fbx.glb': { zOffset: 0.0, scale: 2.05, scaleX: 1.15, yOffset: 0.94, rotX: 0.1, rotY: 0 },
-      'menard_hat_lowpoly.glb': { zOffset: 0.95, scale: 1.85, yOffset: 0.85, rotX: 0.1, rotY: 0 },
-      'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 0.95, scale: 2.0, yOffset: 0.9, rotX: -0.25, rotY: Math.PI }
+      'bucket_hat.glb': { zOffset: 0.95, scale: 3.2, yOffset: 0.78, rotX: 0.2, rotY: 0 },
+      'fbx.glb': { zOffset: 0.8, scale: 3.25, scaleX: 1.25, yOffset: 0.94, rotX: -0.2, rotY: 0 },
+      'menard_hat_lowpoly.glb': { zOffset: 0.95, scale: 2.45, yOffset: 0.65, rotX: 0.2, rotY: 0 },
+      'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 1.25, scale: 2.60, yOffset: 0.9, rotX: -0.35, rotY: Math.PI }
+    };
+    const FACE_FILTER_CATALOG = [
+      { name: 'Butterfly', file: 'butterfly_mask.png' },
+      { name: 'Crystal',   file: 'crystal_mask.png'   },
+      { name: 'Pearl',     file: 'pearl_mask.png'      },
+    ];
+
+    const FILTER_CONFIG = {
+      'butterfly_mask.png': { widthScale: 2.5, yOffset: 0.035,  opacity: 0.65 },
+      'crystal_mask.png':   { widthScale: 1.9, yOffset: 0.0,   opacity: 0.90 },
+      'pearl_mask.png':     { widthScale: 2.6, yOffset: 0.13,  opacity: 0.88 },
+      'peacock_mask.png':   { widthScale: 2.9, yOffset: 0.15,   opacity: 0.85 }  
     };
 
+    let activeFaceFilter = { mesh: null, file: null };
     const video = document.getElementById('webcam');
     const canvas2d = document.getElementById('canvas2d');
     const canvas3d = document.getElementById('canvas3d');
@@ -584,6 +637,168 @@
     let faceLandmarker = null;
     let running = false;
     let lastTime = -1;
+    // --- PIERCING ---
+const PIERCING_PNGS = {
+    "septum_piercing": "/static/accessories/piercings/septum_ring.png",
+    "eyebrow_piercing": "/static/accessories/piercings/eyebrow_spike.png", 
+    "lip_piercing": "/static/accessories/piercings/lip_ring.png"
+};
+
+let selectedPiercing = null;
+let piercingImages = {};
+
+async function loadPiercingPNGs() {
+    for (const [type, path] of Object.entries(PIERCING_PNGS)) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = path;
+        await new Promise(r => { img.onload = r; img.onerror = r; });
+        piercingImages[type] = img;
+    }
+}
+
+window.selectPiercing = function(type, btn) {
+    document.querySelectorAll('.video-piercing-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPiercing = type;
+}
+
+window.clearPiercing = function(btn) {
+    document.querySelectorAll('.video-piercing-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPiercing = null;
+}
+
+function overlay_png(baseCtx, overlayImg, x, y, scale=1.0, angle=0) {
+    if (!overlayImg ||!overlayImg.complete) return;
+    const oh = overlayImg.naturalHeight, ow = overlayImg.naturalWidth;
+    const new_w = Math.max(1, Math.round(ow * scale));
+    const new_h = Math.max(1, Math.round(oh * scale));
+    baseCtx.save();
+    baseCtx.translate(x, y);
+    baseCtx.rotate(angle * Math.PI / 180);
+    baseCtx.drawImage(overlayImg, -new_w/2, -new_h/2, new_w, new_h);
+    baseCtx.restore();
+}
+
+function drawPiercing(pt, piercing_type, item_img) {
+    if (piercing_type === "septum_piercing") {
+        const left_nostril = pt(97);
+        const right_nostril = pt(326);
+        const columella = pt(2);
+        const nose_tip = pt(4);
+        
+        const nose_w = Math.hypot(right_nostril.x - left_nostril.x, right_nostril.y - left_nostril.y);
+        const center = { 
+            x: (left_nostril.x + right_nostril.x) / 2, 
+            y: columella.y + nose_w * 0.01
+        };
+        const scale = nose_w / item_img.naturalWidth * 2.0;
+        
+        // Piercing'i çiz
+        overlay_png(ctx, item_img, center.x, center.y, scale, 0);
+        
+        const png_w = item_img.naturalWidth * scale;
+        const png_h = item_img.naturalHeight * scale;
+        
+        // MASKE: burnun içine giren kısımları gizle
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        
+        // Üst orta — halkanın tepesi buruna giriyor
+        ctx.beginPath();
+        ctx.ellipse(
+            center.x, 
+            center.y - png_h * 0.35,
+            nose_w * 0.38,
+            nose_w * 0.22,
+            0, 0, Math.PI * 2
+        );
+        ctx.fill();
+        
+        // Sol giriş noktası
+        ctx.beginPath();
+        ctx.ellipse(
+            center.x - png_w * 0.32,
+            center.y - png_h * 0.08,
+            nose_w * 0.18,
+            nose_w * 0.15,
+            0, 0, Math.PI * 2
+        );
+        ctx.fill();
+        
+        // Sağ giriş noktası
+        ctx.beginPath();
+        ctx.ellipse(
+            center.x + png_w * 0.32,
+            center.y - png_h * 0.08,
+            nose_w * 0.18,
+            nose_w * 0.15,
+            0, 0, Math.PI * 2
+        );
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
+    if (piercing_type === "eyebrow_piercing") {
+      const face_left = pt(234);
+      const face_right = pt(454);
+      const face_w = Math.hypot(face_right.x - face_left.x, face_right.y - face_left.y);
+
+      const brow_inner = pt(336);
+      const brow_outer = pt(300);
+      const brow_peak = pt(296);
+
+      const brow_w = Math.hypot(brow_outer.x - brow_inner.x, brow_outer.y - brow_inner.y);
+      const brow_height = brow_w * 0.25;
+
+      const center_x = brow_outer.x * 0.92 + brow_inner.x * 0.08;
+      const center_y = brow_peak.y + brow_height * 0.6;
+
+      const target_width = face_w * 0.15;
+      const scale = target_width / item_img.naturalWidth;
+
+      overlay_png(ctx, item_img, center_x, center_y, scale, 0);
+
+      
+  }
+    
+    if (piercing_type === "lip_piercing") {
+        const lip_left = pt(61);
+        const lip_right = pt(291);
+        const lip_bottom_inner = pt(14);
+        const lip_bottom_outer = pt(17);
+        const mouth_w = Math.hypot(lip_right.x - lip_left.x, lip_right.y - lip_left.y);
+        const center_x_base = (lip_left.x + lip_right.x) / 2;
+        const offset_x = mouth_w * 0.30;
+        const sides = [
+            { top_x: center_x_base - offset_x, flip: false },
+            { top_x: center_x_base + offset_x, flip: true }
+        ];
+        sides.forEach(side => {
+            const top_x = side.top_x;
+            const top_y = lip_bottom_inner.y;
+            const bottom_x = top_x + (mouth_w * 0.015 * (side.flip ? -1 : 1));
+            const bottom_y = lip_bottom_outer.y;
+            const center_x = (top_x + bottom_x) / 2;
+            const center_y = (top_y + bottom_y) / 2;
+            const dx = bottom_x - top_x;
+            const dy = bottom_y - top_y;
+            const angle = -Math.atan2(dy, dx) * 180 / Math.PI + 90;
+            const pierce_length = Math.hypot(dx, dy);
+            const scale = pierce_length / item_img.naturalHeight * 1.4;
+            ctx.save();
+            ctx.translate(center_x, center_y);
+            ctx.rotate(angle * Math.PI / 180);
+            if (side.flip) ctx.scale(-1, 1);
+            const new_w = item_img.naturalWidth * scale;
+            const new_h = item_img.naturalHeight * scale;
+            ctx.drawImage(item_img, -new_w/2, -new_h/2, new_w, new_h);
+            ctx.restore();
+        });
+    }
+}
 
     // Three.js Setup
     const renderer3d = new THREE.WebGLRenderer({ canvas: canvas3d, alpha: true, antialias: true });
@@ -629,6 +844,8 @@
     };
     headGroup.add(activeModels.glasses.group);
     headGroup.add(activeModels.hat.group);
+    const faceFilterGroup = new THREE.Group();
+    scene3d.add(faceFilterGroup);
 
     window.switchTab = function (tabName, tabEl) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -699,7 +916,7 @@
       }
       window.clearModel(type, null, false);
       statusBar.textContent = `Loading 3D ${type}: ` + file;
-
+      
       gltfLoader.load(path + file, gltf => {
         const m = gltf.scene;
         const box = new THREE.Box3().setFromObject(m);
@@ -771,6 +988,45 @@
       activeModels[type].ready = false;
     };
 
+    window.selectFaceFilter = function(file, btn) {
+      document.querySelectorAll('#faceFilterGrid .acc-btn')
+        .forEach(b => b.classList.remove('active'));
+      if (activeFaceFilter.file === file) {
+        window.clearFaceFilter();
+        return;
+      }
+      if (btn) btn.classList.add('active');
+      while (faceFilterGroup.children.length > 0)
+        faceFilterGroup.remove(faceFilterGroup.children[0]);
+      const cfg = FILTER_CONFIG[file] || { widthScale: 1.5, yOffset: 0.0, opacity: 0.85 };
+      const loader = new THREE.TextureLoader();
+      loader.load('/static/filters/assets/' + file, texture => {
+        const aspect = texture.image.height / texture.image.width;
+        const geometry = new THREE.PlaneGeometry(1, aspect);
+        const material = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          opacity: cfg.opacity,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.renderOrder = 6;
+        faceFilterGroup.add(mesh);
+        activeFaceFilter = { mesh, file, cfg };
+        console.log('Face filter loaded:', file);
+      }, undefined, err => {
+        console.error('Face filter load error:', err);
+      });
+    };
+
+    window.clearFaceFilter = function() {
+      while (faceFilterGroup.children.length > 0)
+        faceFilterGroup.remove(faceFilterGroup.children[0]);
+      activeFaceFilter = { mesh: null, file: null };
+      document.querySelectorAll('#faceFilterGrid .acc-btn')
+        .forEach(b => b.classList.remove('active'));
+    };
     window.selectAcc = function (type, file, btn) {
       const grid = btn.closest('.acc-grid');
       grid.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('active'));
@@ -779,7 +1035,6 @@
       console.log('AR selectAcc:', type, '->', file);
       if (file) loadPNG(file, type);
     };
-
     function computeTrim(img) {
       const c = document.createElement('canvas');
       c.width = img.naturalWidth;
@@ -860,6 +1115,7 @@
     let _lastNeck = '';
 
     window.startCamera = async function () {
+      await loadPiercingPNGs();
       document.getElementById('startBtn').style.display = 'none';
       statusBar.textContent = 'Loading MediaPipe FaceLandmarker...';
 
@@ -1044,7 +1300,30 @@
             });
           }
         });
+        if (activeFaceFilter.mesh) {
+  const cfg = activeFaceFilter.cfg;
+  const filterWidth = eyeDistWorld * cfg.widthScale;
+  const tex = activeFaceFilter.mesh.material.map;
+  const aspect = tex && tex.image ? tex.image.height / tex.image.width : 0.5;
+  activeFaceFilter.mesh.scale.set(filterWidth, filterWidth * aspect, 1);
 
+  const worldPos = new THREE.Vector3();
+  headGroup.getWorldPosition(worldPos);
+  faceFilterGroup.quaternion.copy(headGroup.quaternion);
+
+  const eyeMidX = (lm[33].x + lm[263].x) / 2;
+  const eyeMidY = (lm[33].y + lm[263].y) / 2;
+  const eyeNdcX = (eyeMidX * 2) - 1;
+  const eyeNdcY = -(eyeMidY * 2) + 1;
+  const eyeWorldX = -(eyeNdcX * halfScreenWorldWidth);
+  const eyeWorldY = (eyeNdcY * halfScreenWorldHeight) - 0.05;
+
+  faceFilterGroup.position.set(
+    eyeWorldX,
+    eyeWorldY + eyeDistWorld * cfg.yOffset,
+    worldPos.z + eyeDistWorld * 0.2
+  );
+}
         debugEl.textContent = `pos:(${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)})`;
       } else {
         headGroup.visible = false;
@@ -1099,7 +1378,10 @@
       if (selected.necklace && pngImages[selected.necklace]) drawNecklace(pt);
       if (selected.earring && pngImages[selected.earring]) drawEarring(pt);
       // if (selected.hat && pngImages[selected.hat]) drawHat(pt); // Disabled PNG hats since we have 3D now
-
+      // PIERCING ÇİZİMİ
+      if (selectedPiercing && piercingImages[selectedPiercing]) {
+          drawPiercing(pt, selectedPiercing, piercingImages[selectedPiercing]);
+      }
       // 3D Render (En Üst Katman Z-Index 3)
       renderer3d.render(scene3d, camera3d);
     }
