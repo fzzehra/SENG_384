@@ -579,11 +579,42 @@
               Remove
             </button>
           </div>
+          
         </div>
-
-        
+<div class="cosmetic-shelf" id="faceFilterList">
+  <div class="shelf-row" id="faceFilterRow">
+    <div class="acc-card" id="butterflyCard" onclick="selectFaceFilter('butterfly')">
+      <img src="/static/filters/assets/butterfly_mask.png">
+      <span class="acc-name">Butterfly</span>
+    </div>
+    <div class="acc-card" id="crystalCard" onclick="selectFaceFilter('crystal')">
+      <img src="/static/filters/assets/crystal_mask.png">
+    <span class="acc-name">Crystal</span>
+  </div>
+  <div class="acc-card" id="pearlCard" onclick="selectFaceFilter('pearl')">
+    <img src="/static/filters/assets/pearl_mask.png">
+    <span class="acc-name">Pearl</span>
+  </div>
+  <div class="acc-card" id="peacockCard" onclick="selectFaceFilter('peacock')">
+    <img src="/static/filters/assets/peacock_mask.png">
+    <span class="acc-name">Peacock</span>
+  </div>
+   <button class="sm-btn" onclick="clearFaceFilter('mask');">
+              Remove
+            </button>
+</div>
       </div><!-- /panel-makeup -->
-
+<div class="cosmetic-shelf" id="faceTattooList">
+  <div class="shelf-row" id="faceTattooRow">
+    <div class="acc-card" id="dragonCard" onclick="selectFaceFilter('dragon')">
+      <img src="/static/filters/assets/dragon_mask.png">
+      <span class="acc-name">Dragon</span>
+    </div>
+    <button class="sm-btn" onclick="clearFaceFilter('mask');">
+              Remove
+            </button>
+  </div>
+</div>
       <!-- ════════ HAIR ════════ -->
       <div class="tab-panel" id="panel-hair">
         <div class="sec-title">Hair Color</div>
@@ -657,15 +688,26 @@
   <button class="sm-btn" onclick="clearPiercings()">Remove Piercings</button>
 </div>
 
+
+</div>
       </div></div></div></div>```
 
 <script>
 // ─── STATE ───────────────────────────────────
 const makeup = {};   // { type: { color, intensity } }
 let overlay = null, hairScale = 1.0, hairX = 0, hairY = 0;
-const acc = { earring: null, necklace: null, glasses: null, hat: null,eyebrowPiercing: null,
-  septumPiercing: null,
-  lipPiercing: null };
+const acc = {
+    earring:null,
+    necklace:null,
+    glasses:null,
+    hat:null,
+
+    eyebrowPiercing:null,
+    septumPiercing:null,
+    lipPiercing:null,
+
+    faceFilter:null
+};
 let debounce;
 let currentImagePath = 'static/uploads/original.jpg';
 
@@ -711,6 +753,32 @@ function togglePal(id, btn) {
   el.style.display = vis ? 'none' : 'flex';
   btn.textContent = vis ? 'More colors' : 'Hide';
 }
+
+function selectFaceFilter(type) {
+  acc.faceFilter = type;
+  document.querySelectorAll("#faceFilterList .acc-card")
+    .forEach(c => c.classList.remove("active"));
+  document.getElementById(type + "Card").classList.add("active");
+  trigger();
+}
+
+function clearFaceFilter() {
+  acc.faceFilter = null;
+  document.querySelectorAll("#faceFilterList .acc-card")
+    .forEach(c => c.classList.remove("active"));
+  trigger();
+}
+
+function clearFaceFilter() {
+
+    acc.faceFilter = null;
+
+    document.querySelectorAll("#faceFilterList .acc-card")
+        .forEach(c => c.classList.remove("active"));
+
+    trigger();
+}
+
 
 // Intensity sliders
 [
@@ -1055,6 +1123,12 @@ if (acc.lipPiercing) {
     type: 'lip_piercing',
     intensity: 1,
     params: { item: acc.lipPiercing }
+  });
+}
+if (acc.faceFilter) {
+  t.push({
+    type: acc.faceFilter,  
+    intensity: 1
   });
 }
   return t;
