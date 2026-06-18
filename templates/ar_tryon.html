@@ -400,7 +400,7 @@
             </div>
           </div>
           <div class="divider"></div>
-          <div>
+<div>
             <div class="section-label">Necklace</div>
             <div class="acc-grid">
               <button class="acc-btn full active" onclick="selectAcc('necklace',null,this)">No Necklace</button>
@@ -409,7 +409,31 @@
               <button class="acc-btn" onclick="selectAcc('necklace','simple_chain.png',this)">Chain</button>
             </div>
           </div>
+          <div class="divider"></div>
+          <div>
+            <div class="section-label">Face Filters</div>
+            <div class="acc-grid" id="faceFilterGrid">
+              <button class="acc-btn full active" onclick="clearFaceFilter()">No Filter</button>
+              <button class="acc-btn" onclick="selectFaceFilter('butterfly_mask.png', this)">
+                <img src="/static/filters/assets/butterfly_mask.png">
+                <span>Butterfly</span>
+              </button>
+              <button class="acc-btn" onclick="selectFaceFilter('crystal_mask.png', this)">
+                <img src="/static/filters/assets/crystal_mask.png">
+                <span>Crystal</span>
+              </button>
+              <button class="acc-btn" onclick="selectFaceFilter('pearl_mask.png', this)">
+                <img src="/static/filters/assets/pearl_mask.png">
+                <span>Pearl</span>
+              </button>
+              <button class="acc-btn" onclick="selectFaceFilter('peacock_mask.png', this)">
+                <img src="/static/filters/assets/peacock_mask.png">
+                <span>Peacock</span>
+              </button>
+            </div>
+          </div>
         </div>
+        <!-- tab-accessories panel-section kapanışı yukarıdaki tek </div> -->
 
         <div class="panel-section" id="tab-makeup">
           <div>
@@ -563,12 +587,25 @@
     ];
 
     const hatConfig = {
-      'bucket_hat.glb': { zOffset: 0.95, scale: 2.1, yOffset: 0.78, rotX: 0.1, rotY: 0 },
-      'fbx.glb': { zOffset: 0.0, scale: 2.05, scaleX: 1.15, yOffset: 0.94, rotX: 0.1, rotY: 0 },
-      'menard_hat_lowpoly.glb': { zOffset: 0.95, scale: 1.85, yOffset: 0.85, rotX: 0.1, rotY: 0 },
-      'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 0.95, scale: 2.0, yOffset: 0.9, rotX: -0.25, rotY: Math.PI }
+      'bucket_hat.glb': { zOffset: 0.95, scale: 3.2, yOffset: 0.78, rotX: 0.2, rotY: 0 },
+      'fbx.glb': { zOffset: 0.8, scale: 3.25, scaleX: 1.25, yOffset: 0.94, rotX: -0.2, rotY: 0 },
+      'menard_hat_lowpoly.glb': { zOffset: 0.95, scale: 2.45, yOffset: 0.65, rotX: 0.2, rotY: 0 },
+      'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 1.25, scale: 2.60, yOffset: 0.9, rotX: -0.35, rotY: Math.PI }
+    };
+    const FACE_FILTER_CATALOG = [
+      { name: 'Butterfly', file: 'butterfly_mask.png' },
+      { name: 'Crystal',   file: 'crystal_mask.png'   },
+      { name: 'Pearl',     file: 'pearl_mask.png'      },
+    ];
+
+    const FILTER_CONFIG = {
+      'butterfly_mask.png': { widthScale: 2.5, yOffset: 0.035,  opacity: 0.65 },
+      'crystal_mask.png':   { widthScale: 1.9, yOffset: 0.0,   opacity: 0.90 },
+      'pearl_mask.png':     { widthScale: 2.6, yOffset: 0.13,  opacity: 0.88 },
+      'peacock_mask.png':   { widthScale: 2.9, yOffset: 0.15,   opacity: 0.85 }  
     };
 
+    let activeFaceFilter = { mesh: null, file: null };
     const video = document.getElementById('webcam');
     const canvas2d = document.getElementById('canvas2d');
     const canvas3d = document.getElementById('canvas3d');
@@ -629,6 +666,8 @@
     };
     headGroup.add(activeModels.glasses.group);
     headGroup.add(activeModels.hat.group);
+    const faceFilterGroup = new THREE.Group();
+    scene3d.add(faceFilterGroup);
 
     window.switchTab = function (tabName, tabEl) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -699,7 +738,7 @@
       }
       window.clearModel(type, null, false);
       statusBar.textContent = `Loading 3D ${type}: ` + file;
-
+      
       gltfLoader.load(path + file, gltf => {
         const m = gltf.scene;
         const box = new THREE.Box3().setFromObject(m);
@@ -771,6 +810,45 @@
       activeModels[type].ready = false;
     };
 
+    window.selectFaceFilter = function(file, btn) {
+      document.querySelectorAll('#faceFilterGrid .acc-btn')
+        .forEach(b => b.classList.remove('active'));
+      if (activeFaceFilter.file === file) {
+        window.clearFaceFilter();
+        return;
+      }
+      if (btn) btn.classList.add('active');
+      while (faceFilterGroup.children.length > 0)
+        faceFilterGroup.remove(faceFilterGroup.children[0]);
+      const cfg = FILTER_CONFIG[file] || { widthScale: 1.5, yOffset: 0.0, opacity: 0.85 };
+      const loader = new THREE.TextureLoader();
+      loader.load('/static/filters/assets/' + file, texture => {
+        const aspect = texture.image.height / texture.image.width;
+        const geometry = new THREE.PlaneGeometry(1, aspect);
+        const material = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          opacity: cfg.opacity,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.renderOrder = 6;
+        faceFilterGroup.add(mesh);
+        activeFaceFilter = { mesh, file, cfg };
+        console.log('Face filter loaded:', file);
+      }, undefined, err => {
+        console.error('Face filter load error:', err);
+      });
+    };
+
+    window.clearFaceFilter = function() {
+      while (faceFilterGroup.children.length > 0)
+        faceFilterGroup.remove(faceFilterGroup.children[0]);
+      activeFaceFilter = { mesh: null, file: null };
+      document.querySelectorAll('#faceFilterGrid .acc-btn')
+        .forEach(b => b.classList.remove('active'));
+    };
     window.selectAcc = function (type, file, btn) {
       const grid = btn.closest('.acc-grid');
       grid.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('active'));
@@ -779,7 +857,6 @@
       console.log('AR selectAcc:', type, '->', file);
       if (file) loadPNG(file, type);
     };
-
     function computeTrim(img) {
       const c = document.createElement('canvas');
       c.width = img.naturalWidth;
@@ -1044,7 +1121,30 @@
             });
           }
         });
+        if (activeFaceFilter.mesh) {
+  const cfg = activeFaceFilter.cfg;
+  const filterWidth = eyeDistWorld * cfg.widthScale;
+  const tex = activeFaceFilter.mesh.material.map;
+  const aspect = tex && tex.image ? tex.image.height / tex.image.width : 0.5;
+  activeFaceFilter.mesh.scale.set(filterWidth, filterWidth * aspect, 1);
 
+  const worldPos = new THREE.Vector3();
+  headGroup.getWorldPosition(worldPos);
+  faceFilterGroup.quaternion.copy(headGroup.quaternion);
+
+  const eyeMidX = (lm[33].x + lm[263].x) / 2;
+  const eyeMidY = (lm[33].y + lm[263].y) / 2;
+  const eyeNdcX = (eyeMidX * 2) - 1;
+  const eyeNdcY = -(eyeMidY * 2) + 1;
+  const eyeWorldX = -(eyeNdcX * halfScreenWorldWidth);
+  const eyeWorldY = (eyeNdcY * halfScreenWorldHeight) - 0.05;
+
+  faceFilterGroup.position.set(
+    eyeWorldX,
+    eyeWorldY + eyeDistWorld * cfg.yOffset,
+    worldPos.z + eyeDistWorld * 0.2
+  );
+}
         debugEl.textContent = `pos:(${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)})`;
       } else {
         headGroup.visible = false;
