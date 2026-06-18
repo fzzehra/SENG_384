@@ -544,11 +544,11 @@
     ];
 
     const hatConfig = {
-      'bucket_hat.glb': { zOffset: 0.85, scale: 2.2, yOffset: 0.8, rotX: 0.1, rotY: 0 },
-      'fbx.glb': { zOffset: 0.85, scale: 2.2, yOffset: 0.8, rotX: 0.1, rotY: 0 },
-      'menard_hat_lowpoly.glb': { zOffset: 0.85, scale: 2.35, yOffset: 0.8, rotX: 0.1, rotY: 0 },
-      'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 0.85, scale: 2.35, yOffset: 0.8, rotX: 0.1, rotY: Math.PI },
-      'victorian_abigail_hat.glb': { zOffset: 0.85, scale: 2.2, yOffset: 0.8, rotX: 0.1, rotY: 0 }
+      'bucket_hat.glb': { zOffset: 0.95, scale: 2.3, yOffset: 0.9, rotX: 0.1, rotY: 0 },
+      'fbx.glb': { zOffset: 0.95, scale: 2.3, yOffset: 0.9, rotX: 0.1, rotY: 0 },
+      'menard_hat_lowpoly.glb': { zOffset: 0.95, scale: 2.25, yOffset: 0.85, rotX: 0.1, rotY: 0 },
+      'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 0.95, scale: 2.45, yOffset: 0.9, rotX: 0.1, rotY: Math.PI },
+      'victorian_abigail_hat.glb': { zOffset: 0.95, scale: 2.3, yOffset: 0.95, rotX: 0.1, rotY: 0 }
     };
 
     const video = document.getElementById('webcam');
@@ -922,8 +922,12 @@
 
         const lEyePx = lm[33].x * W;
         const rEyePx = lm[263].x * W;
-        const eyeDistPx = Math.abs(rEyePx - lEyePx);
-        const eyeDistWorld = (eyeDistPx / W) * halfScreenWorldWidth * 2;
+        // 3D distance is used to prevent the model from shrinking when turning the head
+        const dx = lm[263].x - lm[33].x;
+        const dy = lm[263].y - lm[33].y;
+        const dz = lm[263].z - lm[33].z;
+        const eyeDist3D = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const eyeDistWorld = eyeDist3D * halfScreenWorldWidth * 2;
 
         pos.z = -depth - (eyeDistWorld * 0.5);
         const qAynali = new THREE.Quaternion(quat.x, -quat.y, -quat.z, quat.w);
@@ -936,9 +940,13 @@
         const occlusionOpacity = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(yawAbs, 0.3, 0.7, 1.0, 0.0), 0.0, 1.0);
 
         // Scale and position occluder to roughly match human head, keeping it lower than the hat's top
+        // Extended downwards to cover the chin and neck so the hat strap doesn't show through
         const occluderRadius = eyeDistWorld * 0.9;
-        headOccluder.scale.set(occluderRadius, occluderRadius * 1.1, occluderRadius * 1.1);
-        headOccluder.position.set(0, eyeDistWorld * 0.3, -eyeDistWorld * 0.5);
+        // Kürenin boyunu tekrar uzatıyoruz (arkadaki siyahlığı gizlemek için)
+        // Ancak geriye doğru eğiyoruz (rotation.x) ki öndeki şapkayı delmesin!
+        headOccluder.scale.set(occluderRadius * 1.25, occluderRadius * 1.55, occluderRadius * 1.1);
+        headOccluder.position.set(0, -eyeDistWorld * 0.1, -eyeDistWorld * 0.5);
+        headOccluder.rotation.x = -0.35;
 
         ['glasses', 'hat'].forEach(type => {
           const active = activeModels[type];
@@ -964,7 +972,8 @@
                 child.material.transparent = true;
                 child.material.opacity = occlusionOpacity * child.material._originalOpacity;
               } else {
-                child.material.opacity = child.material._originalOpacity;
+                child.material.transparent = true;
+                child.material.opacity = occlusionOpacity * child.material._originalOpacity;
                 // Fix sorting issues for hat overlapping with occluder
                 child.renderOrder = 10;
               }
