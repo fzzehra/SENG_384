@@ -567,7 +567,7 @@ def apply_eyebrow_slit(image, landmarks, side="right", intensity=0.95):
     
     # Çok hafif multiply - ten rengi biraz koyulaşsın
     output_dark = output * 0.96
-    result = output_dark * (1 - alpha) + skin_layer * alpha
+    result = output * (1 - alpha) + skin_layer * alpha
 
     return np.clip(result, 0, 255).astype(np.uint8)
 
