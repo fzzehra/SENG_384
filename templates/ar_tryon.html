@@ -399,17 +399,33 @@
               <button class="acc-btn" onclick="selectAcc('earring','silver_earring.png',this)">Silver</button>
             </div>
           </div>
+        
           <div class="divider"></div>
-<div>
-            <div class="section-label">Necklace</div>
-            <div class="acc-grid">
-              <button class="acc-btn full active" onclick="selectAcc('necklace',null,this)">No Necklace</button>
-              <button class="acc-btn" onclick="selectAcc('necklace','gold_necklace.png',this)">Gold</button>
-              <button class="acc-btn" onclick="selectAcc('necklace','pearl_necklace.png',this)">Pearl</button>
-              <button class="acc-btn" onclick="selectAcc('necklace','simple_chain.png',this)">Chain</button>
-            </div>
+
+           <div>
+              <div class="section-label">Necklace</div>
+              <div class="acc-grid">
+                <button class="acc-btn full active" onclick="selectAcc('necklace',null,this)">No Necklace</button>
+                <button class="acc-btn" onclick="selectAcc('necklace','gold_necklace.png',this)">Gold</button>
+                <button class="acc-btn" onclick="selectAcc('necklace','pearl_necklace.png',this)">Pearl</button>
+                <button class="acc-btn" onclick="selectAcc('necklace','simple_chain.png',this)">Chain</button>
+              </div>
           </div>
+
+      <div class="divider"></div>
+      
+        <div>
+          <div class="section-label">Piercing</div>
+          <div class="acc-grid">
+            <button class="acc-btn full video-piercing-btn" onclick="clearPiercing(this)">No Piercing</button>
+            <button class="acc-btn video-piercing-btn" onclick="selectPiercing('septum_piercing', this)">Septum</button>
+            <button class="acc-btn video-piercing-btn" onclick="selectPiercing('eyebrow_piercing', this)">Eyebrow</button>
+            <button class="acc-btn video-piercing-btn" onclick="selectPiercing('lip_piercing', this)">Lip</button>
+          </div>
+       </div>
+          
           <div class="divider"></div>
+          
           <div>
             <div class="section-label">Face Filters</div>
             <div class="acc-grid" id="faceFilterGrid">
@@ -621,6 +637,168 @@
     let faceLandmarker = null;
     let running = false;
     let lastTime = -1;
+    // --- PIERCING ---
+const PIERCING_PNGS = {
+    "septum_piercing": "/static/accessories/piercings/septum_ring.png",
+    "eyebrow_piercing": "/static/accessories/piercings/eyebrow_spike.png", 
+    "lip_piercing": "/static/accessories/piercings/lip_ring.png"
+};
+
+let selectedPiercing = null;
+let piercingImages = {};
+
+async function loadPiercingPNGs() {
+    for (const [type, path] of Object.entries(PIERCING_PNGS)) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = path;
+        await new Promise(r => { img.onload = r; img.onerror = r; });
+        piercingImages[type] = img;
+    }
+}
+
+window.selectPiercing = function(type, btn) {
+    document.querySelectorAll('.video-piercing-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPiercing = type;
+}
+
+window.clearPiercing = function(btn) {
+    document.querySelectorAll('.video-piercing-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPiercing = null;
+}
+
+function overlay_png(baseCtx, overlayImg, x, y, scale=1.0, angle=0) {
+    if (!overlayImg ||!overlayImg.complete) return;
+    const oh = overlayImg.naturalHeight, ow = overlayImg.naturalWidth;
+    const new_w = Math.max(1, Math.round(ow * scale));
+    const new_h = Math.max(1, Math.round(oh * scale));
+    baseCtx.save();
+    baseCtx.translate(x, y);
+    baseCtx.rotate(angle * Math.PI / 180);
+    baseCtx.drawImage(overlayImg, -new_w/2, -new_h/2, new_w, new_h);
+    baseCtx.restore();
+}
+
+function drawPiercing(pt, piercing_type, item_img) {
+    if (piercing_type === "septum_piercing") {
+        const left_nostril = pt(97);
+        const right_nostril = pt(326);
+        const columella = pt(2);
+        const nose_tip = pt(4);
+        
+        const nose_w = Math.hypot(right_nostril.x - left_nostril.x, right_nostril.y - left_nostril.y);
+        const center = { 
+            x: (left_nostril.x + right_nostril.x) / 2, 
+            y: columella.y + nose_w * 0.01
+        };
+        const scale = nose_w / item_img.naturalWidth * 2.0;
+        
+        // Piercing'i çiz
+        overlay_png(ctx, item_img, center.x, center.y, scale, 0);
+        
+        const png_w = item_img.naturalWidth * scale;
+        const png_h = item_img.naturalHeight * scale;
+        
+        // MASKE: burnun içine giren kısımları gizle
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        
+        // Üst orta — halkanın tepesi buruna giriyor
+        ctx.beginPath();
+        ctx.ellipse(
+            center.x, 
+            center.y - png_h * 0.35,
+            nose_w * 0.38,
+            nose_w * 0.22,
+            0, 0, Math.PI * 2
+        );
+        ctx.fill();
+        
+        // Sol giriş noktası
+        ctx.beginPath();
+        ctx.ellipse(
+            center.x - png_w * 0.32,
+            center.y - png_h * 0.08,
+            nose_w * 0.18,
+            nose_w * 0.15,
+            0, 0, Math.PI * 2
+        );
+        ctx.fill();
+        
+        // Sağ giriş noktası
+        ctx.beginPath();
+        ctx.ellipse(
+            center.x + png_w * 0.32,
+            center.y - png_h * 0.08,
+            nose_w * 0.18,
+            nose_w * 0.15,
+            0, 0, Math.PI * 2
+        );
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
+    if (piercing_type === "eyebrow_piercing") {
+      const face_left = pt(234);
+      const face_right = pt(454);
+      const face_w = Math.hypot(face_right.x - face_left.x, face_right.y - face_left.y);
+
+      const brow_inner = pt(336);
+      const brow_outer = pt(300);
+      const brow_peak = pt(296);
+
+      const brow_w = Math.hypot(brow_outer.x - brow_inner.x, brow_outer.y - brow_inner.y);
+      const brow_height = brow_w * 0.25;
+
+      const center_x = brow_outer.x * 0.92 + brow_inner.x * 0.08;
+      const center_y = brow_peak.y + brow_height * 0.6;
+
+      const target_width = face_w * 0.15;
+      const scale = target_width / item_img.naturalWidth;
+
+      overlay_png(ctx, item_img, center_x, center_y, scale, 0);
+
+      
+  }
+    
+    if (piercing_type === "lip_piercing") {
+        const lip_left = pt(61);
+        const lip_right = pt(291);
+        const lip_bottom_inner = pt(14);
+        const lip_bottom_outer = pt(17);
+        const mouth_w = Math.hypot(lip_right.x - lip_left.x, lip_right.y - lip_left.y);
+        const center_x_base = (lip_left.x + lip_right.x) / 2;
+        const offset_x = mouth_w * 0.30;
+        const sides = [
+            { top_x: center_x_base - offset_x, flip: false },
+            { top_x: center_x_base + offset_x, flip: true }
+        ];
+        sides.forEach(side => {
+            const top_x = side.top_x;
+            const top_y = lip_bottom_inner.y;
+            const bottom_x = top_x + (mouth_w * 0.015 * (side.flip ? -1 : 1));
+            const bottom_y = lip_bottom_outer.y;
+            const center_x = (top_x + bottom_x) / 2;
+            const center_y = (top_y + bottom_y) / 2;
+            const dx = bottom_x - top_x;
+            const dy = bottom_y - top_y;
+            const angle = -Math.atan2(dy, dx) * 180 / Math.PI + 90;
+            const pierce_length = Math.hypot(dx, dy);
+            const scale = pierce_length / item_img.naturalHeight * 1.4;
+            ctx.save();
+            ctx.translate(center_x, center_y);
+            ctx.rotate(angle * Math.PI / 180);
+            if (side.flip) ctx.scale(-1, 1);
+            const new_w = item_img.naturalWidth * scale;
+            const new_h = item_img.naturalHeight * scale;
+            ctx.drawImage(item_img, -new_w/2, -new_h/2, new_w, new_h);
+            ctx.restore();
+        });
+    }
+}
 
     // Three.js Setup
     const renderer3d = new THREE.WebGLRenderer({ canvas: canvas3d, alpha: true, antialias: true });
@@ -937,6 +1115,7 @@
     let _lastNeck = '';
 
     window.startCamera = async function () {
+      await loadPiercingPNGs();
       document.getElementById('startBtn').style.display = 'none';
       statusBar.textContent = 'Loading MediaPipe FaceLandmarker...';
 
@@ -1199,7 +1378,10 @@
       if (selected.necklace && pngImages[selected.necklace]) drawNecklace(pt);
       if (selected.earring && pngImages[selected.earring]) drawEarring(pt);
       // if (selected.hat && pngImages[selected.hat]) drawHat(pt); // Disabled PNG hats since we have 3D now
-
+      // PIERCING ÇİZİMİ
+      if (selectedPiercing && piercingImages[selectedPiercing]) {
+          drawPiercing(pt, selectedPiercing, piercingImages[selectedPiercing]);
+      }
       // 3D Render (En Üst Katman Z-Index 3)
       renderer3d.render(scene3d, camera3d);
     }
