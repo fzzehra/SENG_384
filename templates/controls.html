@@ -566,6 +566,30 @@
   <input type="range" id="eyelinerInt" min="0" max="100" value="85">
 </div>
 
+<!-- KİRPİK -->
+        <div class="cosmetic-shelf">
+          <div class="shelf-label">Eyelashes</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <div class="color-row" style="margin:0">
+              <label>Color</label>
+              <input type="color" id="lashColor" value="#1a1a1a">
+            </div>
+            <button class="sm-btn" onclick="clearMakeup('lashes')">Remove</button>
+          </div>
+          <div class="int-row">
+            <span class="int-lbl">Length</span><span class="int-val" id="lash-len-v">0%</span>
+          </div>
+          <input type="range" id="lashLen" min="0" max="100" value="0">
+          <div class="int-row">
+            <span class="int-lbl">Thickness</span><span class="int-val" id="lash-thick-v">0%</span>
+          </div>
+          <input type="range" id="lashThick" min="0" max="100" value="0">
+          <div class="int-row">
+            <span class="int-lbl">Intensity</span><span class="int-val" id="lash-int-v">50%</span>
+          </div>
+          <input type="range" id="lashInt" min="0" max="100" value="50">
+        </div>
+
 <!-- EYEBROW SLIT / PIERCING -->
         <div class="cosmetic-shelf">
           <div class="shelf-label">Eyebrow Details</div>
@@ -754,6 +778,24 @@ document.getElementById('browCustom')?.addEventListener('input', e =>
 
 document.getElementById('eyelinerWing')?.addEventListener('change', () => {
   if (makeup['eyeliner']) applyEyeliner(makeup['eyeliner'].color);
+});
+
+function applyLashes() {
+  const color = document.getElementById('lashColor').value;
+  const len   = parseInt(document.getElementById('lashLen').value) / 100;
+  const thick = parseInt(document.getElementById('lashThick').value) / 100;
+  const intns = parseInt(document.getElementById('lashInt').value) / 100;
+  if (len === 0 && thick === 0) { delete makeup['lashes']; trigger(); return; }
+  makeup['lashes'] = { color, intensity: intns, params: { length: len, thickness: thick } };
+  trigger();
+}
+document.getElementById('lashColor')?.addEventListener('input', () => { if (makeup['lashes']) applyLashes(); });
+['lashLen','lashThick','lashInt'].forEach(id => {
+  const lblId = {'lashLen':'lash-len-v','lashThick':'lash-thick-v','lashInt':'lash-int-v'}[id];
+  document.getElementById(id)?.addEventListener('input', e => {
+    document.getElementById(lblId).textContent = e.target.value + '%';
+    applyLashes();
+  });
 });
 
 document.getElementById('freckleCustom')?.addEventListener('input', e =>
