@@ -437,14 +437,17 @@ def _place_necklace(output, overlay, refs, kp, item_scale, intensity):
         print("JEWELRY: kolye için referans bulunamadı, atlandı")
         return output
 
-    width = span * 0.80 * item_scale
-
     if refs:
+        face_w = refs["face_width"]
+        width = face_w * 1.25
         center_x = float(mid[0])
-        top_y = float(refs["chin"][1] + 0.15 * refs["face_width"])
+        top_y = float(refs["chin"][1] + 0.15 * face_w)
     else:
+        width = span * 0.80
         center_x = float(mid[0])
         top_y = float(mid[1] - 0.25 * span)
+
+    width = width * item_scale
 
     target_w = max(20, int(width))
     print("JEWELRY: kolye kaynak=%s span=%.1f target_w=%d top=(%d,%d)" %
