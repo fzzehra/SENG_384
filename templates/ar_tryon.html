@@ -545,7 +545,7 @@
 
     const hatConfig = {
       'bucket_hat.glb': { zOffset: 0.95, scale: 2.6, yOffset: 0.78, rotX: 0.1, rotY: 0 },
-      'fbx.glb': { zOffset: 0.95, scale: 2.6, yOffset: 0.78, rotX: 0.1, rotY: 0 },
+      'fbx.glb': { zOffset: 0.0, scale: 2.55, scaleX: 1.15, yOffset: 0.94, rotX: 0.1, rotY: 0 },
       'menard_hat_lowpoly.glb': { zOffset: 0.95, scale: 2.25, yOffset: 0.85, rotX: 0.1, rotY: 0 },
       'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 0.95, scale: 2.65, yOffset: 0.78, rotX: 0.1, rotY: Math.PI },
       'victorian_abigail_hat.glb': { zOffset: 0.95, scale: 2.4, yOffset: 0.95, rotX: 0.1, rotY: 0 }
@@ -953,7 +953,11 @@
           if (active.ready && active.model) {
             const targetWidth = eyeDistWorld * active.cfg.scale;
             const finalScale = targetWidth * active.normScale;
-            active.model.scale.setScalar(finalScale);
+            active.model.scale.set(
+              finalScale * (active.cfg.scaleX || 1.0),
+              finalScale * (active.cfg.scaleY || 1.0),
+              finalScale * (active.cfg.scaleZ || 1.0)
+            );
 
             // Fixed positioning relative to the head
             let finalY = active.cfg.yOffset * eyeDistWorld;
