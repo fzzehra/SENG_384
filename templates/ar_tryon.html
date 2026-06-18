@@ -1383,28 +1383,7 @@
       ctx.restore();
     }
 
-    function applyEyeColor(pt, intensity) {
-      const { r, g, b } = hexToRgb(document.getElementById('eyeColor').value);
-      ctx.save();
-      [468, 473].forEach(idx => {
-        const c = pt(idx);
-        const pts = idx === 468 ? [469, 470, 471, 472] : [474, 475, 476, 477];
-        let rad = 0; pts.forEach(i => { const p = pt(i); rad += Math.hypot(p.x - c.x, p.y - c.y); });
-        rad = rad / pts.length * 0.68;
 
-        ctx.globalCompositeOperation = 'multiply';
-        const tint = ctx.createRadialGradient(c.x, c.y, rad * 0.15, c.x, c.y, rad);
-        tint.addColorStop(0, `rgba(${r},${g},${b},${0.20 * intensity})`);
-        tint.addColorStop(0.6, `rgba(${r},${g},${b},${0.35 * intensity})`);
-        tint.addColorStop(1, `rgba(${r},${g},${b},${0.22 * intensity})`);
-        ctx.fillStyle = tint; ctx.beginPath(); ctx.arc(c.x, c.y, rad, 0, Math.PI * 2); ctx.fill();
-
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = `rgba(${Math.floor(r * 0.5)},${Math.floor(g * 0.5)},${Math.floor(b * 0.5)},${0.40 * intensity})`;
-        ctx.lineWidth = rad * 0.22; ctx.beginPath(); ctx.arc(c.x, c.y, rad * 0.90, 0, Math.PI * 2); ctx.stroke();
-      });
-      ctx.restore();
-    }
 
     function drawLashes(pt, intensity) {
       var colorEl = document.getElementById('lashColor');
@@ -1547,78 +1526,138 @@
       });
     }
 
-    function applyEyeliner(pt, intensity, wing) {
-      const colorEl = document.getElementById('linerColor');
-      const colorHex = colorEl ? colorEl.value : '#000000';
-      const { r, g, b } = hexToRgb(colorHex) || { r: 0, g: 0, b: 0 };
+   function applyEyeColor(pt, intensity) {
+  var rgb = hexToRgb(document.getElementById('eyeColor').value);
+  var r = rgb.r;
+  var g = rgb.g;
+  var b = rgb.b;
 
-      // SADECE ÜST EYELID - lower yok
-      const lLid = [133, 173, 157, 158, 159, 160, 161, 246, 33]; // içten dışa sıralı
-      const rLid = [362, 398, 384, 385, 386, 387, 388, 466, 263]; // içten dışa sıralı
+  intensity = Math.max(0, Math.min(1, intensity || 0));
 
-      ctx.save();
-      ctx.fillStyle = `rgba(${r},${g},${b},${0.98 * intensity})`;
-      ctx.strokeStyle = `rgba(${r},${g},${b},${0.98 * intensity})`;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      const noseX = pt(1)?.x;
-      if (!noseX) { ctx.restore(); return; }
-
-      // İki göz için döngü
-      [[lLid, 33, 133], [rLid, 263, 362]].forEach(([lid, outerIdx, innerIdx]) => {
-        const outer = pt(outerIdx);
-        const inner = pt(innerIdx);
-        if (!outer || !inner) return;
-
-        // 1. İÇ KÖŞE ÇOK İNCE -> DIŞ KÖŞE KALIN
-        // Her segment için ayrı kalınlık çiziyoruz
-        const n = lid.length;
-        for (let i = 0; i < n - 1; i++) {
-          const p1 = pt(lid[i]);
-          const p2 = pt(lid[i + 1]);
-          if (!p1 || !p2) continue;
-
-          // Progress: 0 = iç köşe, 1 = dış köşe
-          const prog = i / (n - 1);
-          // İç: 0.8px, Dış: 4.5px arası progresif art
-          const thick = (0.8 + prog * 3.7) * intensity;
-
-          ctx.lineWidth = thick;
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-        }
-
-        // 2. WING - DIŞA + YUKARI, ÜÇGEN DOLGU
-        if (wing) {
-          const dir = outer.x < noseX ? -1 : 1;
-
-          // Göz genişliğine göre scale olsun
-          const eyeW = Math.abs(outer.x - inner.x);
-          const wingLength = eyeW * 0.35 * intensity; // dışa uzun
-          const wingHeight = eyeW * 0.18 * intensity; // yukarı kalkış
-
-          // Üçgenin 3 noktası
-          const tipX = outer.x + dir * wingLength; // dışa
-          const tipY = outer.y - wingHeight; // yukarı
-          const baseBottomX = outer.x + dir * (wingLength * 0.2); // alt bağlantı
-          const baseBottomY = outer.y + 2 * intensity; // ALT KAPAĞA BAĞLANMIYOR
-          const baseTopX = outer.x;
-          const baseTopY = outer.y - (4.5 * intensity * 0.5); // üst kirpik çizgisinden başla
-
-          ctx.beginPath();
-          ctx.moveTo(baseTopX, baseTopY); // üstten başla
-          ctx.lineTo(tipX, tipY); // sivri uç
-          ctx.lineTo(baseBottomX, baseBottomY); // geri bağlan, ama alt göz kapağına değme
-          ctx.closePath();
-          ctx.fill(); // İçi dolu üçgen
-        }
-      });
-
-      ctx.restore();
+  var eyes = [
+    {
+      centerIdx: 468,
+      irisIdx: [469, 470, 471, 472],
+      eyeIdx: [33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7],
+      upperIdx: [161, 160, 159, 158, 157],
+      lowerIdx: [163, 144, 145, 153, 154, 155]
+    },
+    {
+      centerIdx: 473,
+      irisIdx: [474, 475, 476, 477],
+      eyeIdx: [263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249],
+      upperIdx: [388, 387, 386, 385, 384],
+      lowerIdx: [390, 373, 374, 380, 381, 382]
     }
+  ];
+
+  function avgY(ids) {
+    var sum = 0;
+    for (var i = 0; i < ids.length; i++) {
+      sum += pt(ids[i]).y;
+    }
+    return sum / ids.length;
+  }
+
+  ctx.save();
+
+  for (var e = 0; e < eyes.length; e++) {
+    var eye = eyes[e];
+
+    var eyePoly = [];
+    for (var i = 0; i < eye.eyeIdx.length; i++) {
+      eyePoly.push(pt(eye.eyeIdx[i]));
+    }
+
+    var xMin = Infinity;
+    var xMax = -Infinity;
+    for (var j = 0; j < eyePoly.length; j++) {
+      if (eyePoly[j].x < xMin) xMin = eyePoly[j].x;
+      if (eyePoly[j].x > xMax) xMax = eyePoly[j].x;
+    }
+
+    var eyeWidth = Math.max(1, xMax - xMin);
+    var upperY = avgY(eye.upperIdx);
+    var lowerY = avgY(eye.lowerIdx);
+    var eyeOpenPx = Math.max(0, lowerY - upperY);
+    var openRatio = eyeOpenPx / eyeWidth;
+
+    if (openRatio < 0.10) {
+      continue;
+    }
+
+    var visibleStrength = (openRatio - 0.10) / 0.10;
+    visibleStrength = Math.max(0, Math.min(1, visibleStrength));
+
+    var c = pt(eye.centerIdx);
+
+    var irisRadius = 0;
+    for (var m = 0; m < eye.irisIdx.length; m++) {
+      var p = pt(eye.irisIdx[m]);
+      irisRadius += Math.hypot(p.x - c.x, p.y - c.y);
+    }
+    irisRadius = irisRadius / eye.irisIdx.length;
+
+    // Eskisine göre biraz daha küçük ve doğal
+    var lensRadius = irisRadius * 1.08;
+
+    ctx.save();
+
+    // Sadece gözün görünen alanına çiz
+    ctx.beginPath();
+    for (var n = 0; n < eyePoly.length; n++) {
+      if (n === 0) ctx.moveTo(eyePoly[n].x, eyePoly[n].y);
+      else ctx.lineTo(eyePoly[n].x, eyePoly[n].y);
+    }
+    ctx.closePath();
+    ctx.clip();
+
+    // Daha doğal görünüm için daha düşük alpha
+    ctx.globalCompositeOperation = "multiply";
+
+    var centerAlpha = (0.08 + 0.05 * intensity) * visibleStrength;
+    var midAlpha = (0.16 + 0.08 * intensity) * visibleStrength;
+    var edgeAlpha = (0.24 + 0.08 * intensity) * visibleStrength;
+
+    var grad = ctx.createRadialGradient(
+      c.x, c.y, lensRadius * 0.12,
+      c.x, c.y, lensRadius
+    );
+
+    grad.addColorStop(0.00, "rgba(" + r + "," + g + "," + b + "," + centerAlpha + ")");
+    grad.addColorStop(0.58, "rgba(" + r + "," + g + "," + b + "," + midAlpha + ")");
+    grad.addColorStop(1.00, "rgba(" + r + "," + g + "," + b + "," + edgeAlpha + ")");
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, lensRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Çok hafif dış halka
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle =
+      "rgba(" +
+      Math.floor(r * 0.42) + "," +
+      Math.floor(g * 0.42) + "," +
+      Math.floor(b * 0.42) + "," +
+      (0.14 * visibleStrength) + ")";
+
+    ctx.lineWidth = Math.max(0.8, lensRadius * 0.05);
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, lensRadius * 0.90, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Ortayı biraz aç ki göz daha doğal dursun
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, lensRadius * 0.16, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
 
     function applyFreckles(pt, intensity, seed = 42) {
       const freckleColor = { r: 155, g: 110, b: 92 }; // aynı renk, kahverengi yapmıyoruz

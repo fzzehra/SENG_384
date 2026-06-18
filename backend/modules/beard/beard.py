@@ -1,173 +1,169 @@
 import cv2
 import numpy as np
-import random
-import math
 
-def apply_beard_effect(image, landmarks, intensity=0.7, hair_len=9, color=(4, 4, 4)):
-    if landmarks is None:
-        return image
 
-    h, w = image.shape[:2]
-    output = image.copy().astype(np.float32)
+def _hex_to_bgr(color_hex: str) -> tuple[int, int, int]:
+    color_hex = (color_hex or "#241815").strip().lstrip("#")
+    if len(color_hex) != 6:
+        color_hex = "241815"
+    r = int(color_hex[0:2], 16)
+    g = int(color_hex[2:4], 16)
+    b = int(color_hex[4:6], 16)
+    return (b, g, r)
 
-    coords = []
-    for lm in landmarks:
-        lx, ly = lm[0], lm[1]
-        if lx <= 1.0 and ly <= 1.0:
-            coords.append((int(lx * w), int(ly * h)))
-        else:
-            coords.append((int(lx), int(ly)))
 
-    def get_pts(idxs):
-        return np.array([coords[i] for i in idxs], np.int32)
+def _pt(landmarks, idx: int, w: int, h: int) -> np.ndarray:
+    p = landmarks[idx]
 
-    # 1. BÖLGELER
+    if isinstance(p, dict):
+        x, y = p["x"], p["y"]
+    elif hasattr(p, "x") and hasattr(p, "y"):
+        x, y = p.x, p.y
+    else:
+        x, y = p[0], p[1]
 
-    # çene + jawline
-    CHIN_ZONE = [
-        234, 93, 132, 58, 172, 136, 150, 149, 176, 148, 152,
-        377, 400, 378, 379, 365, 397, 288, 361, 323, 454
-    ]
+    if x <= 1.5 and y <= 1.5:
+        x, y = x * w, y * h
 
-    # sol yanak: favoriden ağız köşesine doğru inen klasik sakal çizgisi
-    CHEEK_L = [
-        234, 227, 137, 177, 215, 138, 135, 169, 170,
-        140, 171, 208, 32, 194, 211, 61, 58, 172
-    ]
+    return np.array([x, y], dtype=np.float32)
 
-    # sağ yanak
-    CHEEK_R = [
-        454, 447, 366, 401, 435, 367, 364, 394, 395,
-        369, 396, 428, 262, 418, 431, 291, 288, 397
-    ]
 
-    # bıyık: buruna taşmadan üst dudak çevresi
-    MUSTACHE_ZONE = [
-        61, 185, 40, 39, 37, 0,
-        267, 269, 270, 409, 291,
-        164, 165, 167, 391, 393
-    ]
+def apply_beard_effect(image, landmarks, intensity=0.8, color_hex="#241815", **kwargs):
+    out = image.copy()
+    h, w = out.shape[:2]
 
-    LIPS = [
-        61, 185, 40, 39, 37, 0,
-        267, 269, 270, 409, 291,
-        375, 321, 405, 314, 17,
-        84, 181, 91, 146
-    ]
+    intensity = float(np.clip(intensity, 0.0, 1.0))
+    base_bgr = np.array(_hex_to_bgr(color_hex), dtype=np.float32)
+
+    left_cheek = _pt(landmarks, 58, w, h)
+    right_cheek = _pt(landmarks, 288, w, h)
+    left_jaw = _pt(landmarks, 172, w, h)
+    left_low = _pt(landmarks, 150, w, h)
+    chin = _pt(landmarks, 152, w, h)
+    right_low = _pt(landmarks, 379, w, h)
+    right_jaw = _pt(landmarks, 397, w, h)
+
+    mouth_left = _pt(landmarks, 61, w, h)
+    mouth_right = _pt(landmarks, 291, w, h)
+    upper_lip = _pt(landmarks, 13, w, h)
+    lower_lip = _pt(landmarks, 17, w, h)
+
+    face_width = float(np.linalg.norm(right_cheek - left_cheek))
+    beard_height = max(20.0, chin[1] - lower_lip[1])
+
+    if face_width < 20 or beard_height < 6:
+        return out
+
+    beard_poly = np.array([
+        [left_cheek[0],  mouth_left[1] + 6],
+        [left_jaw[0],    mouth_left[1] + 10],
+        [left_low[0],    chin[1] - 10],
+        [chin[0],        chin[1] + 8],
+        [right_low[0],   chin[1] - 10],
+        [right_jaw[0],   mouth_right[1] + 10],
+        [right_cheek[0], mouth_right[1] + 6],
+        [right_cheek[0], (mouth_right[1] + chin[1]) / 2],
+        [left_cheek[0],  (mouth_left[1] + chin[1]) / 2],
+    ], dtype=np.int32)
 
     mask = np.zeros((h, w), dtype=np.uint8)
+    cv2.fillPoly(mask, [beard_poly], 255)
 
-    chin_mask = np.zeros((h, w), dtype=np.uint8)
-    cheek_mask = np.zeros((h, w), dtype=np.uint8)
-    mustache_mask = np.zeros((h, w), dtype=np.uint8)
-    # Favori / kulak önü uzantısı
-    sideburn_mask = np.zeros((h, w), dtype=np.uint8)
+    # Çene altını biraz daha doldur
+    cx = int(chin[0])
+    cy = int((lower_lip[1] + chin[1]) / 2 + 8)
+    beard_w = int(face_width * 0.40)
+    beard_h = int(max(18, beard_height * 0.90))
 
-    LEFT_SIDEBURN = [234, 127, 162, 21, 54, 103, 67, 109, 227, 137]
-    RIGHT_SIDEBURN = [454, 356, 389, 251, 284, 332, 297, 338, 447, 366]
+    cv2.ellipse(
+        mask,
+        (cx, cy),
+        (beard_w, beard_h),
+        0, 0, 180, 255, -1
+    )
 
-    cv2.fillPoly(sideburn_mask, [get_pts(LEFT_SIDEBURN)], 255)
-    cv2.fillPoly(sideburn_mask, [get_pts(RIGHT_SIDEBURN)], 255)
+    # Yanları biraz güçlendir
+    cv2.ellipse(
+        mask,
+        (int(cx - face_width * 0.23), int(cy - beard_h * 0.10)),
+        (int(face_width * 0.14), int(beard_h * 0.55)),
+        -12, 250, 90, 220, -1
+    )
+    cv2.ellipse(
+        mask,
+        (int(cx + face_width * 0.23), int(cy - beard_h * 0.10)),
+        (int(face_width * 0.14), int(beard_h * 0.55)),
+        12, 90, 290, 220, -1
+    )
 
-    # Çok yukarı taşmasın
-    eye_y = min(coords[33][1], coords[263][1])
-    sideburn_mask[:eye_y, :] = 0
+    # Ağız kısmını boş bırak
+    mouth_cx = int((mouth_left[0] + mouth_right[0]) / 2)
+    mouth_cy = int((upper_lip[1] + lower_lip[1]) / 2)
+    mouth_w = int(np.linalg.norm(mouth_right - mouth_left) * 0.45)
+    mouth_h = int(max(8, abs(lower_lip[1] - upper_lip[1]) * 1.5))
 
-    mask = cv2.bitwise_or(mask, sideburn_mask)
+    cv2.ellipse(
+        mask,
+        (mouth_cx, mouth_cy),
+        (mouth_w, mouth_h),
+        0, 0, 360, 0, -1
+    )
 
-    cv2.fillPoly(chin_mask, [get_pts(CHIN_ZONE)], 255)
-    cv2.fillPoly(cheek_mask, [get_pts(CHEEK_L)], 255)
-    cv2.fillPoly(cheek_mask, [get_pts(CHEEK_R)], 255)
-    cv2.fillPoly(mustache_mask, [get_pts(MUSTACHE_ZONE)], 255)
+    # Soul patch
+    cv2.ellipse(
+        mask,
+        (int(chin[0]), int(lower_lip[1] + beard_height * 0.20)),
+        (max(5, int(face_width * 0.06)), max(6, int(beard_height * 0.16))),
+        0, 0, 360, 180, -1
+    )
 
-    # Yanak üst sınırı: elmacık kemiği seviyesine çıkmasın
-    nose_y = coords[2][1]
-    # Sert kesmek yerine sadece çok üst kısmı temizle
-    cheek_mask[:nose_y - int(h * 0.04), :] = 0
+    mask = cv2.GaussianBlur(mask, (31, 31), 0)
 
-    mask = cv2.bitwise_or(chin_mask, cheek_mask)
-    mask = cv2.bitwise_or(mask, mustache_mask)
-    lip_m = np.zeros((h, w), dtype=np.uint8)
-    cv2.fillPoly(lip_m, [get_pts(LIPS)], 255)
+    alpha = (mask.astype(np.float32) / 255.0) * (0.48 + 0.30 * intensity)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
-    lip_m = cv2.dilate(lip_m, kernel, iterations=2)
+    out_f = out.astype(np.float32)
+    for c in range(3):
+        out_f[:, :, c] = out_f[:, :, c] * (1.0 - alpha) + base_bgr[c] * alpha
 
-    mask = cv2.subtract(mask, lip_m)
-    # Sakalın üst sınırı: burun ortasının üstüne çıkmasın
-    nose_y = coords[2][1]
-    mask[:nose_y, :] = 0
+    # Kıl dokusu
+    ys, xs = np.where(mask > 20)
+    if len(xs) > 0:
+        rng = np.random.default_rng(123)
+        count = min(3200, max(1400, len(xs) // 2))
+        pick = rng.choice(len(xs), size=count, replace=(len(xs) < count))
 
-    # Yanaklarda elmacık kemiğine taşmayı azalt
-    left_eye_y = coords[33][1]
-    right_eye_y = coords[263][1]
-    eye_line_y = min(left_eye_y, right_eye_y)
+        hair_layer = out_f.copy()
+        center_x = float(chin[0])
+        min_len = max(4, int(beard_height * 0.10))
+        max_len = max(8, int(beard_height * (0.22 + 0.12 * intensity)))
 
-    mask[:eye_line_y + int(h * 0.13), :] = 0
-    # burun üstüne taşmayı engelle
-    nose_y = coords[2][1]
+        for idx in pick:
+            x = int(xs[idx])
+            y = int(ys[idx])
 
-    mask[:nose_y, :] = 0
+            dist = abs(x - center_x) / max(1.0, face_width * 0.5)
 
-    # Üst sakal çizgisini dağınık yap
-    noise = np.random.normal(0, 1, (h, w)).astype(np.float32)
-    noise = cv2.GaussianBlur(noise, (0, 0), 9)
-    noise = cv2.normalize(noise, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+            if x < center_x - face_width * 0.08:
+                angle = np.deg2rad(rng.normal(-10, 8))
+            elif x > center_x + face_width * 0.08:
+                angle = np.deg2rad(rng.normal(10, 8))
+            else:
+                angle = np.deg2rad(rng.normal(0, 6))
 
-    edge_softener = cv2.inRange(noise, 80, 255)
-    mask = cv2.bitwise_and(mask, edge_softener)
+            ln = int(rng.integers(min_len, max_len + 1))
 
-    mask_f = cv2.GaussianBlur(mask, (35, 35), 0).astype(np.float32) / 255.0
+            x2 = int(np.clip(x + np.sin(angle) * ln * 0.45, 0, w - 1))
+            y2 = int(np.clip(y + np.cos(angle) * ln, 0, h - 1))
 
-    hair_layer = np.zeros_like(image, dtype=np.float32)
+            col = (
+                int(rng.integers(10, 24)),
+                int(rng.integers(12, 26)),
+                int(rng.integers(14, 30)),
+            )
+            cv2.line(hair_layer, (x, y), (x2, y2), col, 1, cv2.LINE_AA)
 
-    ys, xs = np.where(mask > 25)
+        hair_alpha = (mask.astype(np.float32) / 255.0) * (0.20 + 0.18 * intensity)
+        for c in range(3):
+            out_f[:, :, c] = out_f[:, :, c] * (1.0 - hair_alpha) + hair_layer[:, :, c] * hair_alpha
 
-    density = 0.38 + intensity * 0.42
-
-    for i in range(len(xs)):
-        if random.random() > density:
-            continue
-
-        x, y = xs[i], ys[i]
-        local_strength = mask_f[y, x]
-
-        if random.random() > local_strength:
-            continue
-
-        angle = math.radians(random.uniform(70, 110))
-
-        dynamic_len = hair_len * (0.7 + intensity * 1.4)
-
-        length = (
-            dynamic_len *
-            random.uniform(0.45, 1.25) *
-            local_strength
-        )
-
-        x2 = int(x + length * math.cos(angle))
-        y2 = int(y + length * math.sin(angle))
-
-        v = random.randint(-18, 12)
-
-        c = (
-            int(np.clip(color[0] + v, 0, 255)),
-            int(np.clip(color[1] + v, 0, 255)),
-            int(np.clip(color[2] + v, 0, 255))
-        )
-
-        cv2.line(
-            hair_layer,
-            (x, y),
-            (x2, y2),
-            c,
-            1,
-            cv2.LINE_AA
-        )
-
-    shadow_alpha = (mask_f * intensity * 0.20)[:, :, None]
-    output = output * (1.0 - shadow_alpha)
-
-    final = output + (hair_layer * 1.25)
-
-    return np.clip(final, 0, 255).astype(np.uint8)
+    return np.clip(out_f, 0, 255).astype(np.uint8)
