@@ -635,6 +635,27 @@
             <button class="sm-btn" onclick="clearAccessory('necklace')">Remove</button>
           </div>
         </div>
+        <div class="sec-title">Piercings</div>
+<div class="ctrl-card" style="display:flex;flex-direction:column;gap:10px;">
+  <div class="acc-list" id="piercingList">
+    <div class="acc-card" onclick="selectPiercing('eyebrowPiercing', 'eyebrow_barbell.png')">
+      <img src="/static/accessories/piercings/eyebrow_barbell.png">
+      <span class="acc-name">Eyebrow</span>
+    </div>
+
+    <div class="acc-card" onclick="selectPiercing('septumPiercing', 'septum_ring.png')">
+      <img src="/static/accessories/piercings/septum_ring.png">
+      <span class="acc-name">Septum</span>
+    </div>
+
+    <div class="acc-card" onclick="selectPiercing('lipPiercing', 'lip_ring.png')">
+      <img src="/static/accessories/piercings/lip_ring.png">
+      <span class="acc-name">Lip</span>
+    </div>
+  </div>
+
+  <button class="sm-btn" onclick="clearPiercings()">Remove Piercings</button>
+</div>
 
       </div></div></div></div>```
 
@@ -642,7 +663,9 @@
 // ─── STATE ───────────────────────────────────
 const makeup = {};   // { type: { color, intensity } }
 let overlay = null, hairScale = 1.0, hairX = 0, hairY = 0;
-const acc = { earring: null, necklace: null, glasses: null, hat: null };
+const acc = { earring: null, necklace: null, glasses: null, hat: null,eyebrowPiercing: null,
+  septumPiercing: null,
+  lipPiercing: null };
 let debounce;
 let currentImagePath = 'static/uploads/original.jpg';
 
@@ -931,6 +954,45 @@ function clearAccessory(key) {
   trigger();
 }
 
+function selectPiercing(key, file) {
+  acc[key] = acc[key] === file ? null : file;
+
+  document.querySelectorAll('#piercingList .acc-card').forEach(card => {
+    card.classList.remove('active');
+  });
+
+  if (acc.eyebrowPiercing || acc.septumPiercing || acc.lipPiercing) {
+    document.querySelectorAll('#piercingList .acc-card').forEach(card => {
+      const img = card.querySelector('img');
+      if (!img) return;
+
+      const src = img.getAttribute('src');
+
+      if (
+        (acc.eyebrowPiercing && src.includes(acc.eyebrowPiercing)) ||
+        (acc.septumPiercing && src.includes(acc.septumPiercing)) ||
+        (acc.lipPiercing && src.includes(acc.lipPiercing))
+      ) {
+        card.classList.add('active');
+      }
+    });
+  }
+
+  trigger();
+}
+
+function clearPiercings() {
+  acc.eyebrowPiercing = null;
+  acc.septumPiercing = null;
+  acc.lipPiercing = null;
+
+  document.querySelectorAll('#piercingList .acc-card').forEach(card => {
+    card.classList.remove('active');
+  });
+
+  trigger();
+}
+
 function loadAccFetch(category, listId, key) {
   fetch(`/accessories/${category}`)
     .then(r => r.json())
@@ -972,6 +1034,29 @@ function buildTransforms() {
     t.push({ type:'accessories', intensity:1, params:{ glasses:acc.glasses||null, hat:acc.hat||null } });
   if (acc.earring)  t.push({ type:'earring',  intensity:1, params:{ item:acc.earring } });
   if (acc.necklace) t.push({ type:'necklace', intensity:1, params:{ item:acc.necklace } });
+  if (acc.eyebrowPiercing) {
+  t.push({
+    type: 'eyebrow_piercing',
+    intensity: 1,
+    params: { item: acc.eyebrowPiercing }
+  });
+}
+
+if (acc.septumPiercing) {
+  t.push({
+    type: 'septum_piercing',
+    intensity: 1,
+    params: { item: acc.septumPiercing }
+  });
+}
+
+if (acc.lipPiercing) {
+  t.push({
+    type: 'lip_piercing',
+    intensity: 1,
+    params: { item: acc.lipPiercing }
+  });
+}
   return t;
 }
 

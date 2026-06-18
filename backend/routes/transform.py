@@ -20,6 +20,7 @@ from backend.modules.hair.hair import apply_hair_color, apply_eyebrow_color
 from backend.modules.beard.beard import apply_beard_effect
 from backend.modules.moustache.moustache import apply_moustache
 from backend.modules.makeup.makeup import apply_makeup_pipeline
+from backend.modules.piercing.piercing import apply_piercing
 
 pose_model = YOLO("yolov8n-pose.pt")
 transform_bp = Blueprint("transform", __name__)
@@ -625,6 +626,40 @@ def transform_image():
                         )
                 results_meta.append("accessories")
                 print(f"APPLIED: accessories")
+
+
+            elif t_type in ["eyebrow_piercing", "septum_piercing", "lip_piercing"]:
+                landmark_result = process_landmark_pipeline(output_image)
+
+                if landmark_result.get("success"):
+                    transform_params = transform.get("params", {})
+                    item = transform_params.get("item")
+
+                    if not item:
+                        print(f"PIERCING ITEM MISSING for {t_type}")
+                        continue
+
+                    item_path = os.path.join(
+                        current_app.static_folder,
+                        "accessories",
+                        "piercings",
+                        item
+                    )
+
+                    print("PIERCING PATH:", item_path)
+                    print("PIERCING EXISTS:", os.path.exists(item_path))
+
+                    output_image = apply_piercing(
+                        image=output_image,
+                        landmarks=landmark_result["landmarks"],
+                        piercing_type=t_type,
+                        item_path=item_path
+                    )
+
+                    results_meta.append(t_type)
+                    print(f"APPLIED: {t_type}")
+                else:
+                    print(f"Landmark detection failed for {t_type}.")
 
             elif t_type == "landmarks":
                 landmark_result = process_landmark_pipeline(output_image)
