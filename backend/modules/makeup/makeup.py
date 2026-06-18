@@ -154,6 +154,12 @@ def apply_eyeshadow(image, landmarks, color_hex="#b565a7", intensity=0.35):
     right_base = get_points(landmarks, right_lid_idx, w, h)
 
     lift = int(h * 0.018)
+    up_shift = int(h * 0.005)
+
+    left_base = left_base.copy()
+    left_base[:, 1] -= up_shift
+    right_base = right_base.copy()
+    right_base[:, 1] -= up_shift
 
     left_top = left_base.copy()
     left_top[:, 1] -= lift
@@ -363,12 +369,6 @@ def apply_makeup_pipeline(image, landmarks, makeup_type, color_hex="#d96b86", in
     print(f"MAKEUP: unknown makeup_type: {makeup_type}")
     return image
 
-def get_point_xy(landmarks, idx, w, h):
-    lm = landmarks[idx]
-    lx, ly = lm[0], lm[1]
-    if lx <= 1.0 and ly <= 1.0:
-        return int(lx * w), int(ly * h)
-    return int(lx), int(ly)
 
 def apply_freckles(image, landmarks, color_hex="#9b6e5c", intensity=0.7, seed=42):
     h, w = image.shape[:2]
@@ -377,109 +377,96 @@ def apply_freckles(image, landmarks, color_hex="#9b6e5c", intensity=0.7, seed=42
     rng = np.random.default_rng(seed)
     intensity = float(np.clip(intensity, 0.0, 1.0))
 
+    if intensity <= 0:
+        return image
+
     def pt(i):
         return np.array(get_point_xy(landmarks, i, w, h), dtype=np.float32)
 
     freckle_color = np.array(hex_to_bgr(color_hex), dtype=np.float32)
 
-    nose_center = [6, 197, 195, 5, 4, 1, 2, 94, 19, 97, 98]
-    nose_to_left_cheek = [2, 94, 125, 141, 35, 31, 228, 229, 230]
-    nose_to_right_cheek = [2, 94, 354, 370, 265, 261, 448, 449, 450]
-    left_cheek_bone = [116, 117, 118, 101, 36, 205, 206, 50, 123]
-    right_cheek_bone = [345, 346, 347, 330, 266, 425, 426, 280, 352]
+    nose = pt(6)
+    left_cheek = pt(123)
+    right_cheek = pt(352)
+
+    face_width = np.linalg.norm(pt(454) - pt(234))
+    face_height = np.linalg.norm(pt(10) - pt(152))
 
     zones = [
-        {"pts": nose_center, "weight": 1.0},
-        {"pts": nose_to_left_cheek, "weight": 0.7},
-        {"pts": nose_to_right_cheek, "weight": 0.7},
-        {"pts": left_cheek_bone, "weight": 1.0},
-        {"pts": right_cheek_bone, "weight": 1.0},
+        {
+            "center": nose,
+            "rx": face_width * 0.18,
+            "ry": face_height * 0.10,
+            "count": int(90 * intensity),
+            "weight": 1.15
+        },
+        {
+            "center": left_cheek * 0.65 + nose * 0.35,
+            "rx": face_width * 0.22,
+            "ry": face_height * 0.12,
+            "count": int(95 * intensity),
+            "weight": 1.0
+        },
+        {
+            "center": right_cheek * 0.65 + nose * 0.35,
+            "rx": face_width * 0.22,
+            "ry": face_height * 0.12,
+            "count": int(95 * intensity),
+            "weight": 1.0
+        }
     ]
 
-    all_points = []
+    # yüz maskesi: çiller yüz dışına taşmasın
+    face_outline_idx = [
+        10,338,297,332,284,251,389,356,454,323,361,288,
+        397,365,379,378,400,377,152,148,176,149,150,136,
+        172,58,132,93,234,127,162,21,54,103,67,109
+    ]
+
+    face_mask = np.zeros((h, w), dtype=np.uint8)
+    face_poly = get_points(landmarks, face_outline_idx, w, h)
+    cv2.fillPoly(face_mask, [face_poly], 255)
+    face_mask = cv2.erode(face_mask, np.ones((9, 9), np.uint8), iterations=1)
+
     for zone in zones:
-        for idx in zone["pts"]:
-            p = pt(idx)
-            all_points.append([p[0], p[1], zone["weight"]])
+        center = zone["center"]
+        rx = zone["rx"]
+        ry = zone["ry"]
 
-    all_points = np.array(all_points, dtype=np.float32)
-
-    if len(all_points) < 5:
-        return image
-
-    min_x = np.min(all_points[:, 0])
-    max_x = np.max(all_points[:, 0])
-    min_y = np.min(all_points[:, 1])
-    max_y = np.max(all_points[:, 1])
-
-    center_x = (min_x + max_x) / 2
-    center_y = (min_y + max_y) / 2
-
-    area_w = max_x - min_x
-    area_h = max_y - min_y
-
-    total_count = int(260 * intensity)
-
-    overlay = output.copy()
-
-    for _ in range(total_count):
-        t = rng.random()
-
-        if t < 0.25:
-            nose = pt(6)
+        for _ in range(zone["count"]):
             angle = rng.random() * np.pi * 2
-            dist = (rng.random() ** 0.6) * area_w * 0.15
+            dist = rng.random() ** 0.55
 
-            x = nose[0] + np.cos(angle) * dist
-            y = nose[1] + np.sin(angle) * dist
-        else:
-            angle = rng.random() * np.pi * 2
-            dist = (rng.random() ** 0.9) * 0.5
+            x = center[0] + np.cos(angle) * rx * dist
+            y = center[1] + np.sin(angle) * ry * dist
 
-            x = center_x + np.cos(angle) * dist * area_w
-            y = center_y + np.sin(angle) * dist * area_h
+            x = int(np.clip(x, 0, w - 1))
+            y = int(np.clip(y, 0, h - 1))
 
-        x = int(np.clip(x, 0, w - 1))
-        y = int(np.clip(y, 0, h - 1))
+            if face_mask[y, x] == 0:
+                continue
 
-        if rng.random() < 0.9:
-            size = 0.4 + rng.random() * 0.7
-        else:
-            size = 1.1 + rng.random() * 0.7
+            # çoğu küçük, bazıları daha belirgin
+            if rng.random() < 0.88:
+                radius = 1
+            else:
+                radius = 2
 
-        radius = max(1, int(size * (0.8 + intensity * 1.6)))
+            opacity = (0.45 + rng.random() * 0.45) * intensity * zone["weight"]
 
-        opacity = 0.45 + rng.random() * 0.5
-        alpha = opacity * intensity
+            # soft dış halo
+            glow_radius = radius + 1
+            glow_mask = np.zeros((h, w), dtype=np.float32)
+            cv2.circle(glow_mask, (x, y), glow_radius, opacity * 0.22, -1, cv2.LINE_AA)
 
-        # soft glow
-        glow_radius = max(1, int(radius * 2.2))
-        cv2.circle(
-            overlay,
-            (x, y),
-            glow_radius,
-            freckle_color.tolist(),
-            -1,
-            cv2.LINE_AA
-        )
+            # ana nokta
+            spot_mask = np.zeros((h, w), dtype=np.float32)
+            cv2.circle(spot_mask, (x, y), radius, opacity, -1, cv2.LINE_AA)
 
-        # ana çil
-        cv2.circle(
-            overlay,
-            (x, y),
-            radius,
-            freckle_color.tolist(),
-            -1,
-            cv2.LINE_AA
-        )
+            mask = np.clip(glow_mask + spot_mask, 0, 1)[:, :, None]
 
-        # Lokal blend
-        local_mask = np.zeros((h, w), dtype=np.float32)
-        cv2.circle(local_mask, (x, y), glow_radius, alpha * 0.35, -1, cv2.LINE_AA)
-        cv2.circle(local_mask, (x, y), radius, alpha, -1, cv2.LINE_AA)
-
-        local_mask = np.clip(local_mask, 0, 1)[:, :, None]
-        output = output * (1 - local_mask) + overlay * local_mask
+            color_layer = np.full_like(output, freckle_color)
+            output = output * (1 - mask) + color_layer * mask
 
     return np.clip(output, 0, 255).astype(np.uint8)
 
@@ -586,7 +573,7 @@ def apply_eyebrow_slit(image, landmarks, side="right", intensity=0.95):
     
     # Çok hafif multiply - ten rengi biraz koyulaşsın
     output_dark = output * 0.96
-    result = output_dark * (1 - alpha) + skin_layer * alpha
+    result = output * (1 - alpha) + skin_layer * alpha
 
     return np.clip(result, 0, 255).astype(np.uint8)
 

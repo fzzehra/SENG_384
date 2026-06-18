@@ -11,10 +11,13 @@ import cv2
 import numpy as np
 
 HAT_CONFIG = {
-    "hat1.png": {"width_scale": 1.35, "vertical_offset": 0.85, "x_offset": 0, "y_offset": 0},
-    "hat2.png": {"width_scale": 1.55, "vertical_offset": 0.75, "x_offset": 0, "y_offset": 0},
-    "hat3.png": {"width_scale": 2.85, "vertical_offset": 0.55, "x_offset": 0, "y_offset": 0},
-    "hat4.png": {"width_scale": 1.45, "vertical_offset": 0.40, "x_offset": 0, "y_offset": 0},
+    "hat1.png":          {"width_scale": 1.22, "vertical_offset": 0.85, "x_offset": 0, "y_offset": 0},
+    "hat2.png":          {"width_scale": 1.55, "vertical_offset": 0.75, "x_offset": 0, "y_offset": 0},
+    "hat3.png":          {"width_scale": 2.85, "vertical_offset": 0.55, "x_offset": 0, "y_offset": 0},
+    "hat4.png":          {"width_scale": 1.45, "vertical_offset": 0.40, "x_offset": 0, "y_offset": 0},
+    "AcademicCap.png":   {"width_scale": 2.28, "vertical_offset": 0.40, "x_offset": 0, "y_offset": 0},
+    "fez.png":           {"width_scale": 1.27, "vertical_offset": 0.65, "height_scale": 0.80, "x_offset": 0, "y_offset": 0},
+    "backwardsHat.png":  {"width_scale": 1.62, "vertical_offset": 0.72, "x_offset": 0, "y_offset": 0},
 }
 
 LandmarkList = List[Tuple[int, int]]
@@ -173,10 +176,11 @@ def place_hat(image: np.ndarray, landmarks: LandmarkList, hat_image: np.ndarray,
     face_width   = int(np.linalg.norm(right_temple - left_temple))
     target_w     = max(int(face_width * width_scale), 1)
 
-    # 4. Şapka yüksekliği: oranı koru
+    # 4. Şapka yüksekliği: oranı koru, opsiyonel height_scale ile ezip kısaltılabilir
     hat_h_orig, hat_w_orig = hat_image.shape[:2]
     aspect      = hat_h_orig / max(hat_w_orig, 1)
-    target_h    = max(int(target_w * aspect), 1)
+    height_scale = HAT_CONFIG.get(hat_name, {}).get("height_scale", 1.0)
+    target_h    = max(int(target_w * aspect * height_scale), 1)
 
     # 5. Ölçekle
     hat_resized = cv2.resize(hat_image, (target_w, target_h),

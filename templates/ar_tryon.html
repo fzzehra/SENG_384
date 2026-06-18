@@ -559,16 +559,14 @@
       { name: 'Bucket Hat', file: 'bucket_hat.glb' },
       { name: 'FBX Hat', file: 'fbx.glb' },
       { name: 'Lowpoly Hat', file: 'menard_hat_lowpoly.glb' },
-      { name: 'Gen8 Hat', file: 'obj_bucket_hat_gen8_toshitimo.glb' },
-      { name: 'Victorian Hat', file: 'victorian_abigail_hat.glb' }
+      { name: 'Gen8 Hat', file: 'obj_bucket_hat_gen8_toshitimo.glb' }
     ];
 
     const hatConfig = {
-      'bucket_hat.glb': { zOffset: 0.85, scale: 2.2, yOffset: 0.8, rotX: 0.1, rotY: 0 },
-      'fbx.glb': { zOffset: 0.85, scale: 2.2, yOffset: 0.8, rotX: 0.1, rotY: 0 },
-      'menard_hat_lowpoly.glb': { zOffset: 0.85, scale: 2.35, yOffset: 0.8, rotX: 0.1, rotY: 0 },
-      'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 0.85, scale: 2.35, yOffset: 0.8, rotX: 0.1, rotY: Math.PI },
-      'victorian_abigail_hat.glb': { zOffset: 0.85, scale: 2.2, yOffset: 0.8, rotX: 0.1, rotY: 0 }
+      'bucket_hat.glb': { zOffset: 0.95, scale: 2.1, yOffset: 0.78, rotX: 0.1, rotY: 0 },
+      'fbx.glb': { zOffset: 0.0, scale: 2.05, scaleX: 1.15, yOffset: 0.94, rotX: 0.1, rotY: 0 },
+      'menard_hat_lowpoly.glb': { zOffset: 0.95, scale: 1.85, yOffset: 0.85, rotX: 0.1, rotY: 0 },
+      'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 0.95, scale: 2.0, yOffset: 0.9, rotX: -0.25, rotY: Math.PI }
     };
 
     const video = document.getElementById('webcam');
@@ -605,12 +603,16 @@
     const headGroup = new THREE.Group();
     scene3d.add(headGroup);
 
-    // Head Occluder (Invisible sphere that hides the back of the hat)
+    // Head Occluders (Invisible spheres for depth masking)
     const occluderGeometry = new THREE.SphereGeometry(1, 32, 32);
-    const occluderMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, colorWrite: false });
-    const headOccluder = new THREE.Mesh(occluderGeometry, occluderMaterial);
-    // We will scale it in render loop based on head size
-    headGroup.add(headOccluder);
+    // CRITICAL: transparent: true puts the occluder in the same sorting queue as the transparent glasses.
+    // depthWrite: true ensures it still hides the hat rendered after it.
+    const occluderMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, colorWrite: false, transparent: true, depthWrite: true });
+
+    // Glasses don't use an occluder, they render BEFORE this hat occluder so their arms aren't cut!
+    const hatOccluder = new THREE.Mesh(occluderGeometry, occluderMaterial);
+    hatOccluder.renderOrder = 3;
+    headGroup.add(hatOccluder);
 
     const gltfLoader = new THREE.GLTFLoader();
 
@@ -705,11 +707,31 @@
 
         // Center the model inside the wrapper
         m.position.sub(center);
+        if (type === 'glasses') {
+          // Restore exact original glasses offset behavior
+          m.position.add(new THREE.Vector3(0, -0.05, 0));
+          m.position.z -= cfg.zOffset;
+        }
+
+        m.traverse(child => {
+          if (child.isMesh) {
+            // Render glasses first, then hat occluder, then hats, to prevent hat occluder from eating glasses
+            child.renderOrder = (type === 'glasses') ? 2 : 4;
+            // Specific fix for gen8 hat being pure white
+            if (file === 'obj_bucket_hat_gen8_toshitimo.glb' && child.material) {
+              child.material.color.setHex(0x3e4a59); // A nice navy/dark grayish blue
+              child.material.needsUpdate = true;
+            }
+          }
+        });
+
         wrapper.add(m);
 
-        if (cfg.rotX) wrapper.rotation.x = cfg.rotX;
-        if (cfg.rotY) wrapper.rotation.y = cfg.rotY;
-        if (cfg.rotZ) wrapper.rotation.z = cfg.rotZ;
+        if (type !== 'glasses') {
+          if (cfg.rotX) wrapper.rotation.x = cfg.rotX;
+          if (cfg.rotY) wrapper.rotation.y = cfg.rotY;
+          if (cfg.rotZ) wrapper.rotation.z = cfg.rotZ;
+        }
 
         // For hats, shift the wrapper UP so the pivot is at the bottom of the hat.
         // No extra Y offset needed - positioning is handled dynamically in renderLoop
@@ -942,8 +964,12 @@
 
         const lEyePx = lm[33].x * W;
         const rEyePx = lm[263].x * W;
-        const eyeDistPx = Math.abs(rEyePx - lEyePx);
-        const eyeDistWorld = (eyeDistPx / W) * halfScreenWorldWidth * 2;
+        // 3D distance is used to prevent the model from shrinking when turning the head
+        const dx = lm[263].x - lm[33].x;
+        const dy = lm[263].y - lm[33].y;
+        const dz = lm[263].z - lm[33].z;
+        const eyeDist3D = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const eyeDistWorld = eyeDist3D * halfScreenWorldWidth * 2;
 
         pos.z = -depth - (eyeDistWorld * 0.5);
         const qAynali = new THREE.Quaternion(quat.x, -quat.y, -quat.z, quat.w);
@@ -955,22 +981,34 @@
         const yawAbs = Math.abs(euler.y);
         const occlusionOpacity = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(yawAbs, 0.3, 0.7, 1.0, 0.0), 0.0, 1.0);
 
-        // Scale and position occluder to roughly match human head, keeping it lower than the hat's top
         const occluderRadius = eyeDistWorld * 0.9;
-        headOccluder.scale.set(occluderRadius, occluderRadius * 1.1, occluderRadius * 1.1);
-        headOccluder.position.set(0, eyeDistWorld * 0.3, -eyeDistWorld * 0.5);
+
+        // Hat occluder: wider and taller to hide hat straps/flaps properly
+        // Flat on the Z axis and pushed back so it doesn't clip the front brim of the hat!
+        hatOccluder.scale.set(occluderRadius * 1.25, occluderRadius * 1.55, occluderRadius * 0.85);
+        hatOccluder.position.set(0, -eyeDistWorld * 0.1, -eyeDistWorld * 0.65);
+        hatOccluder.rotation.x = 0;
 
         ['glasses', 'hat'].forEach(type => {
           const active = activeModels[type];
           if (active.ready && active.model) {
             const targetWidth = eyeDistWorld * active.cfg.scale;
             const finalScale = targetWidth * active.normScale;
-            active.model.scale.setScalar(finalScale);
+            active.model.scale.set(
+              finalScale * (active.cfg.scaleX || 1.0),
+              finalScale * (active.cfg.scaleY || 1.0),
+              finalScale * (active.cfg.scaleZ || 1.0)
+            );
 
-            // Fixed positioning relative to the head
-            let finalY = active.cfg.yOffset * eyeDistWorld;
-
-            active.model.position.set(0, finalY, -active.cfg.zOffset * eyeDistWorld);
+            if (type === 'glasses') {
+              // Restore original glasses positioning perfectly: 
+              // The original code did `pos.y - 0.1` in world space.
+              active.model.position.set(0, -0.1, 0);
+            } else {
+              // Fixed positioning relative to the head for hats
+              let finalY = active.cfg.yOffset * eyeDistWorld;
+              active.model.position.set(0, finalY, -active.cfg.zOffset * eyeDistWorld);
+            }
 
             active.model.traverse(child => {
               if (!child.isMesh) return;
@@ -984,7 +1022,8 @@
                 child.material.transparent = true;
                 child.material.opacity = occlusionOpacity * child.material._originalOpacity;
               } else {
-                child.material.opacity = child.material._originalOpacity;
+                child.material.transparent = true;
+                child.material.opacity = occlusionOpacity * child.material._originalOpacity;
                 // Fix sorting issues for hat overlapping with occluder
                 child.renderOrder = 10;
               }
