@@ -649,6 +649,8 @@ def transform_image():
                         intensity=t_intensity
                     )
                     results_meta.append("eyebrow_color")
+
+           
             elif t_type == "hair_color":
                 params = transform.get("params", {})
                 color_hex = params.get("color", "#3b1f0a")
@@ -772,6 +774,24 @@ def transform_image():
                 else:
                     print("Landmark detection failed for freckles.")
 
+
+            elif t_type == "eyebrow_slit":
+                landmark_result = process_landmark_pipeline(output_image)
+
+                if landmark_result.get("success"):
+                    output_image = apply_makeup_pipeline(
+                        image=output_image,
+                        landmarks=landmark_result["landmarks"],
+                        makeup_type="eyebrow_slit",
+                        color_hex=color,
+                        intensity=t_intensity
+                    )
+
+                    results_meta.append("eyebrow_slit")
+                    print("APPLIED: eyebrow_slit")
+                else:
+                    print("Landmark detection failed for eyebrow_slit.")
+
             elif t_type == "eyeshadow":
                 landmark_result = process_landmark_pipeline(output_image)
 
@@ -799,6 +819,7 @@ def transform_image():
                     results_meta.append("eye_color")
                 else:
                     print("Landmark detection failed for eye_color.")
+
             
             elif t_type == "eyeliner":
                 landmark_result = process_landmark_pipeline(output_image)
@@ -825,6 +846,24 @@ def transform_image():
                     print("APPLIED: eyeliner")
                 else:
                     print("Landmark detection failed for eyeliner.")
+            
+            elif t_type == "eyebrow_slit":
+                landmark_result = process_landmark_pipeline(output_image)
+
+                if landmark_result.get("success"):
+                    output_image = apply_makeup_pipeline(
+                        image=output_image,
+                        landmarks=landmark_result["landmarks"],
+                        makeup_type="eyebrow_slit",
+                        color_hex=color,
+                        intensity=t_intensity
+                    )
+
+                    results_meta.append("eyebrow_slit")
+                    print("APPLIED: eyebrow_slit")
+                else:
+                    print("Landmark detection failed for eyebrow_slit.")
+
 
             elif t_type in ["earring", "necklace"]:
                 params = transform.get("params", {})
