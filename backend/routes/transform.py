@@ -755,6 +755,23 @@ def transform_image():
                 else:
                     print("Landmark detection failed for blush.")
 
+            elif t_type == "freckles":
+                landmark_result = process_landmark_pipeline(output_image)
+
+                if landmark_result.get("success"):
+                    output_image = apply_makeup_pipeline(
+                        image=output_image,
+                        landmarks=landmark_result["landmarks"],
+                        makeup_type="freckles",
+                        color_hex=color,
+                        intensity=t_intensity
+                    )
+
+                    results_meta.append("freckles")
+                    print("APPLIED: freckles")
+                else:
+                    print("Landmark detection failed for freckles.")
+
             elif t_type == "eyeshadow":
                 landmark_result = process_landmark_pipeline(output_image)
 
