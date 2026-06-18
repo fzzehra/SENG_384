@@ -502,11 +502,6 @@
               <input type="range" id="earringScale" min="0.3" max="2.0" step="0.05" value="1.0"
                 oninput="document.getElementById('eScaleVal').textContent=parseFloat(this.value).toFixed(1)+'x'">
             </div>
-            <div class="slider-row" style="margin-top:8px;">
-              <div class="slider-label"><span>Vertical offset</span><span id="eOffsetVal">0px</span></div>
-              <input type="range" id="earringOffset" min="-40" max="40" step="1" value="0"
-                oninput="document.getElementById('eOffsetVal').textContent=this.value+'px'">
-            </div>
           </div>
         </div>
 
@@ -1440,7 +1435,6 @@
       const meta = pngMeta[file];
       if (!meta) return;
       const scale = parseFloat(document.getElementById('earringScale').value);
-      const yOff = parseInt(document.getElementById('earringOffset').value);
       const lSide = pt(234), rSide = pt(454), chin = pt(152), fore = pt(10);
       const faceH = Math.abs(chin.y - fore.y);
       const angle = Math.atan2(rSide.y - lSide.y, rSide.x - lSide.x);
@@ -1452,8 +1446,8 @@
       const leftOp = yaw < 0 ? fade : 1;
       const rightOp = yaw > 0 ? fade : 1;
       const side = yaw > 0.12 ? 'LEFT-only' : (yaw < -0.12 ? 'RIGHT-only' : 'BOTH');
-      if (leftOp > 0.02) drawAnchoredPNG(file, lSide.x - faceH * 0.02, lSide.y + drop + yOff, tW, angle, 0, leftOp);
-      if (rightOp > 0.02) drawAnchoredPNG(file, rSide.x + faceH * 0.02, rSide.y + drop + yOff, tW, angle, 0, rightOp);
+      if (leftOp > 0.02) drawAnchoredPNG(file, lSide.x - faceH * 0.02, lSide.y + drop, tW, angle, 0, leftOp);
+      if (rightOp > 0.02) drawAnchoredPNG(file, rSide.x + faceH * 0.02, rSide.y + drop, tW, angle, 0, rightOp);
       reportEar(yaw, side);
     }
 
