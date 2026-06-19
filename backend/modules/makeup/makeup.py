@@ -590,6 +590,7 @@ def apply_eyebrow_slit(image, landmarks, side="right", intensity=0.95):
     # 2. ÇİZİK POZİSYONU - KAŞIN DIŞ 2/3 KISMINDA
     # Referansta tam ortadan değil, dışa yakın
     center = (outer * 0.65 + inner * 0.35).astype(np.int32)
+    center[1] -= max(1, int(h * 0.005))  # çok az yukarı
 
     # 3. ÇİZİK BOYUTU - İNCE VE KISA
     brow_w = abs(outer[0] - inner[0])
@@ -649,22 +650,13 @@ def apply_eyebrow_slit(image, landmarks, side="right", intensity=0.95):
     # Referansta keskin değil, soft geçiş var
     mask = cv2.GaussianBlur(mask, (7, 7), 0) # senin 5x5'ti
 
-    # 8. TEN RENGİ - KAŞIN HEMEN ALTINDAN AL
-    sample_x = int(np.clip(center[0], 0, w-1))
-    sample_y = int(np.clip(center[1] + h * 0.025, 0, h-1)) # %2.5 aşağı
-    
-    # 5x5 alan ortalaması al - tek piksel noise olur
-    y1, y2 = max(0, sample_y-2), min(h, sample_y+3)
-    x1, x2 = max(0, sample_x-2), min(w, sample_x+3)
-    skin_color = np.mean(output[y1:y2, x1:x2], axis=(0,1))
+    # 8. TEN RENGİ - sabit #f5ebe7 (BGR)
+    skin_color = np.array([138, 168, 217], dtype=np.float32)  # rgba(217,168,138) → BGR
 
     # 9. UYGULA - SOFT BLEND
     skin_layer = np.full_like(output, skin_color)
     alpha = (mask.astype(np.float32) / 255.0)[:, :, None]
     alpha = np.clip(alpha * intensity, 0, 1)
-    
-    # Çok hafif multiply - ten rengi biraz koyulaşsın
-    output_dark = output * 0.96
     result = output * (1 - alpha) + skin_layer * alpha
 
     return np.clip(result, 0, 255).astype(np.uint8)
