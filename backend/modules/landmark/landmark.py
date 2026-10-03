@@ -8,20 +8,32 @@ import numpy as np
 LandmarkList = List[Tuple[int, int]]
 
 
+import threading
+
+_face_mesh = None
+_face_mesh_lock = threading.Lock()
+
+
+def _get_face_mesh():
+    global _face_mesh
+    if _face_mesh is None:
+        _face_mesh = mp.solutions.face_mesh.FaceMesh(
+            static_image_mode=True,
+            max_num_faces=1,
+            refine_landmarks=True,
+            min_detection_confidence=0.5,
+        )
+    return _face_mesh
+
+
 def detect_landmarks(image: np.ndarray) -> LandmarkList:
     if image is None:
         raise ValueError("Input image is None.")
 
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    mp_face_mesh = mp.solutions.face_mesh
 
-    with mp_face_mesh.FaceMesh(
-        static_image_mode=True,
-        max_num_faces=1,
-        refine_landmarks=True,
-        min_detection_confidence=0.5
-    ) as face_mesh:
-        results = face_mesh.process(rgb_image)
+    with _face_mesh_lock:
+        results = _get_face_mesh().process(rgb_image)
 
     if not results.multi_face_landmarks:
         return []
