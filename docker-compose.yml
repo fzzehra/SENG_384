@@ -1,0 +1,35 @@
+services:
+  db:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpass
+      MARIADB_DATABASE: facial_app
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./facial_app.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build: .
+    ports:
+      - "5001:5001"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: rootpass
+      DB_NAME: facial_app
+      SECRET_KEY: lokal-test-anahtari
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./static/uploads:/app/static/uploads
+      - ./static/results:/app/static/results
+
+volumes:
+  db_data:
