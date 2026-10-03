@@ -81,51 +81,77 @@ def apply_moustache(image, landmarks, intensity=0.8, color_hex="#241815", **kwar
     mask = cv2.GaussianBlur(mask, (23, 23), 0)
 
     out_f = out.astype(np.float32)
-    mf    = mask.astype(np.float32) / 255.0
+    m01 = mask.astype(np.float32) / 255.0
 
-    # ── Sakalla aynı: medium base tonu ───────────────────────────────────
-    alpha = mf * (0.36 + 0.24 * intensity)
+    # ── Sakalla aynı: çok hafif gölge/tint (ten dokusu korunur) ──────────
+    tint_a = m01 * (0.06 + 0.16 * intensity)
+    tint = base_bgr / 255.0
     for c in range(3):
-        out_f[:, :, c] = out_f[:, :, c] * (1.0 - alpha) + base_bgr[c] * alpha
+        mult = 1.0 - tint_a * (1.0 - np.clip(tint[c] * 2.2 + 0.25, 0.0, 1.0))
+        out_f[:, :, c] *= mult
 
-    ys, xs = np.where(mask > 15)
+    # ── Sakalla aynı: tek tek kıllar ──────────────────────────────────────
+    ys, xs = np.where(mask > 20)
     if len(xs) > 0:
-        rng  = np.random.default_rng(42)
-        cx_f = float(cx_m)
+        rng = np.random.default_rng(42)
 
-        # ── Stipple (sakal dibi noktaları) ───────────────────────────────
-        sn     = min(5000, max(1500, int(len(xs) * 0.80)))
-        sp     = rng.choice(len(xs), size=sn, replace=(len(xs) < sn))
-        slayer = out_f.copy()
-        for idx in sp:
-            x = int(xs[idx]); y = int(ys[idx])
-            d = int(rng.integers(5, 22))
-            cv2.circle(slayer, (x, y), 1, (d, d + 2, d + 8), -1, cv2.LINE_AA)
-        sa = mf * (0.20 + 0.13 * intensity)
-        for c in range(3):
-            out_f[:, :, c] = out_f[:, :, c] * (1.0 - sa) + slayer[:, :, c] * sa
+        # Yoğunluk: intensity arttıkça kıl sayısı artar
+        area = float(len(xs))
+        hair_per_px = 0.04 + 0.22 * intensity
+        n_hair = int(min(45000, max(300, area * hair_per_px)))
 
-        # ── Kıl çizgileri — yoğunluk slider'ına göre ─────────────────────
-        hn = min(5000, max(800, int(len(xs) * (0.15 + 0.65 * intensity))))
-        hp = rng.choice(len(xs), size=hn, replace=(len(xs) < hn))
-        hlayer  = out_f.copy()
-        min_len = max(4,  int(mouth_width * 0.032))
-        max_len = max(10, int(mouth_width * (0.085 + 0.045 * intensity)))
+        # Maske değerine göre ağırlıklı seçim: kenarlarda seyrek, merkezde sık
+        weights = m01[ys, xs]
+        weights = weights / weights.sum()
+        pick = rng.choice(len(xs), size=n_hair, replace=True, p=weights)
+        px = xs[pick].astype(np.float32) + rng.uniform(-0.5, 0.5, n_hair)
+        py = ys[pick].astype(np.float32) + rng.uniform(-0.5, 0.5, n_hair)
 
-        for idx in hp:
-            x = int(xs[idx]); y = int(ys[idx])
-            side  = -1 if x < cx_f else 1
-            dist_ratio = abs(x - cx_f) / max(1.0, (right_x - left_x) * 0.5)
-            angle = np.deg2rad(rng.normal(side * (8 + 14 * dist_ratio), 7))
-            ln    = int(rng.integers(min_len, max_len + 1))
-            x2 = int(np.clip(x + np.cos(angle) * ln,        0, w - 1))
-            y2 = int(np.clip(y + np.sin(angle) * ln * 0.22, 0, h - 1))
-            d  = int(rng.integers(6, 26))
-            thick = 1 if rng.random() > 0.18 else 2
-            cv2.line(hlayer, (x, y), (x2, y2), (d, d + 3, d + 9), thick, cv2.LINE_AA)
+        # Kıl boyu sakaldakiyle aynı ölçekte (sakal yüksekliği ≈ ağız genişliğinin yarısı)
+        ref_h = max(20.0, mouth_width * 0.5)
+        min_len = max(2.0, ref_h * 0.035)
+        max_len = max(min_len + 1.0, ref_h * (0.07 + 0.07 * intensity))
+        lengths = rng.uniform(min_len, max_len, n_hair)
 
-        ha = mf * (0.26 + 0.18 * intensity)
-        for c in range(3):
-            out_f[:, :, c] = out_f[:, :, c] * (1.0 - ha) + hlayer[:, :, c] * ha
+        # Yön: aşağı doğru, kenarlarda hafif dışa
+        half_w = max(1.0, (right_x - left_x) * 0.5)
+        side = np.clip((px - cx_m) / half_w, -1.0, 1.0)
+        angles = rng.normal(0.0, 0.28, n_hair) + side * 0.35
+
+        hair_col = np.zeros((h, w, 3), dtype=np.uint8)
+        hair_alpha = np.zeros((h, w), dtype=np.uint8)
+
+        for i in range(n_hair):
+            x0, y0 = float(px[i]), float(py[i])
+            ln = float(lengths[i])
+            a = float(angles[i])
+            dx, dy = np.sin(a), np.cos(a)
+
+            # hafif kavis
+            bend = rng.normal(0, 0.12) * ln
+            xm = x0 + dx * ln * 0.5 + bend
+            ym = y0 + dy * ln * 0.5
+            x1 = x0 + dx * ln + bend * 1.6
+            y1 = y0 + dy * ln
+
+            pts = np.array([[x0, y0], [xm, ym], [x1, y1]], dtype=np.float32)
+            pts = np.round(pts).astype(np.int32).reshape(-1, 1, 2)
+
+            # renk: baz renk etrafında doğal varyasyon
+            v = rng.uniform(0.55, 1.25)
+            col = np.clip(base_bgr * v + rng.uniform(-4, 10), 0, 255)
+            col = tuple(int(c) for c in col)
+
+            op = int(rng.uniform(110, 230) * (0.5 + 0.5 * m01[min(h - 1, max(0, int(y0))), min(w - 1, max(0, int(x0)))]))
+            cv2.polylines(hair_col, [pts], False, col, 1, cv2.LINE_AA)
+            cv2.polylines(hair_alpha, [pts], False, op, 1, cv2.LINE_AA)
+
+        hair_alpha_f = cv2.GaussianBlur(hair_alpha, (3, 3), 0).astype(np.float32) / 255.0
+        hair_alpha_f *= m01  # bıyık bölgesi dışına çıkmasın
+        hair_alpha_f *= (0.70 + 0.30 * intensity)
+
+        col_f = hair_col.astype(np.float32)
+        a3 = hair_alpha_f[:, :, None]
+        out_f = out_f * (1.0 - a3) + col_f * a3
 
     return np.clip(out_f, 0, 255).astype(np.uint8)
