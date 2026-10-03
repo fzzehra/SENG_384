@@ -839,6 +839,18 @@ function drawPiercing(pt, piercing_type, item_img) {
 
     const gltfLoader = new THREE.GLTFLoader();
 
+        // Aynı model ikinci kez indirilip işlenmesin: ilk yüklemeyi sakla, sonra kopyasını ver
+    const gltfCache = {};
+    function loadGltfCached(url, onLoad, onProgress, onError) {
+      if (!gltfCache[url]) {
+        gltfCache[url] = new Promise((resolve, reject) => gltfLoader.load(url, resolve, undefined, reject));
+      }
+      gltfCache[url].then(
+        gltf => onLoad({ scene: gltf.scene.clone(true) }),
+        err => { delete gltfCache[url]; if (onError) onError(err); }
+      );
+    }
+
     let activeModels = {
       glasses: { group: new THREE.Group(), model: null, normScale: 1, cfg: null, ready: false },
       hat: { group: new THREE.Group(), model: null, normScale: 1, cfg: null, ready: false }
@@ -895,7 +907,7 @@ function drawPiercing(pt, piercing_type, item_img) {
 
       const pCamera = new THREE.PerspectiveCamera(35, 2, 0.1, 100);
 
-      gltfLoader.load(path + file, gltf => {
+      loadGltfCached(path + file, gltf => {
         const m = gltf.scene;
         const box = new THREE.Box3().setFromObject(m);
         const center = box.getCenter(new THREE.Vector3());
@@ -918,7 +930,7 @@ function drawPiercing(pt, piercing_type, item_img) {
       window.clearModel(type, null, false);
       statusBar.textContent = `Loading 3D ${type}: ` + file;
       
-      gltfLoader.load(path + file, gltf => {
+      loadGltfCached(path + file, gltf => {
         const m = gltf.scene;
         const box = new THREE.Box3().setFromObject(m);
         const center = box.getCenter(new THREE.Vector3());
