@@ -18,9 +18,9 @@ import sys
 import cv2
 import numpy as np
 
-from landmark import detect_landmarks   # senin landmark.py
+from backend.modules.landmark.landmark import detect_landmarks   # landmark.py'nin yeri
 
-BEARD_MODULE = "beard"   # <-- kendi dosya adınla değiştir
+BEARD_MODULE = "backend.modules.beard.beard"   # sakal kodunun olduğu beard.py
 BEARD_FUNC = "apply_beard_effect"
 
 FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288,

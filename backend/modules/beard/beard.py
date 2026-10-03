@@ -37,9 +37,15 @@ _FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288,
 _JAW_PATH = [132, 58, 172, 136, 150, 149, 176, 148, 152,
              377, 400, 378, 379, 365, 397, 288, 361]
 
+# Dış dudak konturu
+_LIPS_OUTER = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291,
+               409, 270, 269, 267, 0, 37, 39, 40, 185]
+
 
 def apply_beard_effect(image, landmarks, intensity=0.8, color_hex="#241815", **kwargs):
+    print("BEARD v2 (face-clip) AKTİF")
     out = image.copy()
+    cv2.putText(out, "BEARD v2", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     h, w = out.shape[:2]
 
     intensity = float(np.clip(intensity, 0.0, 1.0))
@@ -64,25 +70,22 @@ def apply_beard_effect(image, landmarks, intensity=0.8, color_hex="#241815", **k
 
     # ───────────────────────── 1) Sakal bölgesi maskesi ─────────────────────────
     # Çene hattını takip eden çokgen: sakal yüzün dışına taşamaz.
-    cheek_top_y = mouth_left[1] - beard_height * 0.35
-
     jaw_pts = [P(i) for i in _JAW_PATH]
-    lt = np.array([left_cheek[0] + face_width * 0.03, cheek_top_y])
-    rt = np.array([right_cheek[0] - face_width * 0.03, cheek_top_y])
     mouth_r_o = np.array([mouth_right[0] + face_width * 0.10, mouth_right[1] - beard_height * 0.10])
     mouth_l_o = np.array([mouth_left[0] - face_width * 0.10, mouth_left[1] - beard_height * 0.10])
+    lip_top = P(0)  # üst dudağın üst ortası: bıyık bölgesi sakal dışında kalır
 
-    poly = np.array([lt] + jaw_pts + [rt, mouth_r_o, mouth_l_o], dtype=np.float32)
+    poly = np.array(jaw_pts + [mouth_r_o, lip_top, mouth_l_o], dtype=np.float32)
     mask = np.zeros((h, w), dtype=np.uint8)
     cv2.fillPoly(mask, [poly.astype(np.int32)], 255)
 
-    # Ağız ve üst dudak temizliği
-    mx = int((mouth_left[0] + mouth_right[0]) / 2)
-    mw = int(np.linalg.norm(mouth_right - mouth_left) * 0.62)
-    lip_mid = int((upper_lip[1] + lower_lip[1]) / 2)
-    lip_h = int(max(10, abs(lower_lip[1] - upper_lip[1]) * 1.5 + 6))
-    cv2.ellipse(mask, (mx, lip_mid), (mw, lip_h), 0, 0, 360, 0, -1)
-    cv2.ellipse(mask, (mx, int(upper_lip[1])), (mw, int(beard_height * 0.30)), 0, 180, 360, 0, -1)
+    # Dudak temizliği: elips yerine gerçek dış dudak konturu (açık ağızda çeneyi silmez)
+    lips = np.array([P(i) for i in _LIPS_OUTER], dtype=np.int32)
+    lip_mask = np.zeros((h, w), dtype=np.uint8)
+    cv2.fillPoly(lip_mask, [lips], 255)
+    k = max(3, int(face_width * 0.05)) | 1
+    lip_mask = cv2.dilate(lip_mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k)))
+    mask[lip_mask > 0] = 0
 
     # Yüz ovali içine kırp (hafif içeri çekilmiş) → yanak dışına taşma yok
     face_poly = np.array([P(i) for i in _FACE_OVAL], dtype=np.int32)
