@@ -21,27 +21,13 @@ def _get_model():
 def get_hair_mask(image_bgr: np.ndarray) -> np.ndarray:
     import torch
 
+    h, w = image_bgr.shape[:2]
     image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
     pil_image = Image.fromarray(image_rgb)
-    orig_w, orig_h = pil_image.size
 
     processor, model = _get_model()
 
-    inputs = processor(images=pil_image, return_tensors="pt")
-
-    with torch.no_grad():
-        outputs = model(**inputs)
-
-    # Upsample logits back to original image size
-    logits = torch.nn.functional.interpolate(
-        outputs.logits,
-        size=(orig_h, orig_w),
-        mode="bilinear",
-        align_corners=False,
-    )
-    predicted = logits.argmax(dim=1).squeeze(0).numpy()
-
-    # Find hair label index from model config
+    # Saç sınıfının indeksini bul
     hair_idx = None
     for idx, label in model.config.id2label.items():
         if label.lower() == "hair":
@@ -49,12 +35,18 @@ def get_hair_mask(image_bgr: np.ndarray) -> np.ndarray:
             break
 
     if hair_idx is None:
-        return np.zeros((orig_h, orig_w), dtype=np.uint8)
+        return np.zeros((h, w), dtype=np.uint8)
 
-    hair_mask = ((predicted == hair_idx).astype(np.uint8)) * 255
+    inputs = processor(images=pil_image, return_tensors="pt")
 
-    h, w = image_bgr.shape[:2]
-    if hair_mask.shape != (h, w):
-        hair_mask = cv2.resize(hair_mask, (w, h), interpolation=cv2.INTER_NEAREST)
+    with torch.no_grad():
+        logits = model(**inputs).logits  # küçük çözünürlükte, tüm sınıflar
+
+    # Sınıf seçimini küçük boyutta yap, sadece saç maskesini büyüt
+    predicted = logits.argmax(dim=1)[0].numpy()
+    small_mask = (predicted == hair_idx).astype(np.float32)
+
+    big_mask = cv2.resize(small_mask, (w, h), interpolation=cv2.INTER_LINEAR)
+    hair_mask = (big_mask > 0.5).astype(np.uint8) * 255
 
     return hair_mask
