@@ -232,6 +232,7 @@ JEWELRY_ITEM_SCALE = {
         "_default": 1.0,
         "gold_necklace": 1.0,
         "pearl_necklace": 1.0,
+        "pearl_necklace_3d": 1.0,
         "simple_chain": 1.05,
     },
 }
