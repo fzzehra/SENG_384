@@ -14,6 +14,9 @@ RUN pip install --no-cache-dir torch torchvision --index-url https://download.py
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
+# Saç segmentasyon modelini build sırasında indir (her açılışta indirmesin)
+RUN python -c "from transformers import SegformerImageProcessor, SegformerForSemanticSegmentation; SegformerImageProcessor.from_pretrained('jonathandinu/face-parsing'); SegformerForSemanticSegmentation.from_pretrained('jonathandinu/face-parsing')"
+
 COPY . .
 
 EXPOSE 5001
