@@ -403,12 +403,9 @@
           <div class="divider"></div>
 
            <div>
-              <div class="section-label">Necklace</div>
-              <div class="acc-grid">
-                <button class="acc-btn full active" onclick="selectAcc('necklace',null,this)">No Necklace</button>
-                <button class="acc-btn" onclick="selectAcc('necklace','gold_necklace.png',this)">Gold</button>
-                <button class="acc-btn" onclick="selectAcc('necklace','pearl_necklace.png',this)">Pearl</button>
-                <button class="acc-btn" onclick="selectAcc('necklace','simple_chain.png',this)">Chain</button>
+              <div class="section-label">3D Necklace</div>
+              <div class="acc-grid" id="necklaceGrid">
+                <button class="acc-btn full active" id="btn-no-necklace" onclick="clearModel('necklace', this)">No Necklace</button>
               </div>
           </div>
 
@@ -607,6 +604,16 @@
       'fbx.glb': { zOffset: 0.8, scale: 3.25, scaleX: 1.25, yOffset: 0.94, rotX: -0.2, rotY: 0 },
       'menard_hat_lowpoly.glb': { zOffset: 0.95, scale: 2.45, yOffset: 0.65, rotX: 0.2, rotY: 0 },
       'obj_bucket_hat_gen8_toshitimo.glb': { zOffset: 1.25, scale: 2.60, yOffset: 0.9, rotX: -0.35, rotY: Math.PI }
+    };
+
+    // Kolye .glb dosyalarını /static/accessories/necklaces_3d/ klasörüne koy,
+    // burada dosya adıyla eşleştir (gözlük/şapka ile aynı mantık).
+    const NECKLACE_CATALOG = [
+      { name: 'Pearl Necklace', file: 'pearl_necklace.glb' },
+    ];
+
+    const necklaceConfig = {
+      'pearl_necklace.glb': { scale: 1.0, yOffset: 0, zOffset: 0, rotX: 0 },
     };
     const FACE_FILTER_CATALOG = [
       { name: 'Butterfly', file: 'butterfly_mask.png' },
@@ -853,10 +860,14 @@ function drawPiercing(pt, piercing_type, item_img) {
 
     let activeModels = {
       glasses: { group: new THREE.Group(), model: null, normScale: 1, cfg: null, ready: false },
-      hat: { group: new THREE.Group(), model: null, normScale: 1, cfg: null, ready: false }
+      hat: { group: new THREE.Group(), model: null, normScale: 1, cfg: null, ready: false },
+      necklace: { group: new THREE.Group(), model: null, normScale: 1, cfg: null, ready: false }
     };
     headGroup.add(activeModels.glasses.group);
     headGroup.add(activeModels.hat.group);
+    // Kolye, kafa gibi dönmez: başı çevirince boyun/omuzda sabit kalması için
+    // headGroup'a değil doğrudan sahneye bağlıyoruz, konumunu her karede kendimiz hesaplıyoruz.
+    scene3d.add(activeModels.necklace.group);
     const faceFilterGroup = new THREE.Group();
     scene3d.add(faceFilterGroup);
 
@@ -892,6 +903,13 @@ function drawPiercing(pt, piercing_type, item_img) {
     function buildGlassesGrid() {
       buildModelGrid(GLASSES_CATALOG, 'glasses', 'glassesGrid', 'btn-no-glasses', '/static/accessories/glasses/');
       buildModelGrid(HAT_CATALOG, 'hat', 'hatsGrid', 'btn-no-hat', '/static/accessories/hats_3d/');
+      buildModelGrid(NECKLACE_CATALOG, 'necklace', 'necklaceGrid', 'btn-no-necklace', '/static/accessories/necklaces_3d/');
+    }
+
+    function gridSelectorFor(type) {
+      if (type === 'glasses') return '#glassesGrid';
+      if (type === 'hat') return '#hatsGrid';
+      return '#necklaceGrid';
     }
 
     function generatePreview(file, canvasEl, path) {
@@ -923,13 +941,13 @@ function drawPiercing(pt, piercing_type, item_img) {
 
     window.loadModel = function (file, type, btn, path) {
       if (btn) {
-        const gridSelector = type === 'glasses' ? '#glassesGrid' : '#hatsGrid';
+        const gridSelector = gridSelectorFor(type);
         document.querySelectorAll(`${gridSelector} .acc-btn`).forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
       }
       window.clearModel(type, null, false);
       statusBar.textContent = `Loading 3D ${type}: ` + file;
-      
+
       loadGltfCached(path + file, gltf => {
         const m = gltf.scene;
         const box = new THREE.Box3().setFromObject(m);
@@ -937,7 +955,8 @@ function drawPiercing(pt, piercing_type, item_img) {
         const size = box.getSize(new THREE.Vector3());
 
         const cfg = type === 'glasses' ? (glassesConfig[file] || { zOffset: 0.5, scale: 1.8, yOffset: -0.1, rotX: 0 })
-          : (hatConfig[file] || { zOffset: 0.0, scale: 2.5, yOffset: 0.3, rotX: -Math.PI / 2 });
+          : type === 'hat' ? (hatConfig[file] || { zOffset: 0.0, scale: 2.5, yOffset: 0.3, rotX: -Math.PI / 2 })
+          : (necklaceConfig[file] || { scale: 1.0, yOffset: 0, zOffset: 0, rotX: 0 });
 
         const pivot = new THREE.Group();
         const wrapper = new THREE.Group();
@@ -990,7 +1009,7 @@ function drawPiercing(pt, piercing_type, item_img) {
 
     window.clearModel = function (type, btn, updateUI = true) {
       if (updateUI && btn) {
-        const gridSelector = type === 'glasses' ? '#glassesGrid' : '#hatsGrid';
+        const gridSelector = gridSelectorFor(type);
         document.querySelectorAll(`${gridSelector} .acc-btn`).forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
       }
@@ -1212,6 +1231,7 @@ function drawPiercing(pt, piercing_type, item_img) {
       if (!result.faceLandmarks?.length) {
         statusBar.textContent = 'No face detected';
         headGroup.visible = false;
+        activeModels.necklace.group.visible = false;
         renderer3d.render(scene3d, camera3d);
         return;
       }
@@ -1356,9 +1376,58 @@ function drawPiercing(pt, piercing_type, item_img) {
     worldPos.z + eyeDistWorld * 0.2
   );
 }
+
+        // 3D Kolye: kafa gibi başı çevirince dönmesin, boyun/omuz konumunu
+        // kendi hesaplayıp doğrudan sahne (world) koordinatında konumlandır.
+        if (activeModels.necklace.ready && activeModels.necklace.model) {
+          updateShoulders(now, W, H);
+          const cfgN = activeModels.necklace.cfg || {};
+          const lT = pt(234), rT = pt(454), chinN = pt(152), foreN = pt(10);
+          const faceWpx = Math.hypot(rT.x - lT.x, rT.y - lT.y);
+          const faceHpx = Math.hypot(chinN.x - foreN.x, chinN.y - foreN.y);
+
+          const sh = lastShoulders;
+          const shW = sh ? Math.hypot(sh.s11.x - sh.s12.x, sh.s11.y - sh.s12.y) : 0;
+          const shMidY = sh ? (sh.s11.y + sh.s12.y) / 2 : 0;
+          const shouldersOk = sh && shW > faceWpx * 0.9 && shW < faceWpx * 3.2 && shMidY > chinN.y;
+
+          let cxPx, topYPx, widthPx, rollAngle;
+          if (shouldersOk) {
+            cxPx = (sh.s11.x + sh.s12.x) / 2;
+            widthPx = Math.min(faceWpx * 1.3, Math.max(faceWpx * 0.70, shW * 0.40));
+            topYPx = Math.max(shMidY - shW * 0.22, chinN.y + faceHpx * 0.10);
+            rollAngle = Math.atan2(sh.s11.y - sh.s12.y, sh.s11.x - sh.s12.x);
+          } else {
+            cxPx = (lT.x + rT.x) / 2 + estimateYaw(pt) * faceWpx * 0.15;
+            widthPx = faceWpx * 0.95;
+            topYPx = chinN.y + faceHpx * 0.32;
+            rollAngle = Math.atan2(rT.y - lT.y, rT.x - lT.x) * 0.35;
+          }
+
+          const ndcNX = (cxPx / W) * 2 - 1;
+          const ndcNY = -((topYPx / H) * 2 - 1);
+          const worldNX = -(ndcNX * halfScreenWorldWidth);
+          const worldNY = (ndcNY * halfScreenWorldHeight) - 0.05;
+          const widthWorld = (widthPx / W) * (halfScreenWorldWidth * 2);
+
+          const finalScaleN = widthWorld * activeModels.necklace.normScale * (cfgN.scale || 1.0);
+          activeModels.necklace.model.scale.set(finalScaleN, finalScaleN, finalScaleN);
+          activeModels.necklace.model.rotation.z = rollAngle;
+
+          activeModels.necklace.group.position.set(
+            worldNX,
+            worldNY + (cfgN.yOffset || 0) * finalScaleN,
+            pos.z + (cfgN.zOffset || 0) * finalScaleN
+          );
+          activeModels.necklace.group.visible = true;
+        } else if (activeModels.necklace.model) {
+          activeModels.necklace.group.visible = false;
+        }
+
         debugEl.textContent = `pos:(${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)})`;
       } else {
         headGroup.visible = false;
+        activeModels.necklace.group.visible = false;
       }
 
       // ─── 2. 2D MAKEUP RENDERING (Çizim Katmanı Z-Index 2) ───
@@ -1407,10 +1476,8 @@ function drawPiercing(pt, piercing_type, item_img) {
       if (lashInt > 0) drawLashes(pt, lashInt);
 
       // ─── 3. 2D PNG ACCESSORIES RENDERING (Çizim Katmanı Z-Index 2) ───
-      if (selected.necklace && pngImages[selected.necklace]) {
-        updateShoulders(now, W, H);
-        drawNecklace(pt);
-      }      if (selected.earring && pngImages[selected.earring]) drawEarring(pt);
+      // if (selected.necklace && pngImages[selected.necklace]) { updateShoulders(now, W, H); drawNecklace(pt); } // Disabled PNG necklace since we have 3D now
+      if (selected.earring && pngImages[selected.earring]) drawEarring(pt);
       // if (selected.hat && pngImages[selected.hat]) drawHat(pt); // Disabled PNG hats since we have 3D now
       // PIERCING ÇİZİMİ
       if (selectedPiercing && piercingImages[selectedPiercing]) {
