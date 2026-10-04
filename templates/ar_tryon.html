@@ -812,6 +812,7 @@ function drawPiercing(pt, piercing_type, item_img) {
     const renderer3d = new THREE.WebGLRenderer({ canvas: canvas3d, alpha: true, antialias: true });
     renderer3d.setPixelRatio(window.devicePixelRatio);
     renderer3d.setSize(640, 480, false);
+    renderer3d.localClippingEnabled = true; // kolye halkasının üst kısmını kesmek için
 
     const scene3d = new THREE.Scene();
     const camera3d = new THREE.PerspectiveCamera(60, 640 / 480, 0.1, 2000);
@@ -969,6 +970,22 @@ function drawPiercing(pt, piercing_type, item_img) {
           m.position.z -= cfg.zOffset;
         }
 
+        // Kolye modelleri genelde kapalı/düz bir halka olarak modellenmiş olur
+        // (gerçek boyun gibi arkası ayrı değildir). Halkanın üst kısmını (çeneyle
+        // çakışan kısım) bir clipping plane ile keserek sadece boyunda sarkan
+        // alt kısmı görünür bırakıyoruz.
+        let clipPlaneWorld = null, clipLocalTemplate = null;
+        if (type === 'necklace') {
+          const halfH = size.y / 2;
+          const clipRatio = (cfg.clipRatio != null) ? cfg.clipRatio : 0.35;
+          const clipLocalY = halfH - clipRatio * size.y;
+          clipLocalTemplate = new THREE.Plane(new THREE.Vector3(0, -1, 0), clipLocalY);
+          clipPlaneWorld = new THREE.Plane();
+          activeModels[type].clipLocalY = clipLocalY;
+          activeModels[type].clipLocalTemplate = clipLocalTemplate;
+          activeModels[type].clipPlaneWorld = clipPlaneWorld;
+        }
+
         m.traverse(child => {
           if (child.isMesh) {
             // Render glasses first, then hat occluder, then hats, to prevent hat occluder from eating glasses
@@ -977,6 +994,10 @@ function drawPiercing(pt, piercing_type, item_img) {
             if (file === 'obj_bucket_hat_gen8_toshitimo.glb' && child.material) {
               child.material.color.setHex(0x3e4a59); // A nice navy/dark grayish blue
               child.material.needsUpdate = true;
+            }
+            if (type === 'necklace' && child.material) {
+              child.material = child.material.clone();
+              child.material.clippingPlanes = [clipPlaneWorld];
             }
           }
         });
@@ -1391,35 +1412,50 @@ function drawPiercing(pt, piercing_type, item_img) {
           const shMidY = sh ? (sh.s11.y + sh.s12.y) / 2 : 0;
           const shouldersOk = sh && shW > faceWpx * 0.9 && shW < faceWpx * 3.2 && shMidY > chinN.y;
 
-          let cxPx, topYPx, widthPx, rollAngle;
+          // Modelin görünür üst kenarı (clip sınırı), çenenin hemen altına
+          // denk gelsin istiyoruz — model kapalı bir halka olduğu için
+          // gerçek "üst" değil, kesilmiş halin üst kenarını hedefliyoruz.
+          let cxPx, anchorYPx, widthPx, rollAngle;
           if (shouldersOk) {
             cxPx = (sh.s11.x + sh.s12.x) / 2;
             widthPx = Math.min(faceWpx * 1.3, Math.max(faceWpx * 0.70, shW * 0.40));
-            topYPx = Math.max(shMidY - shW * 0.22, chinN.y + faceHpx * 0.10);
+            anchorYPx = Math.max(shMidY - shW * 0.30, chinN.y + faceHpx * 0.02);
             rollAngle = Math.atan2(sh.s11.y - sh.s12.y, sh.s11.x - sh.s12.x);
           } else {
             cxPx = (lT.x + rT.x) / 2 + estimateYaw(pt) * faceWpx * 0.15;
-            widthPx = faceWpx * 0.95;
-            topYPx = chinN.y + faceHpx * 0.32;
+            widthPx = faceWpx * 0.85;
+            anchorYPx = chinN.y + faceHpx * 0.02;
             rollAngle = Math.atan2(rT.y - lT.y, rT.x - lT.x) * 0.35;
           }
 
           const ndcNX = (cxPx / W) * 2 - 1;
-          const ndcNY = -((topYPx / H) * 2 - 1);
-          const worldNX = -(ndcNX * halfScreenWorldWidth);
-          const worldNY = (ndcNY * halfScreenWorldHeight) - 0.05;
+          const ndcNY = -((anchorYPx / H) * 2 - 1);
+          const worldAnchorX = -(ndcNX * halfScreenWorldWidth);
+          const worldAnchorY = (ndcNY * halfScreenWorldHeight) - 0.05;
           const widthWorld = (widthPx / W) * (halfScreenWorldWidth * 2);
 
           const finalScaleN = widthWorld * activeModels.necklace.normScale * (cfgN.scale || 1.0);
           activeModels.necklace.model.scale.set(finalScaleN, finalScaleN, finalScaleN);
           activeModels.necklace.model.rotation.z = rollAngle;
 
+          // Pivot modelin MERKEZİNDE; görünür (clip sonrası) üst kenarı
+          // worldAnchorY'ye oturtmak için merkezi o kadar aşağı kaydırıyoruz.
+          const clipLocalY = activeModels.necklace.clipLocalY || 0;
+          const groupY = worldAnchorY - clipLocalY * finalScaleN + (cfgN.yOffset || 0) * finalScaleN;
+
           activeModels.necklace.group.position.set(
-            worldNX,
-            worldNY + (cfgN.yOffset || 0) * finalScaleN,
+            worldAnchorX,
+            groupY,
             pos.z + (cfgN.zOffset || 0) * finalScaleN
           );
           activeModels.necklace.group.visible = true;
+          activeModels.necklace.group.updateMatrixWorld(true);
+
+          if (activeModels.necklace.clipPlaneWorld && activeModels.necklace.clipLocalTemplate) {
+            activeModels.necklace.clipPlaneWorld
+              .copy(activeModels.necklace.clipLocalTemplate)
+              .applyMatrix4(activeModels.necklace.model.matrixWorld);
+          }
         } else if (activeModels.necklace.model) {
           activeModels.necklace.group.visible = false;
         }
