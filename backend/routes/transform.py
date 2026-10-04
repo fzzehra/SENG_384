@@ -395,7 +395,7 @@ def _place_earrings(output, overlay, refs, kp, item_scale, intensity):
     )
     img_left, img_right = pts[0], pts[1]
 
-    drop = 0.075 * face_width
+    drop = 0.10 * face_width
     left_lobe = (float(img_left[0]), float(img_left[1]) + drop)
     right_lobe = (float(img_right[0]), float(img_right[1]) + drop)
 
