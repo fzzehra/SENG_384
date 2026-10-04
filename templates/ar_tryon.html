@@ -2158,18 +2158,24 @@ function applyEyeliner(pt, intensity, wing) {
       if (!meta) return;
       const scale = parseFloat(document.getElementById('earringScale').value);
       const lSide = pt(234), rSide = pt(454), chin = pt(152), fore = pt(10);
+      // Kulak memesi, anatomik olarak burun altıyla (landmark 2) aynı hizada olur;
+      // yanak noktasının kendi y'sini kullanmak kameraya/yüze göre kayıyordu.
+      const noseBase = pt(2);
       const faceH = Math.abs(chin.y - fore.y);
+      const faceW = Math.hypot(rSide.x - lSide.x, rSide.y - lSide.y);
       const angle = Math.atan2(rSide.y - lSide.y, rSide.x - lSide.x);
       const tH = faceH * 0.15 * scale;
       const tW = tH * (meta.sw / meta.sh);
-      const drop = faceH * 0.12;
+      // Kulak, yüz hattının (234/454) biraz dışında kalır
+      const outward = faceW * 0.07;
+      const earY = noseBase.y;
       const yaw = estimateYaw(pt);
       const fade = farSideOpacity(yaw);
       const leftOp = yaw < 0 ? fade : 1;
       const rightOp = yaw > 0 ? fade : 1;
       const side = yaw > 0.12 ? 'LEFT-only' : (yaw < -0.12 ? 'RIGHT-only' : 'BOTH');
-      if (leftOp > 0.02) drawAnchoredPNG(file, lSide.x - faceH * 0.02, lSide.y + drop, tW, angle, 0, leftOp);
-      if (rightOp > 0.02) drawAnchoredPNG(file, rSide.x + faceH * 0.02, rSide.y + drop, tW, angle, 0, rightOp);
+      if (leftOp > 0.02) drawAnchoredPNG(file, lSide.x - outward, earY, tW, angle, 0, leftOp);
+      if (rightOp > 0.02) drawAnchoredPNG(file, rSide.x + outward, earY, tW, angle, 0, rightOp);
       reportEar(yaw, side);
     }
 
@@ -2220,10 +2226,13 @@ function applyEyeliner(pt, intensity, wing) {
         topY = Math.max(shMidY - shW * 0.22, chin.y + faceH * 0.10);
         angle = Math.atan2(sh.s11.y - sh.s12.y, sh.s11.x - sh.s12.x);
       } else {
-        // Omuzlar görünmüyor: yüze göre tahmin et
+        // Omuzlar görünmüyor: yüze göre tahmin et.
+        // Çeneden boyun kökü/köprücük kemiğine olan mesafe, yüz yüksekliğinin
+        // ~%22'si değil ~%32'si civarıdır; eski oran kolyeyi çenenin altına,
+        // boyun hattının üstüne oturtuyordu.
         cx = (lT.x + rT.x) / 2 + estimateYaw(pt) * faceW * 0.15;
         tW = faceW * 0.95;
-        topY = chin.y + faceH * 0.22;
+        topY = chin.y + faceH * 0.32;
         angle = Math.atan2(rT.y - lT.y, rT.x - lT.x) * 0.35;
       }
 
