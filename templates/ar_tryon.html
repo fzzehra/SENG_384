@@ -403,22 +403,9 @@
           <div class="divider"></div>
 
            <div>
-              <div class="section-label">3D Necklace</div>
+              <div class="section-label">Necklace</div>
               <div class="acc-grid" id="necklaceGrid">
-                <button class="acc-btn full active" id="btn-no-necklace" onclick="clearModel('necklace', this)">No Necklace</button>
-              </div>
-          </div>
-
-          <div class="divider"></div>
-
-           <div>
-              <div class="section-label">2D Necklace</div>
-              <div class="acc-grid">
-                <button class="acc-btn full active" onclick="selectAcc('necklace',null,this)">No Necklace</button>
-                <button class="acc-btn" onclick="selectAcc('necklace','gold_necklace.png',this)">Gold</button>
-                <button class="acc-btn" onclick="selectAcc('necklace','pearl_necklace.png',this)">Pearl</button>
-                <button class="acc-btn" onclick="selectAcc('necklace','pearl_necklace_3d.png',this)">Pearl (3D)</button>
-                <button class="acc-btn" onclick="selectAcc('necklace','simple_chain.png',this)">Chain</button>
+                <button class="acc-btn full active" id="btn-no-necklace" onclick="clearNecklace(this)">No Necklace</button>
               </div>
           </div>
 
@@ -918,6 +905,26 @@ function drawPiercing(pt, piercing_type, item_img) {
       buildModelGrid(GLASSES_CATALOG, 'glasses', 'glassesGrid', 'btn-no-glasses', '/static/accessories/glasses/');
       buildModelGrid(HAT_CATALOG, 'hat', 'hatsGrid', 'btn-no-hat', '/static/accessories/hats_3d/');
       buildModelGrid(NECKLACE_CATALOG, 'necklace', 'necklaceGrid', 'btn-no-necklace', '/static/accessories/necklaces_3d/');
+      appendPngNecklaceButtons();
+    }
+
+    // 3D kolye grid'i her build'de temizlendiği için eski PNG kolyeleri
+    // (Gold/Pearl/Chain) aynı gride, 3D seçeneğin yanına ekliyoruz —
+    // tek "Necklace" başlığı altında hepsi bir arada görünsün diye.
+    const PNG_NECKLACES = [
+      { name: 'Gold', file: 'gold_necklace.png' },
+      { name: 'Pearl', file: 'pearl_necklace.png' },
+      { name: 'Chain', file: 'simple_chain.png' },
+    ];
+    function appendPngNecklaceButtons() {
+      const grid = document.getElementById('necklaceGrid');
+      PNG_NECKLACES.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'acc-btn';
+        btn.textContent = item.name;
+        btn.addEventListener('click', () => selectAcc('necklace', item.file, btn));
+        grid.appendChild(btn);
+      });
     }
 
     function gridSelectorFor(type) {
@@ -959,6 +966,8 @@ function drawPiercing(pt, piercing_type, item_img) {
         document.querySelectorAll(`${gridSelector} .acc-btn`).forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
       }
+      // Aynı grid'teki 2D PNG kolyeyle çakışmasın diye onu da temizle
+      if (type === 'necklace') selected.necklace = null;
       window.clearModel(type, null, false);
       statusBar.textContent = `Loading 3D ${type}: ` + file;
 
@@ -1054,6 +1063,13 @@ function drawPiercing(pt, piercing_type, item_img) {
       activeModels[type].ready = false;
     };
 
+    // Tek "Necklace" gridinde hem 3D (GLB) hem 2D (PNG) seçenekler bir arada
+    // olduğu için "No Necklace" ikisini birden temizlemeli.
+    window.clearNecklace = function (btn) {
+      selected.necklace = null;
+      window.clearModel('necklace', btn, true);
+    };
+
     window.selectFaceFilter = function(file, btn) {
       document.querySelectorAll('#faceFilterGrid .acc-btn')
         .forEach(b => b.classList.remove('active'));
@@ -1098,6 +1114,8 @@ function drawPiercing(pt, piercing_type, item_img) {
       grid.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selected[type] = file;
+      // Aynı grid'teki 3D kolye modeliyle çakışmasın diye onu da temizle
+      if (type === 'necklace') window.clearModel('necklace', null, false);
       console.log('AR selectAcc:', type, '->', file);
       if (file) loadPNG(file, type);
     };
