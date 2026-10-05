@@ -556,6 +556,40 @@
         </div>
 
         <div class="panel-section" id="tab-adjust">
+          <div>
+            <div class="section-label">Necklace Fit</div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Yana kaydır</span><span id="n3dXVal">0.030</span></div>
+              <input type="range" id="necklace3dX" min="-0.2" max="0.2" step="0.005" value="0.03"
+                oninput="liveTuneNecklaceFit()">
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Genişlik</span><span id="n3dWVal">0.19</span></div>
+              <input type="range" id="necklace3dW" min="-0.3" max="0.3" step="0.01" value="0.19"
+                oninput="liveTuneNecklaceFit()">
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Yukarı/aşağı</span><span id="n3dYVal">0.06</span></div>
+              <input type="range" id="necklace3dY" min="-0.4" max="0.4" step="0.01" value="0.06"
+                oninput="liveTuneNecklaceFit()">
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div>
+            <div class="section-label">Earring Fit</div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Yana kaydır</span><span id="e3dSpreadVal">0.00</span></div>
+              <input type="range" id="earring3dSpread" min="-0.6" max="0.6" step="0.01" value="0"
+                oninput="liveTuneEarringFit()">
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Boyut</span><span id="e3dScaleVal">1.00x</span></div>
+              <input type="range" id="earring3dScale" min="0.5" max="1.6" step="0.01" value="1.0"
+                oninput="liveTuneEarringFit()">
+            </div>
+          </div>
         </div>
 
       </div>
@@ -604,7 +638,7 @@
     ];
 
     const necklaceConfig = {
-      'pearl_necklace.glb': { scale: 1.0, yOffset: -20, zOffset: 0, rotX: 0 },
+      'pearl_necklace.glb': { scale: 1.0, yOffset: -20, zOffset: 0, rotX: 0, xOffset: -0.065, widthMult: 1.13 },
     };
 
     const FACE_FILTER_CATALOG = [
@@ -885,6 +919,11 @@ function drawPiercing(pt, piercing_type, item_img) {
     headGroup.add(earring3dGroup);
     let earringPlaneLeft = null, earringPlaneRight = null;
     let activeEarringTex = null; // { texture, aspect }
+    // Kullanıcının kendi yüzüne göre kalıcı ince ayarı (Adjust sekmesi).
+    // Kalibre edilmiş varsayılanların (EARRING_PNG_3D_CONFIG / necklaceConfig)
+    // üstüne eklenir, hiçbir zaman onları değiştirmez.
+    let earringFit = { spreadDelta: 0, scaleMult: 1.0 };
+    let necklaceFit = { xOffsetDelta: 0.03, widthMultDelta: 0.19, yOffsetDelta: 0.06 };
     const earringTextureCache = {};
 
     const EARRING_PNG_3D_CONFIG = {
@@ -932,6 +971,27 @@ function drawPiercing(pt, piercing_type, item_img) {
         earringPlaneRight.material.needsUpdate = true;
         activeEarringTex = entry;
       });
+    };
+
+    // Kullanıcının kendi yüzüne göre kalıcı ince ayarı — kalibre edilmiş
+    // varsayılanın (necklaceConfig) üstüne eklenir, onu değiştirmez.
+    window.liveTuneNecklaceFit = function () {
+      necklaceFit.xOffsetDelta = parseFloat(document.getElementById('necklace3dX').value);
+      necklaceFit.widthMultDelta = parseFloat(document.getElementById('necklace3dW').value);
+      necklaceFit.yOffsetDelta = parseFloat(document.getElementById('necklace3dY').value);
+      document.getElementById('n3dXVal').textContent = necklaceFit.xOffsetDelta.toFixed(3);
+      document.getElementById('n3dWVal').textContent = necklaceFit.widthMultDelta.toFixed(2);
+      document.getElementById('n3dYVal').textContent = necklaceFit.yOffsetDelta.toFixed(2);
+    };
+
+    // Aynı mantık küpe için — EARRING_PNG_3D_CONFIG'teki kalibre edilmiş
+    // sol/sağ mesafeyi ve boyutu, hangi küpe stili seçilirse seçilsin
+    // kullanıcının kendi ayarıyla kaydırır/ölçekler.
+    window.liveTuneEarringFit = function () {
+      earringFit.spreadDelta = parseFloat(document.getElementById('earring3dSpread').value);
+      earringFit.scaleMult = parseFloat(document.getElementById('earring3dScale').value);
+      document.getElementById('e3dSpreadVal').textContent = earringFit.spreadDelta.toFixed(2);
+      document.getElementById('e3dScaleVal').textContent = earringFit.scaleMult.toFixed(2) + 'x';
     };
 
     window.switchTab = function (tabName, tabEl) {
@@ -1502,12 +1562,15 @@ function drawPiercing(pt, piercing_type, item_img) {
         // dönerse dönsün (yukarı/aşağı/yana) otomatik doğru takip ediyor.
         if (selected.earring && activeEarringTex) {
           const cfgE = EARRING_PNG_3D_CONFIG[selected.earring] || { scale: 0.55, spreadL: 1.5, spreadR: 1.5, yOffset: -0.5, zOffset: 0.05 };
-          const widthWorld = eyeDistWorld * cfgE.scale;
+          // earringFit: kullanıcının Adjust sekmesinden yaptığı kalıcı ince
+          // ayar, kalibre edilmiş varsayılanın (cfgE) ÜSTÜNE eklenir; hangi
+          // küpe stili seçilirse seçilsin aynı kullanıcı ayarı uygulanır.
+          const widthWorld = eyeDistWorld * cfgE.scale * earringFit.scaleMult;
           const heightWorld = widthWorld * activeEarringTex.aspect;
           // Çoğu yüzde kulaklar burun köprüsüne göre tam simetrik değildir;
           // bu yüzden tek "spread" yerine sol/sağ için ayrı mesafe tutuyoruz.
-          const spreadL = cfgE.spreadL != null ? cfgE.spreadL : cfgE.spread;
-          const spreadR = cfgE.spreadR != null ? cfgE.spreadR : cfgE.spread;
+          const spreadL = (cfgE.spreadL != null ? cfgE.spreadL : cfgE.spread) + earringFit.spreadDelta;
+          const spreadR = (cfgE.spreadR != null ? cfgE.spreadR : cfgE.spread) + earringFit.spreadDelta;
           const halfSpreadL = eyeDistWorld * spreadL * 0.5;
           const halfSpreadR = eyeDistWorld * spreadR * 0.5;
           const earYOff = cfgE.yOffset * eyeDistWorld;
@@ -1572,16 +1635,24 @@ function drawPiercing(pt, piercing_type, item_img) {
           const widthWorld = (widthPx / W) * (halfScreenWorldWidth * 2);
 
           const finalScaleN = widthWorld * activeModels.necklace.normScale * (cfgN.scale || 1.0);
-          activeModels.necklace.model.scale.set(finalScaleN, finalScaleN, finalScaleN);
+          // Model simetrik tek parça olduğu için sol/sağ ayrı ayarlanamıyor;
+          // widthMult genel genişliği, xOffset tüm kolyeyi yana kaydırır —
+          // merkez tahmini hafif kaymışsa (omuz landmark'ları tam ortalanmamışsa)
+          // bir taraf "dar/geniş" görünmesinin genelde sebebi budur.
+          // necklaceFit: kullanıcının Adjust sekmesinden yaptığı kalıcı ince ayar,
+          // kalibre edilmiş varsayılanın (cfgN) ÜSTÜNE eklenir.
+          const widthMult = (cfgN.widthMult || 1.0) + necklaceFit.widthMultDelta;
+          activeModels.necklace.model.scale.set(finalScaleN * widthMult, finalScaleN, finalScaleN);
           activeModels.necklace.model.rotation.z = rollAngle;
 
           // Pivot modelin MERKEZİNDE; görünür (clip sonrası) üst kenarı
           // worldAnchorY'ye oturtmak için merkezi o kadar aşağı kaydırıyoruz.
           const clipLocalY = activeModels.necklace.clipLocalY || 0;
-          const groupY = worldAnchorY - clipLocalY * finalScaleN + (cfgN.yOffset || 0) * finalScaleN;
+          const groupY = worldAnchorY - clipLocalY * finalScaleN + (cfgN.yOffset || 0) * finalScaleN + necklaceFit.yOffsetDelta * widthWorld;
+          const xOff = ((cfgN.xOffset || 0) + necklaceFit.xOffsetDelta) * widthWorld;
 
           activeModels.necklace.group.position.set(
-            worldAnchorX,
+            worldAnchorX + xOff,
             groupY,
             pos.z + (cfgN.zOffset || 0) * finalScaleN
           );
@@ -2481,6 +2552,12 @@ function applyEyeliner(pt, intensity, wing) {
         topY = chin.y + faceH * 0.32;
         angle = Math.atan2(rT.y - lT.y, rT.x - lT.x) * 0.35;
       }
+
+      // Adjust sekmesindeki "Necklace Fit" kaydırıcıları — 3D kolyede olduğu
+      // gibi 2D PNG kolyelerde (Gold/Pearl/Chain) de aynı şekilde uygulanır.
+      tW *= (1 + necklaceFit.widthMultDelta);
+      cx += necklaceFit.xOffsetDelta * faceW;
+      topY -= necklaceFit.yOffsetDelta * faceH;
 
       if (_lastNeck !== file) { console.log('AR necklace render:', file); _lastNeck = file; }
       drawAnchoredPNG(file, cx, topY, tW, angle, 0, 1);
