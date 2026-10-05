@@ -556,35 +556,6 @@
         </div>
 
         <div class="panel-section" id="tab-adjust">
-
-          <div>
-            <div class="section-label">3D Earring (kalibrasyon - geçici)</div>
-            <div class="slider-row">
-              <div class="slider-label"><span>Scale</span><span id="e3dScaleVal">0.25</span></div>
-              <input type="range" id="earring3dScale" min="0.02" max="1.0" step="0.005" value="0.25"
-                oninput="liveTuneEarring3D()">
-            </div>
-            <div class="slider-row">
-              <div class="slider-label"><span>Spread Sol</span><span id="e3dSpreadLVal">1.7</span></div>
-              <input type="range" id="earring3dSpreadL" min="0.5" max="4.0" step="0.02" value="1.7"
-                oninput="liveTuneEarring3D()">
-            </div>
-            <div class="slider-row">
-              <div class="slider-label"><span>Spread Sağ</span><span id="e3dSpreadRVal">1.7</span></div>
-              <input type="range" id="earring3dSpreadR" min="0.5" max="4.0" step="0.02" value="1.7"
-                oninput="liveTuneEarring3D()">
-            </div>
-            <div class="slider-row">
-              <div class="slider-label"><span>Y (yukarı/aşağı)</span><span id="e3dYVal">-0.65</span></div>
-              <input type="range" id="earring3dY" min="-2.0" max="1.0" step="0.01" value="-0.65"
-                oninput="liveTuneEarring3D()">
-            </div>
-            <div class="slider-row">
-              <div class="slider-label"><span>Z (ileri/geri)</span><span id="e3dZVal">-0.35</span></div>
-              <input type="range" id="earring3dZ" min="-1.5" max="1.0" step="0.01" value="-0.35"
-                oninput="liveTuneEarring3D()">
-            </div>
-          </div>
         </div>
 
       </div>
@@ -960,45 +931,8 @@ function drawPiercing(pt, piercing_type, item_img) {
         earringPlaneRight.material.map = entry.texture;
         earringPlaneRight.material.needsUpdate = true;
         activeEarringTex = entry;
-        syncEarring3DSliders();
       });
     };
-
-    // --- GEÇİCİ KALİBRASYON ---
-    // Adjust sekmesindeki 4 kaydırıcı, seçili küpenin EARRING_PNG_3D_CONFIG
-    // girdisini canlı günceller. Doğru değerler bulununca bu bloğu ve
-    // ilgili HTML'i kaldırıp config'e sabitleyeceğiz.
-    window.liveTuneEarring3D = function () {
-      const sEl = document.getElementById('earring3dScale');
-      const spLEl = document.getElementById('earring3dSpreadL');
-      const spREl = document.getElementById('earring3dSpreadR');
-      const yEl = document.getElementById('earring3dY');
-      const zEl = document.getElementById('earring3dZ');
-      document.getElementById('e3dScaleVal').textContent = parseFloat(sEl.value).toFixed(3);
-      document.getElementById('e3dSpreadLVal').textContent = parseFloat(spLEl.value).toFixed(2);
-      document.getElementById('e3dSpreadRVal').textContent = parseFloat(spREl.value).toFixed(2);
-      document.getElementById('e3dYVal').textContent = parseFloat(yEl.value).toFixed(2);
-      document.getElementById('e3dZVal').textContent = parseFloat(zEl.value).toFixed(2);
-      if (!selected.earring) return;
-      EARRING_PNG_3D_CONFIG[selected.earring] = {
-        scale: parseFloat(sEl.value),
-        spreadL: parseFloat(spLEl.value),
-        spreadR: parseFloat(spREl.value),
-        yOffset: parseFloat(yEl.value),
-        zOffset: parseFloat(zEl.value),
-      };
-    };
-
-    function syncEarring3DSliders() {
-      const cfg = EARRING_PNG_3D_CONFIG[selected.earring];
-      if (!cfg) return;
-      document.getElementById('earring3dScale').value = cfg.scale;
-      document.getElementById('earring3dSpreadL').value = cfg.spreadL != null ? cfg.spreadL : cfg.spread;
-      document.getElementById('earring3dSpreadR').value = cfg.spreadR != null ? cfg.spreadR : cfg.spread;
-      document.getElementById('earring3dY').value = cfg.yOffset;
-      document.getElementById('earring3dZ').value = cfg.zOffset;
-      window.liveTuneEarring3D();
-    }
 
     window.switchTab = function (tabName, tabEl) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
