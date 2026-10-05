@@ -399,7 +399,7 @@
               <button class="acc-btn" onclick="selectAcc('earring','silver_earring.png',this)">Silver</button>
             </div>
           </div>
-        
+
           <div class="divider"></div>
 
            <div>
@@ -558,11 +558,31 @@
         <div class="panel-section" id="tab-adjust">
 
           <div>
-            <div class="section-label">PNG Earring</div>
+            <div class="section-label">3D Earring (kalibrasyon - geçici)</div>
             <div class="slider-row">
-              <div class="slider-label"><span>Scale</span><span id="eScaleVal">1.0x</span></div>
-              <input type="range" id="earringScale" min="0.3" max="2.0" step="0.05" value="1.0"
-                oninput="document.getElementById('eScaleVal').textContent=parseFloat(this.value).toFixed(1)+'x'">
+              <div class="slider-label"><span>Scale</span><span id="e3dScaleVal">0.25</span></div>
+              <input type="range" id="earring3dScale" min="0.02" max="1.0" step="0.005" value="0.25"
+                oninput="liveTuneEarring3D()">
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Spread Sol</span><span id="e3dSpreadLVal">1.7</span></div>
+              <input type="range" id="earring3dSpreadL" min="0.5" max="4.0" step="0.02" value="1.7"
+                oninput="liveTuneEarring3D()">
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Spread Sağ</span><span id="e3dSpreadRVal">1.7</span></div>
+              <input type="range" id="earring3dSpreadR" min="0.5" max="4.0" step="0.02" value="1.7"
+                oninput="liveTuneEarring3D()">
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Y (yukarı/aşağı)</span><span id="e3dYVal">-0.65</span></div>
+              <input type="range" id="earring3dY" min="-2.0" max="1.0" step="0.01" value="-0.65"
+                oninput="liveTuneEarring3D()">
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Z (ileri/geri)</span><span id="e3dZVal">-0.35</span></div>
+              <input type="range" id="earring3dZ" min="-1.5" max="1.0" step="0.01" value="-0.35"
+                oninput="liveTuneEarring3D()">
             </div>
           </div>
         </div>
@@ -615,6 +635,7 @@
     const necklaceConfig = {
       'pearl_necklace.glb': { scale: 1.0, yOffset: -20, zOffset: 0, rotX: 0 },
     };
+
     const FACE_FILTER_CATALOG = [
       { name: 'Butterfly', file: 'butterfly_mask.png' },
       { name: 'Crystal',   file: 'crystal_mask.png'   },
@@ -823,6 +844,18 @@ function drawPiercing(pt, piercing_type, item_img) {
     const dLight = new THREE.DirectionalLight(0xffffff, 1.2);
     dLight.position.set(0, 1, 1);
     scene3d.add(dLight);
+    // Metalik (altın/gümüş) küpe/kolye materyalleri environment map olmadan
+    // sadece tek yönlü ışıkta neredeyse siyah görünüyordu — birkaç yönden
+    // ek dolgu ışığı ekleyip yüzeyin genelinde parlaklık yakalanmasını sağlıyoruz.
+    const fillLightL = new THREE.DirectionalLight(0xffffff, 0.9);
+    fillLightL.position.set(-1, 0.3, 1);
+    scene3d.add(fillLightL);
+    const fillLightR = new THREE.DirectionalLight(0xffffff, 0.9);
+    fillLightR.position.set(1, 0.3, 1);
+    scene3d.add(fillLightR);
+    const fillLightBack = new THREE.DirectionalLight(0xffffff, 0.5);
+    fillLightBack.position.set(0, -1, -1);
+    scene3d.add(fillLightBack);
 
     const headGroup = new THREE.Group();
     scene3d.add(headGroup);
@@ -872,6 +905,101 @@ function drawPiercing(pt, piercing_type, item_img) {
     const faceFilterGroup = new THREE.Group();
     scene3d.add(faceFilterGroup);
 
+    // --- 3D Küpe (PNG dokulu düzlem, gözlük gibi headGroup'a bağlı) ---
+    // Eski 2D canvas yöntemi (landmark 234/454'ün ekran y'si + sabit offset)
+    // baş yukarı/aşağı eğilince kulaktan kopuyordu çünkü sadece 2D tahmindi.
+    // Burada aynı PNG görselini gerçek 3D kafa rotasyonuna (headGroup.quaternion)
+    // bağlı bir levhaya basıyoruz — gözlük/şapka gibi her açıda doğru kalır.
+    const earring3dGroup = new THREE.Group();
+    headGroup.add(earring3dGroup);
+    let earringPlaneLeft = null, earringPlaneRight = null;
+    let activeEarringTex = null; // { texture, aspect }
+    const earringTextureCache = {};
+
+    const EARRING_PNG_3D_CONFIG = {
+      'hoop_gold.png': { scale: 0.170, spreadL: 2.12, spreadR: 1.74, yOffset: -0.64, zOffset: -0.66 },
+      'pearl_drop.png': { scale: 0.170, spreadL: 2.16, spreadR: 1.84, yOffset: -0.64, zOffset: -0.72 },
+      'silver_earring.png': { scale: 0.170, spreadL: 2.12, spreadR: 1.74, yOffset: -0.64, zOffset: -0.66 },
+    };
+
+    function ensureEarringPlanes() {
+      if (earringPlaneLeft) return;
+      const geo = new THREE.PlaneGeometry(1, 1);
+      earringPlaneLeft = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ transparent: true, side: THREE.DoubleSide, depthWrite: false, depthTest: false }));
+      earringPlaneLeft.renderOrder = 7;
+      earring3dGroup.add(earringPlaneLeft);
+      earringPlaneRight = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ transparent: true, side: THREE.DoubleSide, depthWrite: false, depthTest: false }));
+      earringPlaneRight.renderOrder = 7;
+      earring3dGroup.add(earringPlaneRight);
+    }
+
+    function ensureEarringTexture(file, cb) {
+      if (earringTextureCache[file]) { cb(earringTextureCache[file]); return; }
+      const img = new Image();
+      img.onload = () => {
+        const meta = computeTrim(img);
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, meta.sw);
+        c.height = Math.max(1, meta.sh);
+        c.getContext('2d').drawImage(img, meta.sx, meta.sy, meta.sw, meta.sh, 0, 0, meta.sw, meta.sh);
+        const texture = new THREE.CanvasTexture(c);
+        texture.needsUpdate = true;
+        const entry = { texture, aspect: meta.sh / meta.sw };
+        earringTextureCache[file] = entry;
+        cb(entry);
+      };
+      img.src = '/static/accessories/earrings/' + file;
+    }
+
+    window.select3DEarring = function (file) {
+      if (!file) { activeEarringTex = null; return; }
+      ensureEarringTexture(file, entry => {
+        ensureEarringPlanes();
+        earringPlaneLeft.material.map = entry.texture;
+        earringPlaneLeft.material.needsUpdate = true;
+        earringPlaneRight.material.map = entry.texture;
+        earringPlaneRight.material.needsUpdate = true;
+        activeEarringTex = entry;
+        syncEarring3DSliders();
+      });
+    };
+
+    // --- GEÇİCİ KALİBRASYON ---
+    // Adjust sekmesindeki 4 kaydırıcı, seçili küpenin EARRING_PNG_3D_CONFIG
+    // girdisini canlı günceller. Doğru değerler bulununca bu bloğu ve
+    // ilgili HTML'i kaldırıp config'e sabitleyeceğiz.
+    window.liveTuneEarring3D = function () {
+      const sEl = document.getElementById('earring3dScale');
+      const spLEl = document.getElementById('earring3dSpreadL');
+      const spREl = document.getElementById('earring3dSpreadR');
+      const yEl = document.getElementById('earring3dY');
+      const zEl = document.getElementById('earring3dZ');
+      document.getElementById('e3dScaleVal').textContent = parseFloat(sEl.value).toFixed(3);
+      document.getElementById('e3dSpreadLVal').textContent = parseFloat(spLEl.value).toFixed(2);
+      document.getElementById('e3dSpreadRVal').textContent = parseFloat(spREl.value).toFixed(2);
+      document.getElementById('e3dYVal').textContent = parseFloat(yEl.value).toFixed(2);
+      document.getElementById('e3dZVal').textContent = parseFloat(zEl.value).toFixed(2);
+      if (!selected.earring) return;
+      EARRING_PNG_3D_CONFIG[selected.earring] = {
+        scale: parseFloat(sEl.value),
+        spreadL: parseFloat(spLEl.value),
+        spreadR: parseFloat(spREl.value),
+        yOffset: parseFloat(yEl.value),
+        zOffset: parseFloat(zEl.value),
+      };
+    };
+
+    function syncEarring3DSliders() {
+      const cfg = EARRING_PNG_3D_CONFIG[selected.earring];
+      if (!cfg) return;
+      document.getElementById('earring3dScale').value = cfg.scale;
+      document.getElementById('earring3dSpreadL').value = cfg.spreadL != null ? cfg.spreadL : cfg.spread;
+      document.getElementById('earring3dSpreadR').value = cfg.spreadR != null ? cfg.spreadR : cfg.spread;
+      document.getElementById('earring3dY').value = cfg.yOffset;
+      document.getElementById('earring3dZ').value = cfg.zOffset;
+      window.liveTuneEarring3D();
+    }
+
     window.switchTab = function (tabName, tabEl) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
@@ -910,7 +1038,7 @@ function drawPiercing(pt, piercing_type, item_img) {
 
     // 3D kolye grid'i her build'de temizlendiği için eski PNG kolyeleri
     // (Gold/Pearl/Chain) aynı gride, 3D seçeneğin yanına ekliyoruz —
-    // tek "Necklace" başlığı altında hepsi bir arada görünsün diye.
+    // tek başlık altında hepsi bir arada görünsün diye.
     const PNG_NECKLACES = [
       { name: 'Gold', file: 'gold_necklace.png' },
       { name: 'Pearl', file: 'pearl_necklace.png' },
@@ -973,13 +1101,14 @@ function drawPiercing(pt, piercing_type, item_img) {
 
       loadGltfCached(path + file, gltf => {
         const m = gltf.scene;
-        const box = new THREE.Box3().setFromObject(m);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
 
         const cfg = type === 'glasses' ? (glassesConfig[file] || { zOffset: 0.5, scale: 1.8, yOffset: -0.1, rotX: 0 })
           : type === 'hat' ? (hatConfig[file] || { zOffset: 0.0, scale: 2.5, yOffset: 0.3, rotX: -Math.PI / 2 })
           : (necklaceConfig[file] || { scale: 1.0, yOffset: 0, zOffset: 0, rotX: 0 });
+
+        const box = new THREE.Box3().setFromObject(m);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
 
         const pivot = new THREE.Group();
         const wrapper = new THREE.Group();
@@ -1117,7 +1246,12 @@ function drawPiercing(pt, piercing_type, item_img) {
       // Aynı grid'teki 3D kolye modeliyle çakışmasın diye onu da temizle
       if (type === 'necklace') window.clearModel('necklace', null, false);
       console.log('AR selectAcc:', type, '->', file);
-      if (file) loadPNG(file, type);
+      if (type === 'earring') {
+        // Küpe artık 2D canvas değil, kafaya bağlı 3D bir levhada (bkz. select3DEarring)
+        window.select3DEarring(file);
+      } else if (file) {
+        loadPNG(file, type);
+      }
     };
     function computeTrim(img) {
       const c = document.createElement('canvas');
@@ -1404,6 +1538,7 @@ function drawPiercing(pt, piercing_type, item_img) {
             });
           }
         });
+
         if (activeFaceFilter.mesh) {
   const cfg = activeFaceFilter.cfg;
   const filterWidth = eyeDistWorld * cfg.widthScale;
@@ -1428,6 +1563,43 @@ function drawPiercing(pt, piercing_type, item_img) {
     worldPos.z + eyeDistWorld * 0.2
   );
 }
+
+        // 3D Küpe: gözlük gibi headGroup'a bağlı olduğu için baş hangi yöne
+        // dönerse dönsün (yukarı/aşağı/yana) otomatik doğru takip ediyor.
+        if (selected.earring && activeEarringTex) {
+          const cfgE = EARRING_PNG_3D_CONFIG[selected.earring] || { scale: 0.55, spreadL: 1.5, spreadR: 1.5, yOffset: -0.5, zOffset: 0.05 };
+          const widthWorld = eyeDistWorld * cfgE.scale;
+          const heightWorld = widthWorld * activeEarringTex.aspect;
+          // Çoğu yüzde kulaklar burun köprüsüne göre tam simetrik değildir;
+          // bu yüzden tek "spread" yerine sol/sağ için ayrı mesafe tutuyoruz.
+          const spreadL = cfgE.spreadL != null ? cfgE.spreadL : cfgE.spread;
+          const spreadR = cfgE.spreadR != null ? cfgE.spreadR : cfgE.spread;
+          const halfSpreadL = eyeDistWorld * spreadL * 0.5;
+          const halfSpreadR = eyeDistWorld * spreadR * 0.5;
+          const earYOff = cfgE.yOffset * eyeDistWorld;
+          const earZOff = cfgE.zOffset * eyeDistWorld;
+
+          // Yana dönünce uzak taraftaki küpe, gözlük sapı gibi kafanın
+          // içinden/üzerinden görünmesin diye soluklaştırıp kayboluyor
+          // (aynı 2D sistemde kullandığımız yaw/fade mantığı).
+          const earYaw = estimateYaw(pt);
+          const earFade = farSideOpacity(earYaw);
+          const leftOpE = earYaw > 0 ? earFade : 1;
+          const rightOpE = earYaw < 0 ? earFade : 1;
+
+          earringPlaneLeft.scale.set(widthWorld, heightWorld, 1);
+          earringPlaneLeft.position.set(-halfSpreadL, earYOff, earZOff);
+          earringPlaneLeft.material.opacity = leftOpE;
+          earringPlaneLeft.visible = leftOpE > 0.02;
+
+          earringPlaneRight.scale.set(widthWorld, heightWorld, 1);
+          earringPlaneRight.position.set(halfSpreadR, earYOff, earZOff);
+          earringPlaneRight.material.opacity = rightOpE;
+          earringPlaneRight.visible = rightOpE > 0.02;
+        } else if (earringPlaneLeft) {
+          earringPlaneLeft.visible = false;
+          earringPlaneRight.visible = false;
+        }
 
         // 3D Kolye: kafa gibi başı çevirince dönmesin, boyun/omuz konumunu
         // kendi hesaplayıp doğrudan sahne (world) koordinatında konumlandır.
@@ -1544,7 +1716,7 @@ function drawPiercing(pt, piercing_type, item_img) {
 
       // ─── 3. 2D PNG ACCESSORIES RENDERING (Çizim Katmanı Z-Index 2) ───
       if (selected.necklace && pngImages[selected.necklace]) { updateShoulders(now, W, H); drawNecklace(pt); }
-      if (selected.earring && pngImages[selected.earring]) drawEarring(pt);
+      // if (selected.earring && pngImages[selected.earring]) drawEarring(pt); // 3D levhaya taşındı, bkz. earring3dGroup
       // if (selected.hat && pngImages[selected.hat]) drawHat(pt); // Disabled PNG hats since we have 3D now
       // PIERCING ÇİZİMİ
       if (selectedPiercing && piercingImages[selectedPiercing]) {
@@ -2292,17 +2464,20 @@ function applyEyeliner(pt, intensity, wing) {
       if (!meta) return;
       const scale = parseFloat(document.getElementById('earringScale').value);
       const lSide = pt(234), rSide = pt(454), chin = pt(152), fore = pt(10);
-      // Kulak memesi, anatomik olarak burun altıyla (landmark 2) aynı hizada olur;
-      // yanak noktasının kendi y'sini kullanmak kameraya/yüze göre kayıyordu.
-      const noseBase = pt(2);
       const faceH = Math.abs(chin.y - fore.y);
       const faceW = Math.hypot(rSide.x - lSide.x, rSide.y - lSide.y);
       const angle = Math.atan2(rSide.y - lSide.y, rSide.x - lSide.x);
       const tH = faceH * 0.15 * scale;
       const tW = tH * (meta.sw / meta.sh);
       // Kulak, yüz hattının (234/454) hemen dışında kalır — çok dışarı taşırmıyoruz
-      const outward = faceW * 0.02;
-      const earY = noseBase.y;
+      const outward = faceW * 0.022;
+      // Y için burun altı (landmark 2) yerine 234/454'ün KENDİ y'sini kullanıyoruz:
+      // baş öne/arkaya eğilince (pitch) burun ekranda çok daha fazla hareket eder
+      // (dönme eksenine uzak), kulak ise ona yakın olduğu için az hareket eder —
+      // burun-tabanlı anchor bu yüzden baş eğilince kulaktan kopuyordu. 234/454
+      // zaten izlenen gerçek landmark'lar olduğu için pitch'te de kulakla birlikte kalır.
+      const leftEarY = lSide.y + faceH * 0.14;
+      const rightEarY = rSide.y + faceH * 0.14;
       // PNG'nin en üstü değil, üstten ~1/3'ü kulak hizasına denk gelsin:
       // halka küpeler tamamen aşağı sarkmasın, sapsız modeller de yukarı kaymasın.
       const earAnchorY = 0.35;
@@ -2311,8 +2486,8 @@ function applyEyeliner(pt, intensity, wing) {
       const leftOp = yaw < 0 ? fade : 1;
       const rightOp = yaw > 0 ? fade : 1;
       const side = yaw > 0.12 ? 'LEFT-only' : (yaw < -0.12 ? 'RIGHT-only' : 'BOTH');
-      if (leftOp > 0.02) drawAnchoredPNG(file, lSide.x - outward, earY, tW, angle, earAnchorY, leftOp);
-      if (rightOp > 0.02) drawAnchoredPNG(file, rSide.x + outward, earY, tW, angle, earAnchorY, rightOp);
+      if (leftOp > 0.02) drawAnchoredPNG(file, lSide.x - outward, leftEarY, tW, angle, earAnchorY, leftOp);
+      if (rightOp > 0.02) drawAnchoredPNG(file, rSide.x + outward, rightEarY, tW, angle, earAnchorY, rightOp);
       reportEar(yaw, side);
     }
 
