@@ -395,9 +395,14 @@ def _place_earrings(output, overlay, refs, kp, item_scale, intensity):
     )
     img_left, img_right = pts[0], pts[1]
 
+    # YOLO'nun kulak noktası genelde kulağın dış kenarına denk geliyor,
+    # küpe de buna göre biraz fazla dışarıda kalıyordu — yüze doğru az bir
+    # miktar içeri çekiyoruz (landmark hâlâ gerçek tespit, sadece sabit bir
+    # anatomik düzeltme payı ekleniyor).
+    pull_in = 0.035 * face_width
     drop = 0.10 * face_width
-    left_lobe = (float(img_left[0]), float(img_left[1]) + drop)
-    right_lobe = (float(img_right[0]), float(img_right[1]) + drop)
+    left_lobe = (float(img_left[0]) + pull_in, float(img_left[1]) + drop)
+    right_lobe = (float(img_right[0]) - pull_in, float(img_right[1]) + drop)
 
     target_w = max(8, int(face_width * 0.11 * item_scale))
     print("JEWELRY: küpe kaynak=%s face_width=%.1f target_w=%d tilt=%.1f" %
